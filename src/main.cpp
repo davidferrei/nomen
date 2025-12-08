@@ -2,6 +2,8 @@
 #include "ui/dialogs/startupdialog.h"
 #include "core/logging/debuglogger.h"
 
+#include <tsk/libtsk.h>
+
 #include <QApplication>
 #include <QDebug>
 
@@ -23,6 +25,11 @@ int main(int argc, char *argv[])
 
     MainWindow w;
     w.show();
+
+    //TSK Testing
+    const char* tskVersion = tsk_version_get_str();
+    qInfo() << "The Sleuth Kit version:" << tskVersion;
+
 
     return a.exec();
 

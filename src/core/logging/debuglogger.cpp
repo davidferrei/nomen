@@ -11,29 +11,6 @@ QtMessageHandler originalHandler = nullptr;
 void debugLogger(QtMsgType type, const QMessageLogContext &context, const QString &msg)
 {
 
-    // QByteArray localMsg = msg.toLocal8Bit();
-    // const char *file = context.file ? context.file : "";
-    // const char *function = context.function ? context.function : "";
-    // switch (type) {
-    // case QtInfoMsg:
-    //     fprintf(stdout, "Info: %s (%s:%u, %s)\n", localMsg.constData(), file, context.line, function);
-    //     fflush(stdout);
-    //     break;
-    // case QtDebugMsg:
-    //     fprintf(stdout, "Debug: %s (%s:%u, %s)\n", localMsg.constData(), file, context.line, function);
-    //     fflush(stdout);
-    //     break;
-    // case QtWarningMsg:
-    //     fprintf(stderr, "Warning: %s (%s:%u, %s)\n", localMsg.constData(), file, context.line, function);
-    //     break;
-    // case QtCriticalMsg:
-    //     fprintf(stderr, "Critical: %s (%s:%u, %s)\n", localMsg.constData(), file, context.line, function);
-    //     break;
-    // case QtFatalMsg:
-    //     fprintf(stderr, "Fatal: %s (%s:%u, %s)\n", localMsg.constData(), file, context.line, function);
-    //     break;
-    // }
-
     QByteArray localMsg = msg.toLocal8Bit();
     const char *file = context.file ? context.file : "";
     const char *function = context.function ? context.function : "";

@@ -7,7 +7,7 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
-    qInfo() << "Main Window Opened";
+    qDebug() << "Main Window Opened";
 }
 
 MainWindow::~MainWindow()
