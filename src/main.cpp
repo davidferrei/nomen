@@ -1,38 +1,25 @@
 #include "ui/windows/mainwindow.h"
 #include "ui/dialogs/startupdialog.h"
+#include "core/logging/debuglogger.h"
 
 #include <QApplication>
+#include <QDebug>
 
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
 
-    // startupDialog ui_startup;
-    // ui_startup.show();
+    //Program Setup
+        //TODO: Add Setup info like the Document Example
 
-    // MainWindow ui_main_window;
-    // ui_main_window.show();
-    // return a.exec();
+    //Debug Setup
+        //TODO: This
+    qInstallMessageHandler(debugLogger);
 
-    //###
 
-    // startupDialog startup;
-
-    // if (startup.exec() == QDialog::Accepted)
-    // {
-    //     MainWindow w;
-    //     w.show();
-    //     return a.exec();
-    // }
-
-    // return 0;
-
-    //###
-
+    //Program Start
     startupDialog startup;
-    if (startup.exec() != QDialog::Accepted)
-        return 0;
-
+    if (startup.exec() != QDialog::Accepted) return 0;
 
     MainWindow w;
     w.show();

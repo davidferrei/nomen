@@ -1,0 +1,87 @@
+#include "debuglogger.h"
+#include <QFile>
+#include <QTextStream>
+#include <QDateTime>
+#include <QThread>
+
+
+QtMessageHandler originalHandler = nullptr;
+
+
+void debugLogger(QtMsgType type, const QMessageLogContext &context, const QString &msg)
+{
+
+    // QByteArray localMsg = msg.toLocal8Bit();
+    // const char *file = context.file ? context.file : "";
+    // const char *function = context.function ? context.function : "";
+    // switch (type) {
+    // case QtInfoMsg:
+    //     fprintf(stdout, "Info: %s (%s:%u, %s)\n", localMsg.constData(), file, context.line, function);
+    //     fflush(stdout);
+    //     break;
+    // case QtDebugMsg:
+    //     fprintf(stdout, "Debug: %s (%s:%u, %s)\n", localMsg.constData(), file, context.line, function);
+    //     fflush(stdout);
+    //     break;
+    // case QtWarningMsg:
+    //     fprintf(stderr, "Warning: %s (%s:%u, %s)\n", localMsg.constData(), file, context.line, function);
+    //     break;
+    // case QtCriticalMsg:
+    //     fprintf(stderr, "Critical: %s (%s:%u, %s)\n", localMsg.constData(), file, context.line, function);
+    //     break;
+    // case QtFatalMsg:
+    //     fprintf(stderr, "Fatal: %s (%s:%u, %s)\n", localMsg.constData(), file, context.line, function);
+    //     break;
+    // }
+
+    QByteArray localMsg = msg.toLocal8Bit();
+    const char *file = context.file ? context.file : "";
+    const char *function = context.function ? context.function : "";
+    QString dateTime = QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss");
+    QThread *currentThread = QThread::currentThread();
+    QString threadName = currentThread->objectName();
+    QString logType;
+
+    switch (type) {
+        case QtInfoMsg:
+            logType = "INFO";
+            break;
+        case QtDebugMsg:
+            logType = "DEBUG";
+            break;
+        case QtWarningMsg:
+            logType = "WARNING";
+            break;
+        case QtCriticalMsg:
+            logType = "CRITICAL";
+            break;
+        case QtFatalMsg:
+            logType = "FATAL";
+            break;
+        default:
+            logType = "Unkown";
+            break;
+    }
+
+     QString formattedMessage = QString("[%1] [%2] - \"%3\", %4, %5, Thread: \"%6\"")
+                                    .arg(dateTime)
+                                    .arg(logType)
+                                    .arg(localMsg.constData())
+                                    .arg(file)
+                                    .arg(function)
+                                    .arg(threadName.isEmpty() ? "Unkown" : threadName);
+
+
+    if (type == QtDebugMsg || type == QtInfoMsg) {
+        fprintf(stdout, "%s\n", qPrintable(formattedMessage));
+        fflush(stdout);
+    } else {
+        fprintf(stderr, "%s\n", qPrintable(formattedMessage));
+    }
+
+    if (originalHandler) {
+        originalHandler(type, context, msg);
+    }
+
+}
+

@@ -6,6 +6,8 @@ startupDialog::startupDialog(QWidget *parent)
     , ui(new Ui::startupDialog)
 {
     ui->setupUi(this);
+
+    qInfo() << "Startup Dialog Opened";
 }
 
 startupDialog::~startupDialog()
