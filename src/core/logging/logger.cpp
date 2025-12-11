@@ -1,4 +1,4 @@
-#include "debuglogger.h"
+#include "logger.h"
 #include <QFile>
 #include <QTextStream>
 #include <QDateTime>
@@ -8,7 +8,7 @@
 QtMessageHandler originalHandler = nullptr;
 
 
-void debugLogger(QtMsgType type, const QMessageLogContext &context, const QString &msg)
+void nomenLogger(QtMsgType type, const QMessageLogContext &context, const QString &msg)
 {
 
     QByteArray localMsg = msg.toLocal8Bit();

@@ -1,6 +1,6 @@
 #include "ui/windows/mainwindow.h"
 #include "ui/dialogs/startupdialog.h"
-#include "core/logging/debuglogger.h"
+#include "core/logging/logger.h"
 
 #include <tsk/libtsk.h>
 
@@ -12,11 +12,10 @@ int main(int argc, char *argv[])
     QApplication a(argc, argv);
 
     //Program Setup
-        //TODO: Add Setup info like the Document Example
+        //TODO: Add Setup info like the DocumentViewer Example
 
     //Debug Setup
-        //TODO: This
-    qInstallMessageHandler(debugLogger);
+    qInstallMessageHandler(nomenLogger);
 
 
     //Program Start

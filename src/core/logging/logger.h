@@ -1,11 +1,11 @@
-#ifndef DEBUGLOGGER_H
-#define DEBUGLOGGER_H
+#ifndef LOGGER_H
+#define LOGGER_H
 
 #include <QMessageLogContext>
 #include <QDebug>
 
-void debugLogger(QtMsgType type, const QMessageLogContext &context, const QString &msg);
+void nomenLogger(QtMsgType type, const QMessageLogContext &context, const QString &msg);
 
 extern QtMessageHandler originalHandler;
 
-#endif // DEBUGLOGGER_H
+#endif // LOGGER_H
