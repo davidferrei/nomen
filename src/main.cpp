@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
     MainWindow w;
     w.show();
 
-    //TSK Testing
+    //TSK Version
     const char* tskVersion = tsk_version_get_str();
     qInfo() << "The Sleuth Kit version:" << tskVersion;
 

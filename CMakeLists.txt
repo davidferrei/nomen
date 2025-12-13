@@ -30,6 +30,13 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
     )
+
+    target_include_directories(Nomen
+        PRIVATE
+            ${CMAKE_SOURCE_DIR}/src
+            ${SLEUTHKIT_INCLUDE_DIR}
+    )
+
 # Define target properties for Android with Qt 6 as:
 #    set_property(TARGET Nomen APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR
 #                 ${CMAKE_CURRENT_SOURCE_DIR}/android)
