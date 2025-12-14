@@ -11,8 +11,8 @@ MainWindow::MainWindow(QWidget *parent)
 
     qDebug() << "Main Window Opened";
 
-    qInfo() << "Start Disk Walk";
-    TskWalker::walkImage("/mnt/disk01/DiskImage/kali.raw");
+    //qInfo() << "Start Disk Walk";
+    //TskWalker::walkImage("/mnt/disk01/DiskImage/kali.raw");
 }
 
 MainWindow::~MainWindow()
