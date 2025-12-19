@@ -14,9 +14,8 @@ int main(int argc, char *argv[])
     //Program Setup
         //TODO: Add Setup info like the DocumentViewer Example
 
-    //Debug Setup
-    qInstallMessageHandler(nomenLogger);
-
+    //Logger Setup
+    initLogger();
 
     //Program Start
     startupDialog startup;
@@ -29,7 +28,12 @@ int main(int argc, char *argv[])
     const char* tskVersion = tsk_version_get_str();
     qInfo() << "The Sleuth Kit version:" << tskVersion;
 
+    int app_return = a.exec();
 
-    return a.exec();
+    //Shutdown Setup
+    shutdownLogger();
+
+    // return a.exec();
+    return app_return;
 
 }

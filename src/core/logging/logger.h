@@ -4,7 +4,9 @@
 #include <QMessageLogContext>
 #include <QDebug>
 
+void initLogger();
 void nomenLogger(QtMsgType type, const QMessageLogContext &context, const QString &msg);
+void shutdownLogger();
 
 extern QtMessageHandler originalHandler;
 
