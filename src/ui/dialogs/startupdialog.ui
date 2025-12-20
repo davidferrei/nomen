@@ -95,12 +95,22 @@
          </column>
          <column>
           <property name="text">
-           <string>New Column</string>
+           <string>Case ID</string>
+          </property>
+         </column>
+         <column>
+          <property name="text">
+           <string>State</string>
           </property>
          </column>
          <column>
           <property name="text">
            <string>Created</string>
+          </property>
+         </column>
+         <column>
+          <property name="text">
+           <string>Updated</string>
           </property>
          </column>
          <column>

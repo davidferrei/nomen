@@ -1,6 +1,7 @@
 #include "ui/windows/mainwindow.h"
 #include "ui/dialogs/startupdialog.h"
 #include "core/logging/logger.h"
+#include <core/caseManager/casemanager.h>
 
 #include <tsk/libtsk.h>
 
@@ -20,6 +21,9 @@ int main(int argc, char *argv[])
     //TSK Version
     const char* tskVersion = tsk_version_get_str();
     qInfo() << "The Sleuth Kit version:" << tskVersion;
+
+    //Case Manager Start
+    CaseManager caseManager;
 
     //Program Start
     startupDialog startup;
