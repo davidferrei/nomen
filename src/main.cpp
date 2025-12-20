@@ -17,16 +17,16 @@ int main(int argc, char *argv[])
     //Logger Setup
     initLogger();
 
+    //TSK Version
+    const char* tskVersion = tsk_version_get_str();
+    qInfo() << "The Sleuth Kit version:" << tskVersion;
+
     //Program Start
     startupDialog startup;
     if (startup.exec() != QDialog::Accepted) return 0;
 
     MainWindow w;
     w.show();
-
-    //TSK Version
-    const char* tskVersion = tsk_version_get_str();
-    qInfo() << "The Sleuth Kit version:" << tskVersion;
 
     int app_return = a.exec();
 

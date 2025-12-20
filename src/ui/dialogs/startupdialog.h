@@ -18,8 +18,13 @@ public:
 private slots:
     void on_pushButton_clicked();
 
+    void on_table_case_cellDoubleClicked(int row, int column);
+
 private:
     Ui::startupDialog *ui;
+
+    void populateCaseTable();
+
 };
 
 #endif // STARTUPDIALOG_H
