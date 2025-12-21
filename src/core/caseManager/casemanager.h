@@ -24,10 +24,16 @@ public:
     bool createCase(const CaseInfo& info);
     bool openCase(const QString& casePath);
 
+    QList<CaseInfo> loadPreviousCases() const;
+    void saveCasePath(const QString& casePath);
+
     const CaseInfo& getCurrentCase() const;
+
+    //TODO: Implement a Case Validation Func
 
 private:
     CaseInfo currentCase;
+    QStringList previousCasesPathsList;
 };
 
 #endif // CASEMANAGER_H

@@ -5,8 +5,13 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QDateTime>
+#include <QSettings>
 
-CaseManager::CaseManager() {}
+CaseManager::CaseManager()
+{
+    QSettings settings("Nomen", "Nomen");
+    previousCasesPathsList = settings.value("cases/paths").toStringList();
+}
 
 
 bool CaseManager::createCase(const CaseInfo& info)
@@ -14,7 +19,7 @@ bool CaseManager::createCase(const CaseInfo& info)
     if (info.caseId.isEmpty())
         return false;
 
-    QString caseDirPath = info.casePath;
+    QString caseDirPath = info.casePath; //REFAC: Use caseDir for Paths as well
     QDir caseDir(info.casePath);
 
     if (!caseDir.mkpath("indexes")) return false;
@@ -51,6 +56,9 @@ bool CaseManager::createCase(const CaseInfo& info)
     qDebug() << "Case State:" << info.caseState;
     qDebug() << "Notes:" << info.notes;
     qDebug() << "###################################";
+
+    saveCasePath(info.casePath);
+
     return true;
 }
 
@@ -94,6 +102,56 @@ bool CaseManager::openCase(const QString& casePath)
     qDebug() << "###################################";
     return true;
 }
+
+void CaseManager::saveCasePath(const QString& casePath)
+{
+    if (previousCasesPathsList.contains(casePath))
+        return;
+
+    previousCasesPathsList.append(casePath);
+
+    QSettings settings("Nomen", "Nomen");
+    settings.setValue("cases/paths", previousCasesPathsList);
+
+    qDebug() << "New Case Path Stored With QSettings";
+}
+
+QList<CaseInfo> CaseManager::loadPreviousCases() const
+{
+    QList<CaseInfo> cases;
+
+    for (const QString& path : previousCasesPathsList) {
+
+        QFile file(path + "/case_info.json");
+        if (!file.open(QIODevice::ReadOnly)) {
+            qWarning() << "Missing case_info.json in " << path;
+            continue;
+        }
+
+        QJsonDocument jDoc = QJsonDocument::fromJson(file.readAll());
+        file.close();
+
+        if (!jDoc.isObject())
+            continue;
+
+        QJsonObject jObj = jDoc.object();
+
+        CaseInfo info;
+        info.caseId = jObj.value("case_id").toString();
+        info.caseName = jObj.value("case_name").toString();
+        info.createdDate = jObj.value("created_date").toString();
+        info.updatedDate = jObj.value("updated_date").toString();
+        info.notes = jObj.value("notes").toString();
+        info.caseState = jObj.value("case_state").toInt();
+        info.casePath = path;
+
+        cases.append(info);
+    }
+
+    return cases;
+}
+
+
 
 const CaseInfo& CaseManager::getCurrentCase() const
 {
