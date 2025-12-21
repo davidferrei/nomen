@@ -27,6 +27,12 @@
        </item>
        <item>
         <widget class="QPushButton" name="bttn_import_case">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="toolTip">
+          <string>TO BE IMPLEMENTED</string>
+         </property>
          <property name="text">
           <string>Import</string>
          </property>
