@@ -29,7 +29,8 @@ public:
 
     const CaseInfo& getCurrentCase() const;
 
-    //TODO: Implement a Case Validation Func
+    //TODO: Implement a Case Validation Func that Checks if Cases are Valid (DBs exist, JSON Valid, etc...)
+    //TODO: Delete Case Func
 
 private:
     CaseInfo currentCase;

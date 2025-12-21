@@ -16,6 +16,7 @@ int main(int argc, char *argv[])
     //Program Setup
     QCoreApplication::setOrganizationName("Nomen");
     QCoreApplication::setApplicationName("Nomen");
+    QGuiApplication::setDesktopFileName("nomen");
         //TODO: Add Setup info like the DocumentViewer Example
 
     //Logger Setup

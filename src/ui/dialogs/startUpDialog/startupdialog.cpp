@@ -12,6 +12,8 @@
 //TODO: Implement Searching
 //TODO: Implement Sorting
 
+//TODO: Add a Info Button for Each Row that Reads from the DB and Displays Case Info. (Examiners,Organizations,Stats)
+
 startupDialog::startupDialog(QWidget *parent, CaseManager& caseManager)
     : QDialog(parent)
     , ui(new Ui::startupDialog)
@@ -61,12 +63,18 @@ void startupDialog::populateCaseTable()
         }
         ui->table_case->setItem(i, 2, stateItem);
 
-        ui->table_case->setItem(i, 3, new QTableWidgetItem(c.createdDate));
-        ui->table_case->setItem(i, 4, new QTableWidgetItem(c.updatedDate));
-        ui->table_case->setItem(i, 5, new QTableWidgetItem(c.notes));
+        // ui->table_case->setItem(i, 3, new QTableWidgetItem(c.createdDate));
+        // ui->table_case->setItem(i, 4, new QTableWidgetItem(c.updatedDate));
+
+        ui->table_case->setItem(i, 3, new QTableWidgetItem(QDateTime::fromString(c.createdDate, Qt::ISODate).toLocalTime().toString("dd/MM/yyyy HH:mm:ss")));
+        ui->table_case->setItem(i, 4, new QTableWidgetItem(QDateTime::fromString(c.updatedDate, Qt::ISODate).toLocalTime().toString("dd/MM/yyyy HH:mm:ss")));
+
+        ui->table_case->setItem(i, 5, new QTableWidgetItem(c.notes.simplified()));
     }
 
     ui->table_case->resizeColumnToContents(2);
+    ui->table_case->resizeColumnToContents(3);
+    ui->table_case->resizeColumnToContents(4);
 }
 
 //############################################################################################
@@ -85,17 +93,10 @@ void startupDialog::on_pushButton_clicked()
 
 void startupDialog::on_bttn_create_case_clicked()
 {
-    CreateCaseDialog createDlg(this);
+    CreateCaseDialog createDlg(this, caseManager);
 
     if (createDlg.exec() != QDialog::Accepted)
         return;
-
-    // CaseInfo info = createDlg.caseInfo();
-
-    // if (!caseManager.createCase(info)) {
-    //     // QMessageBox::warning(this, "Error", "Failed to create case");
-    //     return;
-    // }
 
     accept();
 }
