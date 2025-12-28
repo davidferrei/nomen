@@ -4,6 +4,8 @@
 #include "core/caseManager/casemanager.h"
 #include "ui/dialogs/createCaseDialog/createcasedialog.h"
 
+#include "core/logging/performancemeasure.h"
+
 #include <QFile>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -41,6 +43,7 @@ startupDialog::~startupDialog()
 
 void startupDialog::populateCaseTable()
 {
+    PerformanceTimer timer("Populate Previous Cases Table");
 
     QList<CaseInfo> casesList = caseManager.loadPreviousCases();
 
