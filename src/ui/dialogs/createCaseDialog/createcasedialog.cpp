@@ -76,7 +76,7 @@ void CreateCaseDialog::on_bttn_create_clicked()
     newCase.casePath    = casePath;
 
 
-    if (!caseManager.createCase(newCase)) {
+    if (!caseManager.createCaseInfo(newCase)) {
         QMessageBox::critical(
             this,
             "Case Creation Failed",

@@ -21,6 +21,9 @@ class CaseManager
 public:
     CaseManager();
 
+    bool createCaseInfo(const CaseInfo& info);
+    bool loadCaseInfo(const QString& casePath);
+
     bool createCase(const CaseInfo& info);
     bool openCase(const QString& casePath);
 
@@ -31,6 +34,11 @@ public:
 
     //TODO: Implement a Case Validation Func that Checks if Cases are Valid (DBs exist, JSON Valid, etc...)
     //TODO: Delete Case Func
+
+private:
+    bool initEnvironment();
+    bool databaseExists() const;
+    bool createDatabase();
 
 private:
     CaseInfo currentCase;

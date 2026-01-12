@@ -13,8 +13,10 @@ CaseManager::CaseManager()
     previousCasesPathsList = settings.value("cases/paths").toStringList();
 }
 
+//###########################################################################################
+// Case Info
 
-bool CaseManager::createCase(const CaseInfo& info)
+bool CaseManager::createCaseInfo(const CaseInfo& info)
 {
     if (info.caseId.isEmpty())
         return false;
@@ -63,11 +65,11 @@ bool CaseManager::createCase(const CaseInfo& info)
 }
 
 
-bool CaseManager::openCase(const QString& casePath)
+bool CaseManager::loadCaseInfo(const QString& casePath)
 {
     QFile file(casePath + "/case_info.json");
     if (!file.open(QIODevice::ReadOnly)) {
-        qWarning() << "Cannot open case file at:" << casePath << "/case_info.json";
+        qWarning() << "Cannot Open Case File At:" << casePath << "/case_info.json";
         return false;
     }
 
@@ -102,6 +104,56 @@ bool CaseManager::openCase(const QString& casePath)
     qDebug() << "###################################";
     return true;
 }
+
+//###########################################################################################
+// Case Init
+
+bool CaseManager::databaseExists() const
+{
+    return QFile::exists(currentCase.casePath + "/case_db/case.fdb");
+}
+
+bool CaseManager::createDatabase()
+{
+    qDebug() << "Creating Case Database - TO BE IMPLEMENTED";
+    return true;
+}
+
+bool CaseManager::initEnvironment()
+{
+
+    // if (!createDatabase())
+    //     return false;
+
+
+    return true;
+}
+
+
+bool CaseManager::openCase(const QString& casePath)
+{
+    if (!loadCaseInfo(casePath)) {
+        qCritical() << "Failed to Load Case Info";
+        return false;
+    }
+
+    if (!databaseExists())
+    {
+        qInfo() << "Database not Found - Initilizing Case Environment";
+        if (!initEnvironment())
+        {
+            qCritical() << "Create Database Failed";
+        }
+    }
+
+    //TODO: Open DB
+
+    return true;
+}
+
+
+//###########################################################################################
+// QSettings History
 
 void CaseManager::saveCasePath(const QString& casePath)
 {
@@ -151,6 +203,8 @@ QList<CaseInfo> CaseManager::loadPreviousCases() const
     return cases;
 }
 
+//###########################################################################################
+// Case Setter/Getter
 
 
 const CaseInfo& CaseManager::getCurrentCase() const

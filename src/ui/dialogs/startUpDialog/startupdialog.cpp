@@ -9,8 +9,10 @@
 #include <QFile>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QMessageBox>
+#include <QDebug>
 
-//TODO: Implement Creating
+
 //TODO: Implement Searching
 //TODO: Implement Sorting
 
@@ -53,7 +55,9 @@ void startupDialog::populateCaseTable()
     for (int i = 0; i < casesList.size(); ++i) {
         const CaseInfo& c = casesList[i];
 
-        ui->table_case->setItem(i, 0, new QTableWidgetItem(c.caseName));
+        QTableWidgetItem* nameItem = new QTableWidgetItem(c.caseName);
+        nameItem->setData(Qt::UserRole, c.casePath);
+        ui->table_case->setItem(i, 0, nameItem);
         ui->table_case->setItem(i, 1, new QTableWidgetItem(c.caseId));
 
         QTableWidgetItem* stateItem = new QTableWidgetItem;
@@ -65,9 +69,6 @@ void startupDialog::populateCaseTable()
             stateItem->setForeground(QBrush(QColor(120, 0, 0)));
         }
         ui->table_case->setItem(i, 2, stateItem);
-
-        // ui->table_case->setItem(i, 3, new QTableWidgetItem(c.createdDate));
-        // ui->table_case->setItem(i, 4, new QTableWidgetItem(c.updatedDate));
 
         ui->table_case->setItem(i, 3, new QTableWidgetItem(QDateTime::fromString(c.createdDate, Qt::ISODate).toLocalTime().toString("dd/MM/yyyy HH:mm:ss")));
         ui->table_case->setItem(i, 4, new QTableWidgetItem(QDateTime::fromString(c.updatedDate, Qt::ISODate).toLocalTime().toString("dd/MM/yyyy HH:mm:ss")));
@@ -85,12 +86,29 @@ void startupDialog::populateCaseTable()
 
 void startupDialog::on_table_case_cellDoubleClicked(int row, int column)
 {
-    //TODO: Start Case
+    QString casePath = ui->table_case->item(row, 0)->data(Qt::UserRole).toString();
+
+    if (!caseManager.openCase(casePath)) {
+        QMessageBox::critical(this,"Error","The Selected Case Could not be Opened.");
+        return;
+    }
+
+    accept();
 }
 
 void startupDialog::on_pushButton_clicked()
 {
-    //TODO: Start Case
+    int row = ui->table_case->currentRow();
+    if (row < 0)
+        return; //TODO: Disable Button Until Something is Selected
+
+    QString casePath = ui->table_case->item(row, 0)->data(Qt::UserRole).toString();
+
+    if (!caseManager.openCase(casePath)) {
+        QMessageBox::critical(this, "Error", "The Selected Case Could not be Opened.");
+        return;
+    }
+
     accept();
 }
 
