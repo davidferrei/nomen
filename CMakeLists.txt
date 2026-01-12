@@ -24,6 +24,11 @@ file(GLOB_RECURSE PROJECT_SOURCES
     "src/*.h"
     "src/*.ui"
 )
+add_library(ibpp STATIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/ibpp/core/all_in_one.cpp
+)
+
+#add_library(ibpp STATIC ${IBPP_SOURCES})
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(Nomen
@@ -55,8 +60,27 @@ else()
     endif()
 endif()
 
+
+target_include_directories(Nomen PUBLIC
+    "${CMAKE_CURRENT_SOURCE_DIR}/include"
+)
+
+target_compile_definitions(Nomen PRIVATE IBPP_LINUX)
+target_compile_features(ibpp PRIVATE cxx_std_17)
+
+set_target_properties(Nomen PROPERTIES
+    BUILD_RPATH "$ORIGIN/../lib"
+    INSTALL_RPATH "$ORIGIN/../lib"
+)
+
+
 # target_link_libraries(Nomen PRIVATE Qt${QT_VERSION_MAJOR}::Widgets /usr/lib/libtsk.so)
-target_link_libraries(Nomen PRIVATE Qt${QT_VERSION_MAJOR}::Widgets tsk)
+target_link_libraries(Nomen PRIVATE Qt${QT_VERSION_MAJOR}::Widgets tsk ibpp ${CMAKE_SOURCE_DIR}/lib/libfbclient.so)
+
+set(CMAKE_BUILD_RPATH "$ORIGIN/firebird/lib")
+set(CMAKE_INSTALL_RPATH "$ORIGIN/firebird/lib")
+
+
 
 # Qt for iOS sets MACOSX_BUNDLE_GUI_IDENTIFIER automatically since Qt 6.1.
 # If you are developing for iOS or macOS you should consider setting an
