@@ -3,9 +3,10 @@
 
 #include "core/forensic/tsk/tskwalker.h"
 
-MainWindow::MainWindow(QWidget *parent)
+MainWindow::MainWindow(QWidget *parent, const CaseManager& caseManager)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
+    , caseManager(caseManager)
 {
     ui->setupUi(this);
 

@@ -1,80 +1,46 @@
 #include "ui/windows/mainwindow.h"
-#include "ui/dialogs/startupdialog.h"
+#include "ui/dialogs/startUpDialog/startupdialog.h"
 #include "core/logging/logger.h"
+#include <core/caseManager/casemanager.h>
 
 #include <tsk/libtsk.h>
-#include <ibpp/core/ibpp.h>
-#include <iostream>
-#include <cstdlib>
-#include <filesystem>
-#include <sys/stat.h>
-#include <sys/types.h>
 
 #include <QApplication>
 #include <QDebug>
+#include <QDate>
 
 int main(int argc, char *argv[])
 {
-    setenv("FIREBIRD", "/home/admin1/dev/qt6/Nomen/fb_embedded", 1);
-    setenv("LD_LIBRARY_PATH", "/home/admin1/dev/qt6/Nomen/fb_embedded/lib", 1);
-    setenv("FIREBIRD_LOCK", "/tmp/firebird_lock", 1);
-    mkdir("/tmp/firebird_lock", 0700);;
-
     QApplication a(argc, argv);
 
     //Program Setup
+    QCoreApplication::setOrganizationName("Nomen");
+    QCoreApplication::setApplicationName("Nomen");
+    QGuiApplication::setDesktopFileName("nomen");
         //TODO: Add Setup info like the DocumentViewer Example
 
-    //Debug Setup
-    qInstallMessageHandler(nomenLogger);
-
-
-    //Program Start
-    startupDialog startup;
-    if (startup.exec() != QDialog::Accepted) return 0;
-
-    MainWindow w;
-    w.show();
+    //Logger Setup
+    initLogger();
 
     //TSK Version
     const char* tskVersion = tsk_version_get_str();
     qInfo() << "The Sleuth Kit version:" << tskVersion;
 
-    //
+    //Case Manager Start
+    CaseManager caseManager;
 
+    //Program Start
+    startupDialog startup(nullptr,caseManager);
+    if (startup.exec() != QDialog::Accepted) return 0;
 
-    try
-    {
-        const std::string dbPath = "/tmp/sql_ok.fdb";
-        const std::string user   = "SYSDBA";
-        const std::string pass   = "masterkey";
+    MainWindow w(nullptr,caseManager);
+    w.show();
 
-        IBPP::Database db = IBPP::DatabaseFactory(
-            "",
-            dbPath,
-            user,
-            pass
-            );
+    int app_return = a.exec();
 
-        if (!std::filesystem::exists(dbPath))
-        {
-            qDebug() << "Database does not exist, creating...";
-            db->Create(3);          // SQL dialect 3
-            db->Disconnect();       // Create() auto-connects
-        }
-        else
-        {
-            qDebug() << "Database exists, connecting...";
-            db->Connect();
-        }
-    }
-    catch (const IBPP::Exception& e)
-    {
-        std::cerr << e.ErrorMessage() << std::endl;
-    }
+    //Shutdown Setup
+    shutdownLogger();
 
-
-
-    return a.exec();
+    return app_return;
 
 }
