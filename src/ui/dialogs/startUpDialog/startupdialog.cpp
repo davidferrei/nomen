@@ -119,6 +119,7 @@ void startupDialog::on_bttn_create_case_clicked()
     if (createDlg.exec() != QDialog::Accepted)
         return;
 
-    accept();
+    //TODO: Open Case
+    //accept();
 }
 

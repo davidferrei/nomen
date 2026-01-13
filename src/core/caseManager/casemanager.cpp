@@ -1,5 +1,12 @@
 #include "casemanager.h"
 
+#include <ibpp/core/ibpp.h>
+// #include <iostream>
+// #include <cstdlib>
+#include <filesystem>
+#include <sys/stat.h>
+#include <sys/types.h>
+
 #include <QDir>
 #include <QFile>
 #include <QJsonDocument>
@@ -115,15 +122,83 @@ bool CaseManager::databaseExists() const
 
 bool CaseManager::createDatabase()
 {
-    qDebug() << "Creating Case Database - TO BE IMPLEMENTED";
+    qDebug() << "FIREBIRD: Creating Case Database";
+
+    if (currentCase.casePath.isEmpty()) {
+        qCritical() << "No Case Path Set";
+        return false;
+    }
+
+    const QString dbDirPath = currentCase.casePath + "/case_db";
+    const QString dbFilePath = dbDirPath + "/case.fdb";
+
+    QDir caseDbDir(dbDirPath);
+    if (!caseDbDir.exists()) {
+        if (!caseDbDir.mkpath(".")) {
+            qCritical() << "Failed to Create case_db Directory:" << dbDirPath;
+            return false;
+        }
+    }
+
+
+    //TODO: Windows Fix
+    setenv("FIREBIRD", "/home/admin1/dev/qt6/Nomen/fb_embedded", 1);
+    setenv("LD_LIBRARY_PATH", "/home/admin1/dev/qt6/Nomen/fb_embedded/lib", 1);
+    setenv("FIREBIRD_LOCK", "/tmp/firebird_lock", 1);
+
+    QDir lockDir("/tmp/firebird_lock"); //TODO: Windows Fix
+
+    if (!lockDir.exists()) {
+        if (!lockDir.mkpath(".")) {
+            qCritical() << "Failed to Create Firebird Lock Directory:" << lockDir.absolutePath();
+            return false;
+        }
+    }
+
+    try {
+        const std::string dbPath = dbFilePath.toStdString();
+
+        IBPP::Database db = IBPP::DatabaseFactory(
+            "",
+            dbPath,
+            "SYSDBA", //TODO: Make User Choose This
+            "masterkey"
+            );
+
+        if (!std::filesystem::exists(dbPath)) {
+            db->Create(3);
+            db->Disconnect();
+        } else {
+            qInfo() << "FIREBIRD: Database Already exists, Skipping Creation";
+        }
+    }
+    catch (const IBPP::Exception& e) {
+        qCritical() << "FIREBIRD: Error While Creating Database:" << e.ErrorMessage();
+        return false;
+    }
+    catch (const std::exception& e) {
+        qCritical() << "Exception While Creating Database:" << e.what();
+        return false;
+    }
+    catch (...) {
+        qCritical() << "FIREBIRD: Unknown Error While Creating Database";
+        return false;
+    }
+
     return true;
 }
 
 bool CaseManager::initEnvironment()
 {
 
-    // if (!createDatabase())
-    //     return false;
+    if (!createDatabase())
+    {
+        return false;
+    }
+    else
+    {
+        qInfo() << "FIREBIRD: Database Created";
+    }
 
 
     return true;
