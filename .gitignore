@@ -80,3 +80,21 @@ CMakeLists.txt.user*
 .rcc/
 .uic/
 /build*/
+
+# Prebuilt libraries
+lib/**/*.so
+lib/**/*.so.*
+lib/**/*.a
+lib/**/*.dll
+lib/**/*.dylib
+
+# Firebird Embedded Runtime
+fb_embedded/
+fb_embedded/libfbclient.so*
+fb_embedded/libtomcrypt*
+fb_embedded/bin/
+fb_embedded/plugins/udr/
+fb_embedded/security*.fdb
+fb_embedded/databases.conf
+fb_embedded/firebird.log
+
