@@ -200,6 +200,87 @@ bool CaseManager::initEnvironment()
         qInfo() << "FIREBIRD: Database Created";
     }
 
+    //TODO:Schema
+
+    return true;
+}
+
+
+bool CaseManager::openDatabase()
+{
+    qDebug() << "FIREBIRD: Opening Case Database";
+
+    const QString dbFilePath = currentCase.casePath + "/case_db/case.fdb";
+
+    if (!QFile::exists(dbFilePath)) {
+        qCritical() << "Database File Does not Exist:" << dbFilePath;
+        return false;
+    }
+
+    try {
+        setenv("FIREBIRD", "/home/admin1/dev/qt6/Nomen/fb_embedded", 1);
+        setenv("LD_LIBRARY_PATH", "/home/admin1/dev/qt6/Nomen/fb_embedded/lib", 1);
+        setenv("FIREBIRD_LOCK", "/tmp/firebird_lock", 1);
+
+        const std::string dbPath = dbFilePath.toStdString();
+
+        IBPP::Database db = IBPP::DatabaseFactory(
+            "",
+            dbPath,
+            "SYSDBA", //TODO: Make User Choose This
+            "masterkey"
+            );
+
+        db->Connect();
+        qInfo() << "FIREBIRD: Database Connection Successful";
+
+        IBPP::Transaction tr = IBPP::TransactionFactory(db);
+        tr->Start();
+
+        IBPP::Statement st = IBPP::StatementFactory(db, tr);
+        st->Prepare(
+            "SELECT "
+            "CURRENT_USER, "
+            "CURRENT_ROLE, "
+            "CAST(CURRENT_TIMESTAMP AS VARCHAR(64))"
+            "FROM RDB$DATABASE"
+            );
+
+        st->Execute();
+
+        std::string user;
+        std::string role;
+        std::string firebirdTime;
+
+        if (st->Fetch()) {
+            st->Get(1, user);
+            st->Get(2, role);
+            st->Get(3, firebirdTime);
+
+            qDebug() << "##########################################";
+            qDebug() << "FIREBIRD Stats";
+            qDebug() << "FIREBIRD: Connected User:" << user.c_str();
+            qDebug() << "FIREBIRD: Role:" << role.c_str();
+            qDebug() << "FIREBIRD: Server Time:" << firebirdTime.c_str();
+            qDebug() << "##########################################";
+        }
+
+        tr->Commit();
+        db->Disconnect();
+
+    }
+    catch (const IBPP::Exception& e) {
+        qCritical() << "FIREBIRD: Error While Opening Database:" << e.ErrorMessage();
+        return false;
+    }
+    catch (const std::exception& e) {
+        qCritical() << "Exception While Opening Database:" << e.what();
+        return false;
+    }
+    catch (...) {
+        qCritical() << "FIREBIRD: Unknown Error While Opening Database";
+        return false;
+    }
 
     return true;
 }
@@ -221,8 +302,12 @@ bool CaseManager::openCase(const QString& casePath)
         }
     }
 
-    //TODO: Open DB
+    if (!openDatabase()) {
+        qCritical() << "Database Open Test Failed";
+        return false;
+    }
 
+    qInfo() << "Case Opened Successfully:" << currentCase.caseName;
     return true;
 }
 

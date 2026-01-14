@@ -24,7 +24,6 @@ public:
     bool createCaseInfo(const CaseInfo& info);
     bool loadCaseInfo(const QString& casePath);
 
-    bool createCase(const CaseInfo& info);
     bool openCase(const QString& casePath);
 
     QList<CaseInfo> loadPreviousCases() const;
@@ -36,9 +35,12 @@ public:
     //TODO: Delete Case Func
 
 private:
-    bool initEnvironment();
     bool databaseExists() const;
+
+    bool initEnvironment();
     bool createDatabase();
+
+    bool openDatabase();
 
 private:
     CaseInfo currentCase;
