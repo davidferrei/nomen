@@ -20,8 +20,13 @@ public:
     MainWindow(QWidget *parent, const CaseManager& caseManager);
     ~MainWindow();
 
+protected:
+    void showEvent(QShowEvent *event) override;
+
 private:
     Ui::MainWindow *ui;
     const CaseManager& caseManager;
+
+    void setUIWidgetsSizes();
 };
 #endif // MAINWINDOW_H
