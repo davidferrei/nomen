@@ -1,6 +1,9 @@
 #ifndef CASEMANAGER_H
 #define CASEMANAGER_H
 
+#include <ibpp/core/ibpp.h>
+
+
 #include <QString>
 #include <QDebug>
 
@@ -20,6 +23,7 @@ class CaseManager
 {
 public:
     CaseManager();
+    ~CaseManager();
 
     bool createCaseInfo(const CaseInfo& info);
     bool loadCaseInfo(const QString& casePath);
@@ -33,6 +37,7 @@ public:
 
     //TODO: Implement a Case Validation Func that Checks if Cases are Valid (DBs exist, JSON Valid, etc...)
     //TODO: Delete Case Func
+    //TODO: Get Case DB
 
 private:
     bool databaseExists() const;
@@ -41,10 +46,13 @@ private:
     bool createDatabase();
 
     bool openDatabase();
+    void closeDatabase();
 
 private:
     CaseInfo currentCase;
     QStringList previousCasesPathsList;
+
+    IBPP::Database currentCaseDB;
 };
 
 #endif // CASEMANAGER_H

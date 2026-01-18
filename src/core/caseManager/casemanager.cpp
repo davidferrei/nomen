@@ -1,8 +1,7 @@
 #include "casemanager.h"
 
-#include <ibpp/core/ibpp.h>
-// #include <iostream>
-// #include <cstdlib>
+#include "casedatabaseschema.h"
+
 #include <filesystem>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -18,6 +17,11 @@ CaseManager::CaseManager()
 {
     QSettings settings("Nomen", "Nomen");
     previousCasesPathsList = settings.value("cases/paths").toStringList();
+}
+
+CaseManager::~CaseManager()
+{
+    closeDatabase();
 }
 
 //###########################################################################################
@@ -195,14 +199,12 @@ bool CaseManager::initEnvironment()
     {
         return false;
     }
-    else
-    {
-        qInfo() << "FIREBIRD: Database Created";
-    }
 
-    //TODO:Schema
+    qInfo() << "FIREBIRD: Database Created";
 
-    return true;
+    IBPP::Database db = IBPP::DatabaseFactory("", currentCase.casePath.toStdString() + "/case_db/case.fdb", "SYSDBA", "masterkey");
+
+    return CaseDatabaseSchema::createSchema(db);
 }
 
 
@@ -224,20 +226,20 @@ bool CaseManager::openDatabase()
 
         const std::string dbPath = dbFilePath.toStdString();
 
-        IBPP::Database db = IBPP::DatabaseFactory(
+        currentCaseDB = IBPP::DatabaseFactory(
             "",
             dbPath,
             "SYSDBA", //TODO: Make User Choose This
             "masterkey"
             );
 
-        db->Connect();
+        currentCaseDB->Connect();
         qInfo() << "FIREBIRD: Database Connection Successful";
 
-        IBPP::Transaction tr = IBPP::TransactionFactory(db);
+        IBPP::Transaction tr = IBPP::TransactionFactory(currentCaseDB);
         tr->Start();
 
-        IBPP::Statement st = IBPP::StatementFactory(db, tr);
+        IBPP::Statement st = IBPP::StatementFactory(currentCaseDB, tr);
         st->Prepare(
             "SELECT "
             "CURRENT_USER, "
@@ -266,7 +268,7 @@ bool CaseManager::openDatabase()
         }
 
         tr->Commit();
-        db->Disconnect();
+        //currentCaseDB->Disconnect();
 
     }
     catch (const IBPP::Exception& e) {
@@ -285,6 +287,21 @@ bool CaseManager::openDatabase()
     return true;
 }
 
+
+void CaseManager::closeDatabase()
+{
+    if (currentCaseDB->Connected()) {
+        qDebug() << "FIREBIRD: Closing Database Connection";
+        try {
+            currentCaseDB->Disconnect();
+        }
+        catch (...) {
+            qWarning() << "FIREBIRD: Exception While Closing Case DB";
+        }
+    }
+
+    currentCaseDB = nullptr;
+}
 
 bool CaseManager::openCase(const QString& casePath)
 {
@@ -310,7 +327,6 @@ bool CaseManager::openCase(const QString& casePath)
     qInfo() << "Case Opened Successfully:" << currentCase.caseName;
     return true;
 }
-
 
 //###########################################################################################
 // QSettings History
