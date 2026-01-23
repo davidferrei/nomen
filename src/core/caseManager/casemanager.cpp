@@ -49,6 +49,7 @@ bool CaseManager::createCaseInfo(const CaseInfo& info)
     jObj["updated_date"] = info.updatedDate;
     jObj["notes"] = info.notes;
     jObj["case_state"] = info.caseState;
+    jObj["environment_initialized"] = false;
 
     QFile file(caseDirPath + "/case_info.json");
     if (!file.open(QIODevice::WriteOnly))
@@ -67,6 +68,7 @@ bool CaseManager::createCaseInfo(const CaseInfo& info)
     qDebug() << "Created Date:" << info.createdDate;
     qDebug() << "Updated Date:" << info.updatedDate;
     qDebug() << "Case State:" << info.caseState;
+    qDebug() << "Environment Initialized:" << false;
     qDebug() << "Notes:" << info.notes;
     qDebug() << "###################################";
 
@@ -101,6 +103,7 @@ bool CaseManager::loadCaseInfo(const QString& casePath)
     currentCase.updatedDate = jObj.value("updated_date").toString();
     currentCase.notes = jObj.value("notes").toString();
     currentCase.caseState = jObj.value("case_state").toInt();
+    currentCase.isEnvInitialized = jObj.value("environment_initialized").toBool();
     currentCase.casePath = casePath;
 
     qInfo() << "Case Opened:" << currentCase.caseName;
@@ -110,9 +113,48 @@ bool CaseManager::loadCaseInfo(const QString& casePath)
     qDebug() << "Created Date:" << currentCase.createdDate;
     qDebug() << "Updated Date:" << currentCase.updatedDate;
     qDebug() << "Case State:" << currentCase.caseState;
+    qDebug() << "Case Initialized:" << currentCase.isEnvInitialized;
     qDebug() << "Notes:" << currentCase.notes;
     qDebug() << "Case Path:" << currentCase.casePath;
     qDebug() << "###################################";
+    return true;
+}
+
+bool CaseManager::markCaseEnvironmentInitialized()
+{
+    QString caseInfoPath = currentCase.casePath + "/case_info.json";
+    QFile file(caseInfoPath);
+
+    if (!file.open(QIODevice::ReadOnly))
+    {
+        qCritical() << "Cannot Open Case Info File For Read";
+        return false;
+    }
+
+    QJsonDocument jDoc = QJsonDocument::fromJson(file.readAll());
+    file.close();
+
+    if (!jDoc.isObject())
+    {
+        qCritical() << "Case Info Json Is Invalid";
+        return false;
+    }
+
+    QJsonObject jObj = jDoc.object();
+    jObj["environment_initialized"] = true;
+
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate))
+    {
+        qCritical() << "Cannot Open Case Info File For Write";
+        return false;
+    }
+
+    file.write(QJsonDocument(jObj).toJson(QJsonDocument::Indented));
+    file.close();
+
+    qInfo() << "Case Environment Marked Initialized";
+    currentCase.isEnvInitialized = true;
+
     return true;
 }
 
@@ -204,7 +246,19 @@ bool CaseManager::initEnvironment()
 
     IBPP::Database db = IBPP::DatabaseFactory("", currentCase.casePath.toStdString() + "/case_db/case.fdb", "SYSDBA", "masterkey");
 
-    return CaseDatabaseSchema::createSchema(db);
+    if (!CaseDatabaseSchema::createSchema(db))
+    {
+        qCritical() << "Failed To Create Database Schema";
+        return false;
+    }
+
+    if (!markCaseEnvironmentInitialized())
+    {
+        qCritical() << "Failed To Mark Case Environment Initialized";
+        return false;
+    }
+
+    return true;
 }
 
 
@@ -305,6 +359,9 @@ void CaseManager::closeDatabase()
 
 bool CaseManager::openCase(const QString& casePath)
 {
+    //FIXME: Must not Create DB if Case already existed
+        //HAve flag in json with inited or something if so and DB not found fail gracefully
+
     if (!loadCaseInfo(casePath)) {
         qCritical() << "Failed to Load Case Info";
         return false;
@@ -312,10 +369,17 @@ bool CaseManager::openCase(const QString& casePath)
 
     if (!databaseExists())
     {
+        if (currentCase.isEnvInitialized)
+        {
+            qCritical() << "Case DB is not Present But Environment is Marked as Initialized";
+            return false;
+        }
+
         qInfo() << "Database not Found - Initilizing Case Environment";
         if (!initEnvironment())
         {
             qCritical() << "Create Database Failed";
+            return false;
         }
     }
 

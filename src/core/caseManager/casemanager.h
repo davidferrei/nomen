@@ -15,6 +15,7 @@ struct CaseInfo {
     QString updatedDate;
     QString notes;
     int caseState;
+    bool isEnvInitialized;
     QString casePath;
 };
 
@@ -43,11 +44,11 @@ private:
     bool databaseExists() const;
 
     bool initEnvironment();
+    bool markCaseEnvironmentInitialized();
     bool createDatabase();
 
     bool openDatabase();
     void closeDatabase();
-
 private:
     CaseInfo currentCase;
     QStringList previousCasesPathsList;
