@@ -252,11 +252,11 @@ bool CaseManager::initEnvironment()
         return false;
     }
 
-    if (!markCaseEnvironmentInitialized())
-    {
-        qCritical() << "Failed To Mark Case Environment Initialized";
-        return false;
-    }
+    // if (!markCaseEnvironmentInitialized())
+    // {
+    //     qCritical() << "Failed To Mark Case Environment Initialized";
+    //     return false;
+    // }
 
     return true;
 }
@@ -373,7 +373,7 @@ bool CaseManager::openCase(const QString& casePath)
             return false;
         }
 
-        qInfo() << "Database not Found - Initilizing Case Environment";
+        qInfo() << "Initilizing Case Environment";
         if (!initEnvironment())
         {
             qCritical() << "Create Database Failed";

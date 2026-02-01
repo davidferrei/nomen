@@ -1,5 +1,7 @@
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
+#include "ui/dialogs/initCaseDialog/initcasedialog.h"
+
 
 #include <QLabel>
 #include <QMessageBox>
@@ -16,26 +18,21 @@ MainWindow::MainWindow(QWidget *parent, const CaseManager& caseManager)
     //qInfo() << "Start Disk Walk";
     //TskWalker::walkImage("/mnt/disk01/DiskImage/kali.raw");
 
-    // Action Bar
-    QMenu* fileMenu = ui->menubar->addMenu("&File");
-    QAction* openAction = new QAction("Open", this);
-    QAction* exitAction = new QAction("Exit", this);
-    connect(exitAction, &QAction::triggered, this, &MainWindow::close);
-    fileMenu->addAction(openAction);
-    fileMenu->addAction(exitAction);
+    setupUiElements();
 
-    // Help Menu
-    QMenu* helpMenu = ui->menubar->addMenu("&Help");
-    QAction* aboutAction = new QAction("About", this);
-    connect(aboutAction, &QAction::triggered, this, []() {
-        QMessageBox::information(nullptr, "About", "Nomen v1.0");
-    });
-    helpMenu->addAction(aboutAction);
+    if(!caseManager.getCurrentCase().isEnvInitialized)
+    {
+        initCaseDialog createDlg(this);
 
-    // Status Bar
-    ui->statusbar->showMessage("Ready");
-    QLabel* userLabel = new QLabel("Case: " + caseManager.getCurrentCase().caseName + " | " + caseManager.getCurrentCase().caseId , this);
-    ui->statusbar->addPermanentWidget(userLabel);
+        //FIXME: Handle CaseInitNotWorkig
+        if (createDlg.exec() != QDialog::Accepted)
+        {
+            //QMessageBox::critical(this, "Error", "Case not Initilized");
+            return;
+        }
+
+    }
+
 
 }
 
@@ -44,6 +41,8 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
+//############################################################################################
+//UI Stuff
 
 void MainWindow::setUIWidgetsSizes() {
 
@@ -67,4 +66,34 @@ void MainWindow::showEvent(QShowEvent *event)
     QMainWindow::showEvent(event);
 
     setUIWidgetsSizes();
+}
+
+void MainWindow::setupUiElements()
+{
+    // Menu Bar
+    QMenu* fileMenu = ui->menubar->addMenu("&File");
+
+    QAction* openAction = new QAction("Open", this);
+    QAction* exitAction = new QAction("Exit", this);
+    connect(exitAction, &QAction::triggered, this, &MainWindow::close);
+
+    fileMenu->addAction(openAction);
+    fileMenu->addAction(exitAction);
+
+    QMenu* helpMenu = ui->menubar->addMenu("&Help");
+    QAction* aboutAction = new QAction("About", this);
+    connect(aboutAction, &QAction::triggered, this, []() {
+        QMessageBox::information(nullptr, "About", "Nomen v1.0");
+    });
+    helpMenu->addAction(aboutAction);
+
+    // Status Bar
+    ui->statusbar->showMessage("Ready");
+
+    const CaseInfo& c = caseManager.getCurrentCase();
+    QLabel* userLabel = new QLabel(
+        "Case: " + c.caseName + " | " + c.caseId,
+        this
+        );
+    ui->statusbar->addPermanentWidget(userLabel);
 }

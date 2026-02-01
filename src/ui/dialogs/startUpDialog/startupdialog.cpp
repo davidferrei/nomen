@@ -3,7 +3,6 @@
 
 #include "core/caseManager/casemanager.h"
 #include "ui/dialogs/createCaseDialog/createcasedialog.h"
-
 #include "core/logging/performancemeasure.h"
 
 #include <QFile>

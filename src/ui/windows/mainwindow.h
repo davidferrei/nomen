@@ -28,5 +28,6 @@ private:
     const CaseManager& caseManager;
 
     void setUIWidgetsSizes();
+    void setupUiElements();
 };
 #endif // MAINWINDOW_H
