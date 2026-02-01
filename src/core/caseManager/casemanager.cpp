@@ -359,8 +359,6 @@ void CaseManager::closeDatabase()
 
 bool CaseManager::openCase(const QString& casePath)
 {
-    //FIXME: Must not Create DB if Case already existed
-        //HAve flag in json with inited or something if so and DB not found fail gracefully
 
     if (!loadCaseInfo(casePath)) {
         qCritical() << "Failed to Load Case Info";
