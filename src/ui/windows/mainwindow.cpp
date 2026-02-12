@@ -1,6 +1,6 @@
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
-#include "ui/dialogs/initCaseDialog/initcasedialog.h"
+#include "ui/dialogs/caseDetailWizard/casedetailwizard.h"
 
 
 #include <QLabel>
@@ -22,14 +22,26 @@ MainWindow::MainWindow(QWidget *parent, const CaseManager& caseManager)
 
     if(!caseManager.getCurrentCase().isEnvInitialized)
     {
-        initCaseDialog createDlg(this);
+        // caseDetailDialog createDlg(this);
 
-        //FIXME: Handle CaseInitNotWorkig
-        if (createDlg.exec() != QDialog::Accepted)
+        // if (createDlg.exec() != QDialog::Accepted)
+        // {
+        //     //QMessageBox::critical(this, "Error", "Case not Initilized");
+        //     return;
+        // }
+
+        caseDetailWizard wizard(&caseManager, this);
+
+        int result = wizard.exec();
+
+        if (result != QDialog::Accepted)
         {
-            //QMessageBox::critical(this, "Error", "Case not Initilized");
+            qWarning() << "Case Initialization Cancelled By User";
             return;
         }
+
+        qInfo() << "Case Initialization Completed";
+
 
     }
 
