@@ -3,10 +3,11 @@
 
 #include <QDialog>
 
+#include "data/case/investigatorData.h"
+
 namespace Ui {
 class addInvestigatorDialog;
 }
-
 
 class addInvestigatorDialog : public QDialog
 {
@@ -15,6 +16,10 @@ class addInvestigatorDialog : public QDialog
 public:
     explicit addInvestigatorDialog(QWidget *parent = nullptr);
     ~addInvestigatorDialog();
+
+    void setInvestigator(const InvestigatorData& data);
+
+    InvestigatorData getInvestigator() const;
 
 private:
     Ui::addInvestigatorDialog *ui;

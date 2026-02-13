@@ -1,0 +1,7 @@
+<RCC>
+    <qresource prefix="/icons">
+        <file>app_icon_v1.svg</file>
+        <file>app_icon_v2.svg</file>
+        <file>app_icon_v3.svg</file>
+    </qresource>
+</RCC>

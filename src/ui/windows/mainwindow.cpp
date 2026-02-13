@@ -83,17 +83,45 @@ void MainWindow::showEvent(QShowEvent *event)
 void MainWindow::setupUiElements()
 {
     // Menu Bar
-    QMenu* fileMenu = ui->menubar->addMenu("&File");
-
-    QAction* openAction = new QAction("Open", this);
+    QMenu* fileMenu = ui->menubar->addMenu("&Nomen");
+    QAction* openAction = new QAction("Open Case", this);
+    fileMenu->addAction(openAction);
     QAction* exitAction = new QAction("Exit", this);
     connect(exitAction, &QAction::triggered, this, &MainWindow::close);
-
-    fileMenu->addAction(openAction);
     fileMenu->addAction(exitAction);
+
+    openAction->setEnabled(false);
+    exitAction->setEnabled(true);
+
+    QMenu* addMenu = ui->menubar->addMenu("&Add");
+    QAction* newDSAction = new QAction("New Data Sources", this);
+    addMenu->addAction(newDSAction);
+    QAction* newIngestJobAction = new QAction("New Ingest Job", this);
+    addMenu->addAction(newIngestJobAction);
+
+    newDSAction->setEnabled(false);
+    newIngestJobAction->setEnabled(false);
+
+    QMenu* addView = ui->menubar->addMenu("&View");
+    QAction* viewCaseInfoAction = new QAction("Case Information", this);
+    addView->addAction(viewCaseInfoAction);
+    QAction* viewDSAction = new QAction("Data Sources", this);
+    addView->addAction(viewDSAction);
+
+    viewCaseInfoAction->setEnabled(false);
+    viewDSAction->setEnabled(false);
+
+    QMenu* addSettings = ui->menubar->addMenu("&Settings");
+    QAction* settingsNomenAction = new QAction("Nomen", this);
+    addSettings->addAction(settingsNomenAction);
+
+    settingsNomenAction->setEnabled(false);
+
+
 
     QMenu* helpMenu = ui->menubar->addMenu("&Help");
     QAction* aboutAction = new QAction("About", this);
+    aboutAction->setIcon(QIcon(":/icons/app_icon_v1.svg"));
     connect(aboutAction, &QAction::triggered, this, []() {
         QMessageBox::information(nullptr, "About", "Nomen v1.0");
     });

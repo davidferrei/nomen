@@ -43,10 +43,12 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(Nomen
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
+        resources/icons/icons.qrc
     )
 else()
     add_executable(Nomen
         ${PROJECT_SOURCES}
+        resources/icons/icons.qrc
     )
 endif()
 

@@ -4,6 +4,13 @@
 #include <QWizard>
 
 #include "core/caseManager/casemanager.h"
+#include "data/case/investigatorData.h"
+#include "data/case/organizationData.h"
+
+
+#include "ui/dialogs/addInvestigatorDialog/addinvestigatordialog.h"
+#include "ui/dialogs/addOrganizationDialog/addorganizationdialog.h"
+
 
 namespace Ui {
 class caseDetailWizard;
@@ -26,7 +33,26 @@ private:
     Ui::caseDetailWizard *ui;
     const CaseManager* currentCaseManager;
 
+    QList<InvestigatorData> investigators;
+    QList<OrganizationData> organizations;
+
     void LoadCaseData();
+    void setupInvestigatorTable();
+    void setupOrganizationTable();
+    void refreshInvestigatorTable();
+    void refreshOrganizationTable();
+
+
+    void editInvestigator(int row);
+    void removeInvestigator(int row);
+
+    void editOrganization(int row);
+    void removeOrganization(int row);
+
+
+    void addInvestigatorRow(const InvestigatorData &inv, int index);
+    void addOrganizationRow(const OrganizationData& org, int index);
+
 };
 
 #endif // CASEDETAILWIZARD_H
