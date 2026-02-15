@@ -1,6 +1,6 @@
 #include "casemanager.h"
 
-#include "casedatabaseschema.h"
+#include "casedbmanager.h"
 
 #include <filesystem>
 #include <sys/stat.h>
@@ -246,7 +246,7 @@ bool CaseManager::initEnvironment()
 
     IBPP::Database db = IBPP::DatabaseFactory("", currentCase.casePath.toStdString() + "/case_db/case.fdb", "SYSDBA", "masterkey");
 
-    if (!CaseDatabaseSchema::createSchema(db))
+    if (!CaseDBManager::createSchema(db))
     {
         qCritical() << "Failed To Create Database Schema";
         return false;

@@ -1,10 +1,10 @@
-#include "casedatabaseschema.h"
+#include "casedbmanager.h"
 
 #include <QDebug>
 
-CaseDatabaseSchema::CaseDatabaseSchema() {}
+CaseDBManager::CaseDBManager() {}
 
-bool CaseDatabaseSchema::createSchema(IBPP::Database db)
+bool CaseDBManager::createSchema(IBPP::Database db)
 {
     try
     {
