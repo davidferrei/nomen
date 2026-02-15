@@ -22,13 +22,6 @@ MainWindow::MainWindow(QWidget *parent, const CaseManager& caseManager)
 
     if(!caseManager.getCurrentCase().isEnvInitialized)
     {
-        // caseDetailDialog createDlg(this);
-
-        // if (createDlg.exec() != QDialog::Accepted)
-        // {
-        //     //QMessageBox::critical(this, "Error", "Case not Initilized");
-        //     return;
-        // }
 
         caseDetailWizard wizard(&caseManager, this);
 
@@ -41,7 +34,6 @@ MainWindow::MainWindow(QWidget *parent, const CaseManager& caseManager)
         }
 
         qInfo() << "Case Initialization Completed";
-
 
     }
 

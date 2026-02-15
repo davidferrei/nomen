@@ -1,6 +1,8 @@
 #include "casedetailwizard.h"
 #include "ui_casedetailwizard.h"
 
+#include <QMessageBox>
+
 caseDetailWizard::caseDetailWizard(const CaseManager* caseManager, QWidget *parent) :
     QWizard(parent),
     ui(new Ui::caseDetailWizard),
@@ -38,6 +40,7 @@ caseDetailWizard::~caseDetailWizard()
 
 //#####################################################################################
 // Functions
+
 
 void caseDetailWizard::LoadCaseData()
 {
@@ -166,6 +169,61 @@ void caseDetailWizard::addOrganizationRow(const OrganizationData& org,int index)
         organizations.removeAt(row);
         refreshOrganizationTable();
     });
+}
+
+
+bool caseDetailWizard::validateCurrentPage()
+{
+
+    switch (currentId())
+    {
+
+    // Page 02 - Investigators / Orgs
+    case 1:
+    {
+        qDebug() << "#########################";
+        qDebug() << "##### INVESTIGATORS #####";
+        for (int i = 0; i < investigators.size(); ++i)
+        {
+            qDebug() << "Index:" << i
+                     << "| Name:" << investigators[i].name
+                     << "| Email:" << investigators[i].email
+                     << "| Phone:" << investigators[i].phoneNumber;
+        }
+
+        qDebug() << "##### ORGANIZATIONS #####";
+        for (int i = 0; i < organizations.size(); ++i)
+        {
+            qDebug() << "Index:" << i
+                     << "| Name:" << organizations[i].name
+                     << "| Email:" << organizations[i].email
+                     << "| Phone:" << organizations[i].phoneNumber;
+        }
+
+        qDebug() << "#########################";
+        break;
+    }
+
+    // Page 03 - Data Source
+    case 2:
+    {
+        if (!ui->checkBox_skip->isChecked())
+        {
+            QMessageBox::warning(this,
+                                 "Data Source Required",
+                                 "You must provide a data source or check 'Skip this step'.");
+            return false;
+        }
+        break;
+    }
+
+    default:
+        break;
+    }
+
+    return QWizard::validateCurrentPage();
+
+
 }
 
 

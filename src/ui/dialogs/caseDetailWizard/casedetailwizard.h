@@ -29,6 +29,8 @@ private slots:
 
     void on_bttn_create_org_clicked();
 
+    bool validateCurrentPage() override;
+
 private:
     Ui::caseDetailWizard *ui;
     const CaseManager* currentCaseManager;
