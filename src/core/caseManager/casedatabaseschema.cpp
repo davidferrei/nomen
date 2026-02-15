@@ -39,6 +39,17 @@ bool CaseDatabaseSchema::createSchema(IBPP::Database db)
             )
         )");
 
+        // Investigator Table
+        st->Execute(R"(
+            CREATE TABLE Investigator (
+                InvestigatorID VARCHAR(64) PRIMARY KEY,
+                Name VARCHAR(255),
+                PhoneNumber VARCHAR(50),
+                Email VARCHAR(255),
+                Notes BLOB SUB_TYPE TEXT
+            )
+        )");
+
         tr->Commit();
         db->Disconnect();
 
