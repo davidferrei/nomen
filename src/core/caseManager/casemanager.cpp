@@ -1,6 +1,6 @@
 #include "casemanager.h"
 
-#include "casedbmanager.h"
+#include "core/caseDBManager/casedbmanager.h"
 
 #include <filesystem>
 #include <sys/stat.h>
@@ -249,8 +249,20 @@ bool CaseManager::initEnvironment()
     if (!CaseDBManager::createSchema(db))
     {
         qCritical() << "Failed To Create Database Schema";
+
+        QFile dbFile(currentCase.casePath + "/case_db/case.fdb");
+        if (dbFile.exists())
+        {
+            if (dbFile.remove())
+                qWarning() << "Partial DB Deleted.";
+            else
+                qFatal() << "Failed to Delete Partial DB!";
+        }
+
         return false;
     }
+
+
 
     // if (!markCaseEnvironmentInitialized())
     // {
