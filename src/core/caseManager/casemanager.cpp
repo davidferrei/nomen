@@ -1,16 +1,5 @@
 #include "casemanager.h"
 
-// #include <filesystem>
-// #include <sys/stat.h>
-// #include <sys/types.h>
-
-#include <QDir>
-#include <QFile>
-#include <QJsonDocument>
-#include <QJsonObject>
-#include <QDateTime>
-#include <QSettings>
-
 CaseManager::CaseManager()
 {
     QSettings settings("Nomen", "Nomen");
@@ -155,8 +144,6 @@ bool CaseManager::markCaseEnvironmentInitialized()
 //###########################################################################################
 // Case Init
 
-
-
 bool CaseManager::initEnvironment()
 {
 
@@ -288,6 +275,20 @@ QList<CaseInfo> CaseManager::loadPreviousCases() const
 
     return cases;
 }
+//###########################################################################################
+// Access DB
+
+bool CaseManager::saveInvestigator(const InvestigatorData& inv)
+{
+
+    if (!currentCaseDB) {
+        qCritical() << "No case database open!";
+        return false;
+    }
+
+    return currentCaseDB->investigatorRepo().insert(inv);
+}
+
 
 //###########################################################################################
 // Case Setter/Getter

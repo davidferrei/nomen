@@ -5,6 +5,8 @@
 
 #include<QString>
 
+#include "core/caseDBManager/repositories/investigatorRepository.h"
+
 class CaseDBManager
 {
 public:
@@ -20,7 +22,7 @@ public:
     bool databaseExists() const;
 
     //Repos
-    //InvestigatorRepository investigatorRepo();
+    InvestigatorRepository investigatorRepo() { return InvestigatorRepository(fb_db); };
     //OrganizationRepository organizationRepo();
 
 private:

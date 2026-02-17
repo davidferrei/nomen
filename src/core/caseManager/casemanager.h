@@ -6,6 +6,13 @@
 
 #include <QString>
 #include <QDebug>
+#include <QDir>
+#include <QFile>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QDateTime>
+#include <QSettings>
+
 
 #include "core/caseDBManager/casedbmanager.h"
 
@@ -22,27 +29,31 @@ struct CaseInfo {
 };
 
 
+//TODO: Implement a Case Validation Func that Checks if Cases are Valid (DBs exist, JSON Valid, etc...)
+//TODO: Delete Case Func
+//TODO: Get Case DB
+
 class CaseManager
 {
 public:
     CaseManager();
 
+    //Case Logic
     bool createCaseInfo(const CaseInfo& info);
     bool loadCaseInfo(const QString& casePath);
-
     bool openCase(const QString& casePath);
 
+    //Previous Case History
     QList<CaseInfo> loadPreviousCases() const;
     void saveCasePath(const QString& casePath);
 
+    //Getter/Setters
     const CaseInfo& getCurrentCase() const;
 
-    //TODO: Implement a Case Validation Func that Checks if Cases are Valid (DBs exist, JSON Valid, etc...)
-    //TODO: Delete Case Func
-    //TODO: Get Case DB
+    //Access DB
+    bool saveInvestigator(const InvestigatorData& inv);
 
 private:
-
     bool initEnvironment();
     bool markCaseEnvironmentInitialized();
 

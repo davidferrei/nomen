@@ -31,6 +31,9 @@ private slots:
 
     bool validateCurrentPage() override;
 
+protected:
+    void done(int result) override;
+
 private:
     Ui::caseDetailWizard *ui;
     const CaseManager* currentCaseManager;

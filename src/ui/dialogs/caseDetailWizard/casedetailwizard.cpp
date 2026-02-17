@@ -171,6 +171,8 @@ void caseDetailWizard::addOrganizationRow(const OrganizationData& org,int index)
     });
 }
 
+//#####################################################################################
+// QWizard Logic
 
 bool caseDetailWizard::validateCurrentPage()
 {
@@ -226,6 +228,35 @@ bool caseDetailWizard::validateCurrentPage()
 
 }
 
+
+void caseDetailWizard::done(int result)
+{
+    if (result == QDialog::Accepted) {
+        if (!currentCaseManager) {
+            QMessageBox::critical(this, "Error", "CaseManager Not Found");
+            QDialog::reject();
+            return;
+        }
+
+        bool allOk = true;
+
+        for (const InvestigatorData& inv : investigators) {
+            if (!currentCaseManager->saveInvestigator(inv)) {
+                allOk = false;
+                qCritical() << "Failed to Save Investigator:" << inv.name;
+            }
+        }
+
+        if (!allOk) {
+            QMessageBox::critical(this, "Error", "One or more investigators could not be saved.");
+            return; // stop closing wizard
+        }
+
+        QMessageBox::information(this, "Success", "Case details saved!");
+    }
+
+    QWizard::done(result);
+}
 
 //#####################################################################################
 // Signals

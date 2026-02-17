@@ -3,6 +3,8 @@
 
 InvestigatorRepository::InvestigatorRepository(IBPP::Database casedb) : fb_db(casedb) {}
 
+//TODO: Make These Safe
+
 bool InvestigatorRepository::insert(const InvestigatorData& inv)
 {
     IBPP::Transaction tr = IBPP::TransactionFactory(fb_db);
