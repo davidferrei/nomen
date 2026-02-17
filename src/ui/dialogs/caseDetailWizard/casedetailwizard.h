@@ -21,7 +21,7 @@ class caseDetailWizard : public QWizard
     Q_OBJECT
 
 public:
-    explicit caseDetailWizard(const CaseManager* caseManager, QWidget *parent = nullptr);
+    explicit caseDetailWizard(CaseManager* caseManager, QWidget *parent = nullptr);
     ~caseDetailWizard();
 
 private slots:
@@ -36,7 +36,7 @@ protected:
 
 private:
     Ui::caseDetailWizard *ui;
-    const CaseManager* currentCaseManager;
+    CaseManager* currentCaseManager;
 
     QList<InvestigatorData> investigators;
     QList<OrganizationData> organizations;
@@ -46,7 +46,6 @@ private:
     void setupOrganizationTable();
     void refreshInvestigatorTable();
     void refreshOrganizationTable();
-
 
     void editInvestigator(int row);
     void removeInvestigator(int row);

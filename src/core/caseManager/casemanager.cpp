@@ -176,8 +176,6 @@ bool CaseManager::initEnvironment()
         return false;
     }
 
-
-
     // if (!markCaseEnvironmentInitialized())
     // {
     //     qCritical() << "Failed To Mark Case Environment Initialized";
@@ -289,12 +287,23 @@ bool CaseManager::saveInvestigator(const InvestigatorData& inv)
     return currentCaseDB->investigatorRepo().insert(inv);
 }
 
+bool CaseManager::saveOrganization(const OrganizationData& org)
+{
+
+    if (!currentCaseDB) {
+        qCritical() << "No case database open!";
+        return false;
+    }
+
+    return currentCaseDB->organizationRepo().insert(org);
+}
+
 
 //###########################################################################################
 // Case Setter/Getter
 
 
-const CaseInfo& CaseManager::getCurrentCase() const
+CaseInfo& CaseManager::getCurrentCase()
 {
     return currentCase;
 }

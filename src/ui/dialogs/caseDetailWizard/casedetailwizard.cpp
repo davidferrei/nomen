@@ -3,14 +3,17 @@
 
 #include <QMessageBox>
 
-caseDetailWizard::caseDetailWizard(const CaseManager* caseManager, QWidget *parent) :
+//TODO: Make the Data Source Widget
+//TODO: Save Info to DB
+//TODO: Hava a way to Assign a Investigator to one or many Organizations
+
+caseDetailWizard::caseDetailWizard(CaseManager* caseManager, QWidget *parent) :
     QWizard(parent),
     ui(new Ui::caseDetailWizard),
     currentCaseManager(caseManager)
 {
     ui->setupUi(this);
 
-    //TODO: Hava a way to Assign a Investigator to one or many Organizations
 
     qDebug() << "Case Details Wizard Opened";
 
@@ -24,11 +27,6 @@ caseDetailWizard::caseDetailWizard(const CaseManager* caseManager, QWidget *pare
     setupOrganizationTable();
 
     connect(ui->checkBox_skip, &QCheckBox::toggled, ui->dataSourceWidget, &QWidget::setDisabled);
-    //TODO: Add Validation If enabled dont allow Finish without something in DataSources
-
-    //TODO: Make the Data Source Widget
-    //TODO: Save Info to DB
-
 }
 
 caseDetailWizard::~caseDetailWizard()
@@ -207,17 +205,9 @@ bool caseDetailWizard::validateCurrentPage()
     }
 
     // Page 03 - Data Source
-    case 2:
-    {
-        if (!ui->checkBox_skip->isChecked())
-        {
-            QMessageBox::warning(this,
-                                 "Data Source Required",
-                                 "You must provide a data source or check 'Skip this step'.");
-            return false;
-        }
-        break;
-    }
+    // case 2:
+    // {
+    // }
 
     default:
         break;
@@ -238,21 +228,34 @@ void caseDetailWizard::done(int result)
             return;
         }
 
+        if (!ui->checkBox_skip->isChecked())
+        {
+            QMessageBox::warning(this, "Data Source Required", "You must provide a data source or check 'Skip this step'.");
+            return;
+        }
+
         bool allOk = true;
 
-        for (const InvestigatorData& inv : investigators) {
+        for (int i = 0; i < investigators.size(); ++i) {
+            const InvestigatorData &inv = investigators[i];
             if (!currentCaseManager->saveInvestigator(inv)) {
                 allOk = false;
                 qCritical() << "Failed to Save Investigator:" << inv.name;
             }
         }
 
-        if (!allOk) {
-            QMessageBox::critical(this, "Error", "One or more investigators could not be saved.");
-            return; // stop closing wizard
+        for (int i = 0; i < organizations.size(); ++i) {
+            const OrganizationData &org = organizations[i];
+            if (!currentCaseManager->saveOrganization(org)) {
+                allOk = false;
+                qCritical() << "Failed to Save Organization:" << org.name;
+            }
         }
 
-        QMessageBox::information(this, "Success", "Case details saved!");
+        if (!allOk) {
+            QMessageBox::critical(this, "Error", "One or more investigators could not be saved.");
+            return;
+        }
     }
 
     QWizard::done(result);

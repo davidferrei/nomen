@@ -6,6 +6,7 @@
 #include<QString>
 
 #include "core/caseDBManager/repositories/investigatorRepository.h"
+#include "core/caseDBManager/repositories/organizationRepository.h"
 
 class CaseDBManager
 {
@@ -23,7 +24,7 @@ public:
 
     //Repos
     InvestigatorRepository investigatorRepo() { return InvestigatorRepository(fb_db); };
-    //OrganizationRepository organizationRepo();
+    OrganizationRepository organizationRepo() { return OrganizationRepository(fb_db); };
 
 private:
     IBPP::Database fb_db;

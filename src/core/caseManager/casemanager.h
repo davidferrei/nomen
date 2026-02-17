@@ -48,10 +48,11 @@ public:
     void saveCasePath(const QString& casePath);
 
     //Getter/Setters
-    const CaseInfo& getCurrentCase() const;
+    CaseInfo& getCurrentCase();
 
     //Access DB
     bool saveInvestigator(const InvestigatorData& inv);
+    bool saveOrganization(const OrganizationData& inv);
 
 private:
     bool initEnvironment();

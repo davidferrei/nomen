@@ -12,6 +12,11 @@ CaseDBManager::~CaseDBManager()
 
 bool CaseDBManager::createSchema()
 {
+    if (fb_db == nullptr) {
+        qCritical() << "Database Handle not Initialized!";
+        return false;
+    }
+
     try
     {
         fb_db->Connect();
@@ -139,7 +144,7 @@ bool CaseDBManager::createDatabase()
     try {
         const std::string dbPath = dbFilePath.toStdString();
 
-        IBPP::Database db = IBPP::DatabaseFactory(
+        fb_db = IBPP::DatabaseFactory(
             "",
             dbPath,
             "SYSDBA", //TODO: Make User Choose This
@@ -147,8 +152,8 @@ bool CaseDBManager::createDatabase()
             );
 
         if (!std::filesystem::exists(dbPath)) {
-            db->Create(3);
-            db->Disconnect();
+            fb_db->Create(3);
+            fb_db->Disconnect();
         } else {
             qInfo() << "FIREBIRD: Database Already exists, Skipping Creation";
         }

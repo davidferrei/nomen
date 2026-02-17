@@ -6,7 +6,7 @@
 #include <QLabel>
 #include <QMessageBox>
 
-MainWindow::MainWindow(QWidget *parent, const CaseManager& caseManager)
+MainWindow::MainWindow(QWidget *parent, CaseManager& caseManager)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
     , caseManager(caseManager)
