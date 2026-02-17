@@ -7,6 +7,8 @@
 #include <QString>
 #include <QDebug>
 
+#include "core/caseDBManager/casedbmanager.h"
+
 
 struct CaseInfo {
     QString caseId;
@@ -24,7 +26,6 @@ class CaseManager
 {
 public:
     CaseManager();
-    ~CaseManager();
 
     bool createCaseInfo(const CaseInfo& info);
     bool loadCaseInfo(const QString& casePath);
@@ -41,19 +42,15 @@ public:
     //TODO: Get Case DB
 
 private:
-    bool databaseExists() const;
 
     bool initEnvironment();
     bool markCaseEnvironmentInitialized();
-    bool createDatabase();
 
-    bool openDatabase();
-    void closeDatabase();
 private:
     CaseInfo currentCase;
     QStringList previousCasesPathsList;
 
-    IBPP::Database currentCaseDB;
+    CaseDBManager* currentCaseDB = nullptr;
 };
 
 #endif // CASEMANAGER_H

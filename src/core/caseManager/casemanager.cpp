@@ -1,10 +1,8 @@
 #include "casemanager.h"
 
-#include "core/caseDBManager/casedbmanager.h"
-
-#include <filesystem>
-#include <sys/stat.h>
-#include <sys/types.h>
+// #include <filesystem>
+// #include <sys/stat.h>
+// #include <sys/types.h>
 
 #include <QDir>
 #include <QFile>
@@ -19,10 +17,6 @@ CaseManager::CaseManager()
     previousCasesPathsList = settings.value("cases/paths").toStringList();
 }
 
-CaseManager::~CaseManager()
-{
-    closeDatabase();
-}
 
 //###########################################################################################
 // Case Info
@@ -161,92 +155,25 @@ bool CaseManager::markCaseEnvironmentInitialized()
 //###########################################################################################
 // Case Init
 
-bool CaseManager::databaseExists() const
-{
-    return QFile::exists(currentCase.casePath + "/case_db/case.fdb");
-}
 
-bool CaseManager::createDatabase()
-{
-    qDebug() << "FIREBIRD: Creating Case Database";
-
-    if (currentCase.casePath.isEmpty()) {
-        qCritical() << "No Case Path Set";
-        return false;
-    }
-
-    const QString dbDirPath = currentCase.casePath + "/case_db";
-    const QString dbFilePath = dbDirPath + "/case.fdb";
-
-    QDir caseDbDir(dbDirPath);
-    if (!caseDbDir.exists()) {
-        if (!caseDbDir.mkpath(".")) {
-            qCritical() << "Failed to Create case_db Directory:" << dbDirPath;
-            return false;
-        }
-    }
-
-
-    //TODO: Windows Fix
-    setenv("FIREBIRD", "/home/admin1/dev/qt6/Nomen/fb_embedded", 1);
-    setenv("LD_LIBRARY_PATH", "/home/admin1/dev/qt6/Nomen/fb_embedded/lib", 1);
-    setenv("FIREBIRD_LOCK", "/tmp/firebird_lock", 1);
-
-    QDir lockDir("/tmp/firebird_lock"); //TODO: Windows Fix
-
-    if (!lockDir.exists()) {
-        if (!lockDir.mkpath(".")) {
-            qCritical() << "Failed to Create Firebird Lock Directory:" << lockDir.absolutePath();
-            return false;
-        }
-    }
-
-    try {
-        const std::string dbPath = dbFilePath.toStdString();
-
-        IBPP::Database db = IBPP::DatabaseFactory(
-            "",
-            dbPath,
-            "SYSDBA", //TODO: Make User Choose This
-            "masterkey"
-            );
-
-        if (!std::filesystem::exists(dbPath)) {
-            db->Create(3);
-            db->Disconnect();
-        } else {
-            qInfo() << "FIREBIRD: Database Already exists, Skipping Creation";
-        }
-    }
-    catch (const IBPP::Exception& e) {
-        qCritical() << "FIREBIRD: Error While Creating Database:" << e.ErrorMessage();
-        return false;
-    }
-    catch (const std::exception& e) {
-        qCritical() << "Exception While Creating Database:" << e.what();
-        return false;
-    }
-    catch (...) {
-        qCritical() << "FIREBIRD: Unknown Error While Creating Database";
-        return false;
-    }
-
-    return true;
-}
 
 bool CaseManager::initEnvironment()
 {
 
-    if (!createDatabase())
+    if (!currentCaseDB)
+    {
+        qCritical() << "Tying to Initialize Database Before Opening It";
+        return false;
+    }
+
+    if (!currentCaseDB->createDatabase())
     {
         return false;
     }
 
     qInfo() << "FIREBIRD: Database Created";
 
-    IBPP::Database db = IBPP::DatabaseFactory("", currentCase.casePath.toStdString() + "/case_db/case.fdb", "SYSDBA", "masterkey");
-
-    if (!CaseDBManager::createSchema(db))
+    if (!currentCaseDB->createSchema())
     {
         qCritical() << "Failed To Create Database Schema";
 
@@ -274,100 +201,6 @@ bool CaseManager::initEnvironment()
 }
 
 
-bool CaseManager::openDatabase()
-{
-    qDebug() << "FIREBIRD: Opening Case Database";
-
-    const QString dbFilePath = currentCase.casePath + "/case_db/case.fdb";
-
-    if (!QFile::exists(dbFilePath)) {
-        qCritical() << "Database File Does not Exist:" << dbFilePath;
-        return false;
-    }
-
-    try {
-        setenv("FIREBIRD", "/home/admin1/dev/qt6/Nomen/fb_embedded", 1);
-        setenv("LD_LIBRARY_PATH", "/home/admin1/dev/qt6/Nomen/fb_embedded/lib", 1);
-        setenv("FIREBIRD_LOCK", "/tmp/firebird_lock", 1);
-
-        const std::string dbPath = dbFilePath.toStdString();
-
-        currentCaseDB = IBPP::DatabaseFactory(
-            "",
-            dbPath,
-            "SYSDBA", //TODO: Make User Choose This
-            "masterkey"
-            );
-
-        currentCaseDB->Connect();
-        qInfo() << "FIREBIRD: Database Connection Successful";
-
-        IBPP::Transaction tr = IBPP::TransactionFactory(currentCaseDB);
-        tr->Start();
-
-        IBPP::Statement st = IBPP::StatementFactory(currentCaseDB, tr);
-        st->Prepare(
-            "SELECT "
-            "CURRENT_USER, "
-            "CURRENT_ROLE, "
-            "CAST(CURRENT_TIMESTAMP AS VARCHAR(64))"
-            "FROM RDB$DATABASE"
-            );
-
-        st->Execute();
-
-        std::string user;
-        std::string role;
-        std::string firebirdTime;
-
-        if (st->Fetch()) {
-            st->Get(1, user);
-            st->Get(2, role);
-            st->Get(3, firebirdTime);
-
-            qDebug() << "##########################################";
-            qDebug() << "FIREBIRD Stats";
-            qDebug() << "FIREBIRD: Connected User:" << user.c_str();
-            qDebug() << "FIREBIRD: Role:" << role.c_str();
-            qDebug() << "FIREBIRD: Server Time:" << firebirdTime.c_str();
-            qDebug() << "##########################################";
-        }
-
-        tr->Commit();
-        //currentCaseDB->Disconnect();
-
-    }
-    catch (const IBPP::Exception& e) {
-        qCritical() << "FIREBIRD: Error While Opening Database:" << e.ErrorMessage();
-        return false;
-    }
-    catch (const std::exception& e) {
-        qCritical() << "Exception While Opening Database:" << e.what();
-        return false;
-    }
-    catch (...) {
-        qCritical() << "FIREBIRD: Unknown Error While Opening Database";
-        return false;
-    }
-
-    return true;
-}
-
-
-void CaseManager::closeDatabase()
-{
-    if (currentCaseDB->Connected()) {
-        qDebug() << "FIREBIRD: Closing Database Connection";
-        try {
-            currentCaseDB->Disconnect();
-        }
-        catch (...) {
-            qWarning() << "FIREBIRD: Exception While Closing Case DB";
-        }
-    }
-
-    currentCaseDB = nullptr;
-}
 
 bool CaseManager::openCase(const QString& casePath)
 {
@@ -377,7 +210,10 @@ bool CaseManager::openCase(const QString& casePath)
         return false;
     }
 
-    if (!databaseExists())
+    delete currentCaseDB;
+    currentCaseDB = new CaseDBManager(casePath);
+
+    if (!currentCaseDB->databaseExists())
     {
         if (currentCase.isEnvInitialized)
         {
@@ -393,7 +229,7 @@ bool CaseManager::openCase(const QString& casePath)
         }
     }
 
-    if (!openDatabase()) {
+    if (!currentCaseDB->openDatabase()) {
         qCritical() << "Database Open Test Failed";
         return false;
     }

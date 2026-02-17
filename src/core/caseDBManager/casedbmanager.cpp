@@ -1,19 +1,25 @@
 #include "casedbmanager.h"
 
 #include <QDebug>
+#include <QDir>
 
-CaseDBManager::CaseDBManager() {}
+CaseDBManager::CaseDBManager(const QString& casePath) : dbPath(casePath) {}
 
-bool CaseDBManager::createSchema(IBPP::Database db)
+CaseDBManager::~CaseDBManager()
+{
+    closeDatabase();
+}
+
+bool CaseDBManager::createSchema()
 {
     try
     {
-        db->Connect();
-        IBPP::Transaction tr = IBPP::TransactionFactory(db, IBPP::amWrite);
+        fb_db->Connect();
+        IBPP::Transaction tr = IBPP::TransactionFactory(fb_db, IBPP::amWrite);
 
         tr->Start();
 
-        IBPP::Statement st = IBPP::StatementFactory(db, tr);
+        IBPP::Statement st = IBPP::StatementFactory(fb_db, tr);
 
         // CASE Table
         st->Execute(R"(
@@ -80,7 +86,7 @@ bool CaseDBManager::createSchema(IBPP::Database db)
 
 
         tr->Commit();
-        db->Disconnect();
+        fb_db->Disconnect();
 
         qDebug() << "FIREBIRD: Schema Created Successfully";
         return true;
@@ -88,7 +94,178 @@ bool CaseDBManager::createSchema(IBPP::Database db)
     catch (const IBPP::Exception &e)
     {
         qCritical() << "FIREBIRD: Failed to create schema:" << e.ErrorMessage();
-        try { db->Disconnect(); } catch (...) {}
+        try { fb_db->Disconnect(); } catch (...) {}
         return false;
     }
+}
+
+//##
+
+bool CaseDBManager::createDatabase()
+{
+    qDebug() << "FIREBIRD: Creating Case Database";
+
+    if (dbPath.isEmpty()) {
+        qCritical() << "No Case Path Set";
+        return false;
+    }
+
+    const QString dbDirPath = dbPath + "/case_db";
+    const QString dbFilePath = dbDirPath + "/case.fdb";
+
+    QDir caseDbDir(dbDirPath);
+    if (!caseDbDir.exists()) {
+        if (!caseDbDir.mkpath(".")) {
+            qCritical() << "Failed to Create case_db Directory:" << dbDirPath;
+            return false;
+        }
+    }
+
+
+    //TODO: Windows Fix
+    setenv("FIREBIRD", "/home/admin1/dev/qt6/Nomen/fb_embedded", 1);
+    setenv("LD_LIBRARY_PATH", "/home/admin1/dev/qt6/Nomen/fb_embedded/lib", 1);
+    setenv("FIREBIRD_LOCK", "/tmp/firebird_lock", 1);
+
+    QDir lockDir("/tmp/firebird_lock"); //TODO: Windows Fix
+
+    if (!lockDir.exists()) {
+        if (!lockDir.mkpath(".")) {
+            qCritical() << "Failed to Create Firebird Lock Directory:" << lockDir.absolutePath();
+            return false;
+        }
+    }
+
+    try {
+        const std::string dbPath = dbFilePath.toStdString();
+
+        IBPP::Database db = IBPP::DatabaseFactory(
+            "",
+            dbPath,
+            "SYSDBA", //TODO: Make User Choose This
+            "masterkey"
+            );
+
+        if (!std::filesystem::exists(dbPath)) {
+            db->Create(3);
+            db->Disconnect();
+        } else {
+            qInfo() << "FIREBIRD: Database Already exists, Skipping Creation";
+        }
+    }
+    catch (const IBPP::Exception& e) {
+        qCritical() << "FIREBIRD: Error While Creating Database:" << e.ErrorMessage();
+        return false;
+    }
+    catch (const std::exception& e) {
+        qCritical() << "Exception While Creating Database:" << e.what();
+        return false;
+    }
+    catch (...) {
+        qCritical() << "FIREBIRD: Unknown Error While Creating Database";
+        return false;
+    }
+
+    return true;
+}
+
+
+bool CaseDBManager::openDatabase()
+{
+    qDebug() << "FIREBIRD: Opening Case Database";
+
+    const QString dbFilePath = dbPath + "/case_db/case.fdb";
+
+    if (!QFile::exists(dbFilePath)) {
+        qCritical() << "Database File Does not Exist:" << dbFilePath;
+        return false;
+    }
+
+    try {
+        setenv("FIREBIRD", "/home/admin1/dev/qt6/Nomen/fb_embedded", 1);
+        setenv("LD_LIBRARY_PATH", "/home/admin1/dev/qt6/Nomen/fb_embedded/lib", 1);
+        setenv("FIREBIRD_LOCK", "/tmp/firebird_lock", 1);
+
+        const std::string dbPath = dbFilePath.toStdString();
+
+        fb_db = IBPP::DatabaseFactory(
+            "",
+            dbPath,
+            "SYSDBA", //TODO: Make User Choose This
+            "masterkey"
+            );
+
+        fb_db->Connect();
+        qInfo() << "FIREBIRD: Database Connection Successful";
+
+        IBPP::Transaction tr = IBPP::TransactionFactory(fb_db);
+        tr->Start();
+
+        IBPP::Statement st = IBPP::StatementFactory(fb_db, tr);
+        st->Prepare(
+            "SELECT "
+            "CURRENT_USER, "
+            "CURRENT_ROLE, "
+            "CAST(CURRENT_TIMESTAMP AS VARCHAR(64))"
+            "FROM RDB$DATABASE"
+            );
+
+        st->Execute();
+
+        std::string user;
+        std::string role;
+        std::string firebirdTime;
+
+        if (st->Fetch()) {
+            st->Get(1, user);
+            st->Get(2, role);
+            st->Get(3, firebirdTime);
+
+            qDebug() << "##########################################";
+            qDebug() << "FIREBIRD Stats";
+            qDebug() << "FIREBIRD: Connected User:" << user.c_str();
+            qDebug() << "FIREBIRD: Role:" << role.c_str();
+            qDebug() << "FIREBIRD: Server Time:" << firebirdTime.c_str();
+            qDebug() << "##########################################";
+        }
+
+        tr->Commit();
+        //fb_db->Disconnect();
+
+    }
+    catch (const IBPP::Exception& e) {
+        qCritical() << "FIREBIRD: Error While Opening Database:" << e.ErrorMessage();
+        return false;
+    }
+    catch (const std::exception& e) {
+        qCritical() << "Exception While Opening Database:" << e.what();
+        return false;
+    }
+    catch (...) {
+        qCritical() << "FIREBIRD: Unknown Error While Opening Database";
+        return false;
+    }
+
+    return true;
+}
+
+
+void CaseDBManager::closeDatabase()
+{
+    if (fb_db->Connected()) {
+        qDebug() << "FIREBIRD: Closing Database Connection";
+        try {
+            fb_db->Disconnect();
+        }
+        catch (...) {
+            qWarning() << "FIREBIRD: Exception While Closing Case DB";
+        }
+    }
+
+    fb_db = nullptr;
+}
+
+bool CaseDBManager::databaseExists() const
+{
+    return QFile::exists(dbPath + "/case_db/case.fdb");
 }

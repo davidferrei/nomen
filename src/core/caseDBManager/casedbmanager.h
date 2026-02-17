@@ -3,13 +3,29 @@
 
 #include <ibpp/core/ibpp.h>
 
+#include<QString>
 
 class CaseDBManager
 {
 public:
-    CaseDBManager();
+    CaseDBManager(const QString& casePath);
+    ~CaseDBManager();
 
-    static bool createSchema(IBPP::Database db);
+    bool createDatabase();
+    bool createSchema();
+    bool openDatabase();
+    void closeDatabase();
+
+    IBPP::Database database() const;
+    bool databaseExists() const;
+
+    //Repos
+    //InvestigatorRepository investigatorRepo();
+    //OrganizationRepository organizationRepo();
+
+private:
+    IBPP::Database fb_db;
+    QString dbPath;
 
 
 };
