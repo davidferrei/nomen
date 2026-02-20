@@ -1,8 +1,20 @@
 #ifndef CASEMANAGER_H
 #define CASEMANAGER_H
 
+#include <ibpp/core/ibpp.h>
+
+
 #include <QString>
 #include <QDebug>
+#include <QDir>
+#include <QFile>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QDateTime>
+#include <QSettings>
+
+
+#include "core/caseDBManager/casedbmanager.h"
 
 
 struct CaseInfo {
@@ -12,29 +24,45 @@ struct CaseInfo {
     QString updatedDate;
     QString notes;
     int caseState;
+    bool isEnvInitialized;
     QString casePath;
 };
 
+
+//TODO: Implement a Case Validation Func that Checks if Cases are Valid (DBs exist, JSON Valid, etc...)
+//TODO: Delete Case Func
+//TODO: Get Case DB
 
 class CaseManager
 {
 public:
     CaseManager();
 
-    bool createCase(const CaseInfo& info);
+    //Case Logic
+    bool createCaseInfo(const CaseInfo& info);
+    bool loadCaseInfo(const QString& casePath);
     bool openCase(const QString& casePath);
 
+    //Previous Case History
     QList<CaseInfo> loadPreviousCases() const;
     void saveCasePath(const QString& casePath);
 
-    const CaseInfo& getCurrentCase() const;
+    //Getter/Setters
+    CaseInfo& getCurrentCase();
+    bool markCurrentCaseEnvironmentInitialized();
+    
+    //Access DB
+    bool saveInvestigator(const InvestigatorData& inv);
+    bool saveOrganization(const OrganizationData& inv);
 
-    //TODO: Implement a Case Validation Func that Checks if Cases are Valid (DBs exist, JSON Valid, etc...)
-    //TODO: Delete Case Func
+private:
+    bool initEnvironment();
 
 private:
     CaseInfo currentCase;
     QStringList previousCasesPathsList;
+
+    CaseDBManager* currentCaseDB = nullptr;
 };
 
 #endif // CASEMANAGER_H

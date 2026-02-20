@@ -1,12 +1,5 @@
 #include "casemanager.h"
 
-#include <QDir>
-#include <QFile>
-#include <QJsonDocument>
-#include <QJsonObject>
-#include <QDateTime>
-#include <QSettings>
-
 CaseManager::CaseManager()
 {
     QSettings settings("Nomen", "Nomen");
@@ -14,7 +7,10 @@ CaseManager::CaseManager()
 }
 
 
-bool CaseManager::createCase(const CaseInfo& info)
+//###########################################################################################
+// Case Info
+
+bool CaseManager::createCaseInfo(const CaseInfo& info)
 {
     if (info.caseId.isEmpty())
         return false;
@@ -36,6 +32,7 @@ bool CaseManager::createCase(const CaseInfo& info)
     jObj["updated_date"] = info.updatedDate;
     jObj["notes"] = info.notes;
     jObj["case_state"] = info.caseState;
+    jObj["environment_initialized"] = false;
 
     QFile file(caseDirPath + "/case_info.json");
     if (!file.open(QIODevice::WriteOnly))
@@ -54,6 +51,7 @@ bool CaseManager::createCase(const CaseInfo& info)
     qDebug() << "Created Date:" << info.createdDate;
     qDebug() << "Updated Date:" << info.updatedDate;
     qDebug() << "Case State:" << info.caseState;
+    qDebug() << "Environment Initialized:" << false;
     qDebug() << "Notes:" << info.notes;
     qDebug() << "###################################";
 
@@ -63,11 +61,11 @@ bool CaseManager::createCase(const CaseInfo& info)
 }
 
 
-bool CaseManager::openCase(const QString& casePath)
+bool CaseManager::loadCaseInfo(const QString& casePath)
 {
     QFile file(casePath + "/case_info.json");
     if (!file.open(QIODevice::ReadOnly)) {
-        qWarning() << "Cannot open case file at:" << casePath << "/case_info.json";
+        qWarning() << "Cannot Open Case File At:" << casePath << "/case_info.json";
         return false;
     }
 
@@ -88,6 +86,7 @@ bool CaseManager::openCase(const QString& casePath)
     currentCase.updatedDate = jObj.value("updated_date").toString();
     currentCase.notes = jObj.value("notes").toString();
     currentCase.caseState = jObj.value("case_state").toInt();
+    currentCase.isEnvInitialized = jObj.value("environment_initialized").toBool();
     currentCase.casePath = casePath;
 
     qInfo() << "Case Opened:" << currentCase.caseName;
@@ -97,11 +96,136 @@ bool CaseManager::openCase(const QString& casePath)
     qDebug() << "Created Date:" << currentCase.createdDate;
     qDebug() << "Updated Date:" << currentCase.updatedDate;
     qDebug() << "Case State:" << currentCase.caseState;
+    qDebug() << "Case Initialized:" << currentCase.isEnvInitialized;
     qDebug() << "Notes:" << currentCase.notes;
     qDebug() << "Case Path:" << currentCase.casePath;
     qDebug() << "###################################";
     return true;
 }
+
+bool CaseManager::markCurrentCaseEnvironmentInitialized()
+{
+    if(currentCase.isEnvInitialized)
+    {
+        qWarning() << "Case is Already Initialized";
+        return true;
+    }
+
+    QString caseInfoPath = currentCase.casePath + "/case_info.json";
+    QFile file(caseInfoPath);
+
+    if (!file.open(QIODevice::ReadOnly))
+    {
+        qCritical() << "Cannot Open Case Info File For Read";
+        return false;
+    }
+
+    QJsonDocument jDoc = QJsonDocument::fromJson(file.readAll());
+    file.close();
+
+    if (!jDoc.isObject())
+    {
+        qCritical() << "Case Info Json Is Invalid";
+        return false;
+    }
+
+    QJsonObject jObj = jDoc.object();
+    jObj["environment_initialized"] = true;
+
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate))
+    {
+        qCritical() << "Cannot Open Case Info File For Write";
+        return false;
+    }
+
+    file.write(QJsonDocument(jObj).toJson(QJsonDocument::Indented));
+    file.close();
+
+    currentCase.isEnvInitialized = true;
+
+    qInfo() << "Case Environment Marked Initialized";
+
+    return true;
+}
+
+//###########################################################################################
+// Case Init
+
+bool CaseManager::initEnvironment()
+{
+
+    if (!currentCaseDB)
+    {
+        qCritical() << "Tying to Initialize Database Before Opening It";
+        return false;
+    }
+
+    if (!currentCaseDB->createDatabase())
+    {
+        return false;
+    }
+
+    qInfo() << "FIREBIRD: Database Created";
+
+    if (!currentCaseDB->createSchema())
+    {
+        qCritical() << "Failed To Create Database Schema";
+
+        QFile dbFile(currentCase.casePath + "/case_db/case.fdb");
+        if (dbFile.exists())
+        {
+            if (dbFile.remove())
+                qWarning() << "Partial DB Deleted.";
+            else
+                qFatal() << "Failed to Delete Partial DB!";
+        }
+
+        return false;
+    }
+
+    return true;
+}
+
+
+
+bool CaseManager::openCase(const QString& casePath)
+{
+
+    if (!loadCaseInfo(casePath)) {
+        qCritical() << "Failed to Load Case Info";
+        return false;
+    }
+
+    delete currentCaseDB;
+    currentCaseDB = new CaseDBManager(casePath);
+
+    if (!currentCaseDB->databaseExists())
+    {
+        if (currentCase.isEnvInitialized)
+        {
+            qCritical() << "Case DB is not Present But Environment is Marked as Initialized";
+            return false;
+        }
+
+        qInfo() << "Initilizing Case Environment";
+        if (!initEnvironment())
+        {
+            qCritical() << "Create Database Failed";
+            return false;
+        }
+    }
+
+    if (!currentCaseDB->openDatabase()) {
+        qCritical() << "Database Open Test Failed";
+        return false;
+    }
+
+    qInfo() << "Case Opened Successfully:" << currentCase.caseName;
+    return true;
+}
+
+//###########################################################################################
+// QSettings History
 
 void CaseManager::saveCasePath(const QString& casePath)
 {
@@ -150,10 +274,37 @@ QList<CaseInfo> CaseManager::loadPreviousCases() const
 
     return cases;
 }
+//###########################################################################################
+// Access DB
+
+bool CaseManager::saveInvestigator(const InvestigatorData& inv)
+{
+
+    if (!currentCaseDB) {
+        qCritical() << "No case database open!";
+        return false;
+    }
+
+    return currentCaseDB->investigatorRepo().insert(inv);
+}
+
+bool CaseManager::saveOrganization(const OrganizationData& org)
+{
+
+    if (!currentCaseDB) {
+        qCritical() << "No case database open!";
+        return false;
+    }
+
+    return currentCaseDB->organizationRepo().insert(org);
+}
 
 
+//###########################################################################################
+// Case Setter/Getter
 
-const CaseInfo& CaseManager::getCurrentCase() const
+
+CaseInfo& CaseManager::getCurrentCase()
 {
     return currentCase;
 }

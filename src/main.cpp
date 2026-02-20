@@ -18,6 +18,7 @@ int main(int argc, char *argv[])
     QCoreApplication::setApplicationName("Nomen");
     QGuiApplication::setDesktopFileName("nomen");
         //TODO: Add Setup info like the DocumentViewer Example
+    a.setWindowIcon(QIcon(":/icons/app_icon_v1.svg"));
 
     //Logger Setup
     initLogger();

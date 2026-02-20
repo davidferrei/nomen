@@ -17,11 +17,17 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    MainWindow(QWidget *parent, const CaseManager& caseManager);
+    MainWindow(QWidget *parent, CaseManager& caseManager);
     ~MainWindow();
+
+protected:
+    void showEvent(QShowEvent *event) override;
 
 private:
     Ui::MainWindow *ui;
-    const CaseManager& caseManager;
+    CaseManager& caseManager;
+
+    void setUIWidgetsSizes();
+    void setupUiElements();
 };
 #endif // MAINWINDOW_H
