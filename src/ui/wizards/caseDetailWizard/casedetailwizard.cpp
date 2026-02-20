@@ -4,8 +4,8 @@
 #include <QMessageBox>
 
 //TODO: Make the Data Source Widget
-//TODO: Save Info to DB
 //TODO: Hava a way to Assign a Investigator to one or many Organizations
+//REFAC: The awfull code in done function
 
 caseDetailWizard::caseDetailWizard(CaseManager* caseManager, QWidget *parent) :
     QWizard(parent),
@@ -252,8 +252,13 @@ void caseDetailWizard::done(int result)
             }
         }
 
+        if (!currentCaseManager->markCurrentCaseEnvironmentInitialized()) {
+            allOk = false;
+            qCritical() << "Failed to Mark Case as Initialized";
+        }
+
         if (!allOk) {
-            QMessageBox::critical(this, "Error", "One or more investigators could not be saved.");
+            QMessageBox::critical(this, "Error", "Something went wrong, check the logs");
             return;
         }
     }

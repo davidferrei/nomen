@@ -103,8 +103,14 @@ bool CaseManager::loadCaseInfo(const QString& casePath)
     return true;
 }
 
-bool CaseManager::markCaseEnvironmentInitialized()
+bool CaseManager::markCurrentCaseEnvironmentInitialized()
 {
+    if(currentCase.isEnvInitialized)
+    {
+        qWarning() << "Case is Already Initialized";
+        return true;
+    }
+
     QString caseInfoPath = currentCase.casePath + "/case_info.json";
     QFile file(caseInfoPath);
 
@@ -135,8 +141,9 @@ bool CaseManager::markCaseEnvironmentInitialized()
     file.write(QJsonDocument(jObj).toJson(QJsonDocument::Indented));
     file.close();
 
-    qInfo() << "Case Environment Marked Initialized";
     currentCase.isEnvInitialized = true;
+
+    qInfo() << "Case Environment Marked Initialized";
 
     return true;
 }
@@ -175,12 +182,6 @@ bool CaseManager::initEnvironment()
 
         return false;
     }
-
-    // if (!markCaseEnvironmentInitialized())
-    // {
-    //     qCritical() << "Failed To Mark Case Environment Initialized";
-    //     return false;
-    // }
 
     return true;
 }

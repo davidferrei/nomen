@@ -1,6 +1,6 @@
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
-#include "ui/dialogs/caseDetailWizard/casedetailwizard.h"
+#include "ui/wizards/caseDetailWizard/casedetailwizard.h"
 
 
 #include <QLabel>

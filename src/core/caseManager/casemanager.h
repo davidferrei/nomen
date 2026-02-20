@@ -49,14 +49,14 @@ public:
 
     //Getter/Setters
     CaseInfo& getCurrentCase();
-
+    bool markCurrentCaseEnvironmentInitialized();
+    
     //Access DB
     bool saveInvestigator(const InvestigatorData& inv);
     bool saveOrganization(const OrganizationData& inv);
 
 private:
     bool initEnvironment();
-    bool markCaseEnvironmentInitialized();
 
 private:
     CaseInfo currentCase;
