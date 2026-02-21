@@ -22,6 +22,8 @@ bool CaseManager::createCaseInfo(const CaseInfo& info)
     if (!caseDir.mkpath("case_db")) return false;
     if (!caseDir.mkpath("evidence")) return false;
     if (!caseDir.mkpath("logs")) return false;
+    if (!caseDir.mkpath("logs/ingest")) return false;
+    if (!caseDir.mkpath("logs/index")) return false;
     if (!caseDir.mkpath("reports")) return false;
     if (!caseDir.mkpath("exports")) return false;
 
