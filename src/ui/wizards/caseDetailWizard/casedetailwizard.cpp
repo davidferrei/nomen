@@ -3,6 +3,8 @@
 
 #include <QMessageBox>
 
+#include "../../widgets/dataSourcesForm.h"
+
 //TODO: Make the Data Source Widget
 //TODO: Hava a way to Assign a Investigator to one or many Organizations
 //REFAC: The awfull code in done function
@@ -26,7 +28,10 @@ caseDetailWizard::caseDetailWizard(CaseManager* caseManager, QWidget *parent) :
     setupInvestigatorTable();
     setupOrganizationTable();
 
-    connect(ui->checkBox_skip, &QCheckBox::toggled, ui->dataSourceWidget, &QWidget::setDisabled);
+    connect(ui->checkBox_skip, &QCheckBox::toggled, ui->dataSourceWidgetGrid, &QWidget::setDisabled);
+
+    DataSourcesForm *dataSourceWidget = new DataSourcesForm(this);
+    ui->dataSourceWidgetLayout->addWidget(dataSourceWidget);
 }
 
 caseDetailWizard::~caseDetailWizard()

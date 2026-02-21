@@ -304,17 +304,13 @@
        </widget>
       </item>
       <item>
-       <widget class="QWidget" name="dataSourceWidget" native="true">
+       <widget class="QWidget" name="dataSourceWidgetGrid" native="true">
         <property name="enabled">
          <bool>true</bool>
         </property>
         <layout class="QGridLayout" name="gridLayout_4">
          <item row="0" column="0">
-          <widget class="QPushButton" name="pushButton">
-           <property name="text">
-            <string>PushButton</string>
-           </property>
-          </widget>
+          <layout class="QVBoxLayout" name="dataSourceWidgetLayout"/>
          </item>
         </layout>
        </widget>

@@ -2,9 +2,10 @@
 #include "./ui_mainwindow.h"
 #include "ui/wizards/caseDetailWizard/casedetailwizard.h"
 
-
 #include <QLabel>
 #include <QMessageBox>
+
+//FIXME: Handle Case Init Cancelled by User
 
 MainWindow::MainWindow(QWidget *parent, CaseManager& caseManager)
     : QMainWindow(parent)
