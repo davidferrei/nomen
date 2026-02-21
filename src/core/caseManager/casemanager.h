@@ -15,6 +15,7 @@
 
 
 #include "core/caseDBManager/casedbmanager.h"
+#include "core/logging/logger.h"
 
 
 struct CaseInfo {

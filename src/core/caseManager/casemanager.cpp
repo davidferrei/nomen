@@ -199,6 +199,18 @@ bool CaseManager::openCase(const QString& casePath)
     delete currentCaseDB;
     currentCaseDB = new CaseDBManager(casePath);
 
+    if (!loadCaseInfo(casePath)) {
+        qCritical() << "Failed to Load Case Info";
+        return false;
+    }
+
+    QString dateForFile = QDateTime::currentDateTime().toString("dd_MM_yyyy");
+    QString logFilePath = currentCase.casePath + "/logs/nomen_" + dateForFile + ".log";
+
+    setLogFilePath(logFilePath);
+
+    qInfo() << "Logging Into:" << logFilePath;
+
     if (!currentCaseDB->databaseExists())
     {
         if (currentCase.isEnvInitialized)

@@ -17,11 +17,27 @@ QtMessageHandler originalHandler = nullptr;
 static QFile g_logFile;
 static QTextStream g_logStream;
 
+// void initLogger()
+// {
+//     QString dateForFile = QDateTime::currentDateTime().toString("dd_MM_yyyy");
+//     QString logFilePath = QString("/tmp/nomen_%1.log").arg(dateForFile);
+//     //TODO: Save Log File to Case Folder
+
+//     g_logFile.setFileName(logFilePath);
+
+//     if (g_logFile.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text)) {
+//         g_logStream.setDevice(&g_logFile);
+//         g_logStream << "===== Nomen =====\n";
+//         g_logStream.flush();
+//     }
+
+//     originalHandler = qInstallMessageHandler(nomenLogger);
+// }
+
 void initLogger()
 {
     QString dateForFile = QDateTime::currentDateTime().toString("dd_MM_yyyy");
     QString logFilePath = QString("/tmp/nomen_%1.log").arg(dateForFile);
-    //TODO: Save Log File to Case Folder
 
     g_logFile.setFileName(logFilePath);
 
@@ -29,16 +45,35 @@ void initLogger()
         g_logStream.setDevice(&g_logFile);
         g_logStream << "===== Nomen =====\n";
         g_logStream.flush();
+    } else {
+        qCritical() << "Failed To Open Temp Log File At:" << logFilePath;
     }
 
     originalHandler = qInstallMessageHandler(nomenLogger);
 }
+
 void shutdownLogger()
 {
     if (g_logFile.isOpen()) {
         g_logStream << "===== Bye =====\n";
         g_logStream.flush();
         g_logFile.close();
+    }
+}
+
+void setLogFilePath(const QString &path)
+{
+    if (g_logFile.isOpen())
+        g_logFile.close();
+
+    g_logFile.setFileName(path);
+
+    if (g_logFile.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text)) {
+        g_logStream.setDevice(&g_logFile);
+        g_logStream << "===== Nomen =====\n";
+        g_logStream.flush();
+    } else {
+        qCritical() << "Failed To Open Log File At:" << path;
     }
 }
 
