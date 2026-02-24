@@ -37,13 +37,81 @@ void DataSourcesForm::setupDataSourceTable()
 
 void DataSourcesForm::on_bttn_create_DS_clicked()
 {
-//     addDataSourceDialog dlg(this);
+    addDataSourceDialog dlg(this);
 
-//     if (dlg.exec() == QDialog::Accepted)
-//     {
-//         DataSourceData inv = dlg.getDataSource();
-//         dataSources.append(inv);
-//         addDataSourceRow(inv, dataSources.size() - 1);
-//     }
+    if (dlg.exec() == QDialog::Accepted)
+    {
+        DataSourceData inv = dlg.getDataSource();
+        dataSources.append(inv);
+        addDataSourceRow(inv, dataSources.size() - 1);
+    }
+}
+
+void DataSourcesForm::addDataSourceRow(const DataSourceData& ds, int index)
+{
+    int row = ui->table_DS->rowCount();
+    ui->table_DS->insertRow(row);
+
+    ui->table_DS->setItem(row, 0, new QTableWidgetItem(ds.name));
+
+    QPushButton* editBtn = new QPushButton("Edit");
+    ui->table_DS->setCellWidget(row, 1, editBtn);
+
+    connect(editBtn, &QPushButton::clicked, [this, editBtn]() {
+        int row = ui->table_DS->indexAt(editBtn->pos()).row();
+        editDataSource(row);
+    });
+
+    QPushButton* removeBtn = new QPushButton("Remove");
+    ui->table_DS->setCellWidget(row, 2, removeBtn);
+
+    connect(removeBtn, &QPushButton::clicked, [this, removeBtn]() {
+        int row = ui->table_DS->indexAt(removeBtn->pos()).row();
+        if (row < 0 || row >= dataSources.size()) return;
+        dataSources.removeAt(row);
+        refreshDataSourceTable();
+    });
+
+
+    editBtn->setIcon(QIcon::fromTheme("document-edit", QIcon(":/icons/pencil.png")));
+    editBtn->setToolTip("Edit Data Source");
+    editBtn->setText("");
+
+    removeBtn->setIcon(QIcon::fromTheme("edit-delete", QIcon(":/icons/trash.png")));
+    removeBtn->setToolTip("Remove Data Source");
+    removeBtn->setText("");
+}
+
+void DataSourcesForm::refreshDataSourceTable()
+{
+    ui->table_DS->setRowCount(0);
+
+    for (int i = 0; i < dataSources.size(); ++i)
+        addDataSourceRow(dataSources[i], i);
+}
+
+//#####################################################################################
+// Signals
+
+void DataSourcesForm::editDataSource(int index)
+{
+    if (index < 0 || index >= dataSources.size()) return;
+
+    addDataSourceDialog dlg(this);
+    dlg.setDataSource(dataSources[index]);
+
+    if (dlg.exec() == QDialog::Accepted)
+    {
+        dataSources[index] = dlg.getDataSource();
+        refreshDataSourceTable();
+    }
+}
+
+void DataSourcesForm::removeDataSource(int row)
+{
+    if (row < 0 || row >= dataSources.size()) return;
+
+    dataSources.removeAt(row);
+    refreshDataSourceTable();
 }
 

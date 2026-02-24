@@ -6,7 +6,7 @@
 #include "data/evidence/dataSourceData.h"
 
 
-// #include "ui/dialogs/addInvestigatorDialog/addinvestigatordialog.h"
+#include "ui/dialogs/addDataSourceDialog/adddatasourcedialog.h"
 
 
 namespace Ui {
@@ -32,6 +32,9 @@ private:
     void setupDataSourceTable();
     void refreshDataSourceTable();
     void addDataSourceRow(const DataSourceData& ds, int index);
+
+    void removeDataSource(int row);
+    void editDataSource(int index);
 };
 
 #endif // DATASOURCESFORM_H
