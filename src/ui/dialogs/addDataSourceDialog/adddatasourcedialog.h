@@ -2,6 +2,8 @@
 #define ADDDATASOURCEDIALOG_H
 
 #include <QDialog>
+#include <QFileDialog>
+#include <QMessageBox>
 
 #include "data/evidence/dataSourceData.h"
 
@@ -20,6 +22,9 @@ public:
 
     void setDataSource(const DataSourceData &data);
     DataSourceData getDataSource() const;
+
+private slots:
+    void on_bttn_browse_clicked();
 
 private:
     Ui::addDataSourceDialog *ui;

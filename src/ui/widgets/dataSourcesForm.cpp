@@ -26,7 +26,7 @@ void DataSourcesForm::setupDataSourceTable()
     ui->table_DS->setColumnCount(5);
 
     QStringList headers;
-    headers << "ID" << "Time Zone" << "File Path" << "" << "";
+    headers << "ID/Name" << "Time Zone" << "File Path" << "" << "";
     ui->table_DS->setHorizontalHeaderLabels(headers);
 
     ui->table_DS->verticalHeader()->setVisible(false);

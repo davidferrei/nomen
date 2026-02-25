@@ -1,6 +1,8 @@
 #include "adddatasourcedialog.h"
 #include "ui_adddatasourcedialog.h"
 
+//TODO: Make TimeZone be a ComboBox
+
 addDataSourceDialog::addDataSourceDialog(QWidget *parent)
     : QDialog(parent)
     , ui(new Ui::addDataSourceDialog)
@@ -40,3 +42,31 @@ DataSourceData addDataSourceDialog::getDataSource() const
 
     return dataSource;
 }
+
+void addDataSourceDialog::on_bttn_browse_clicked()
+{
+    QString filePath = QFileDialog::getOpenFileName(
+        this,
+        "Select Forensic Image",
+        QDir::homePath(),
+        "All Files (*)"
+        );
+
+    if (filePath.isEmpty())
+        return;
+
+    QFileInfo fileInfo(filePath);
+
+    if (!fileInfo.exists())
+    {
+        QMessageBox::warning(
+            this,
+            "Invalid File",
+            "The Selected File Does not Exist."
+            );
+        return;
+    }
+
+    ui->le_filePath->setText(filePath);
+}
+
