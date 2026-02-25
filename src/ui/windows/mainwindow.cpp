@@ -1,11 +1,8 @@
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
-#include "ui/wizards/caseDetailWizard/casedetailwizard.h"
 
 #include <QLabel>
 #include <QMessageBox>
-
-//FIXME: Handle Case Init Cancelled by User
 
 MainWindow::MainWindow(QWidget *parent, CaseManager& caseManager)
     : QMainWindow(parent)
@@ -20,24 +17,6 @@ MainWindow::MainWindow(QWidget *parent, CaseManager& caseManager)
     //TskWalker::walkImage("/mnt/disk01/DiskImage/kali.raw");
 
     setupUiElements();
-
-    if(!caseManager.getCurrentCase().isEnvInitialized)
-    {
-
-        caseDetailWizard wizard(&caseManager, this);
-
-        int result = wizard.exec();
-
-        if (result != QDialog::Accepted)
-        {
-            qWarning() << "Case Initialization Cancelled By User";
-            return;
-        }
-
-        qInfo() << "Case Initialization Completed";
-
-    }
-
 
 }
 

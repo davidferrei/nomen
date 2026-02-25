@@ -1,5 +1,8 @@
 #include "ui/windows/mainwindow.h"
+
 #include "ui/dialogs/startUpDialog/startupdialog.h"
+#include "ui/wizards/caseDetailWizard/casedetailwizard.h"
+
 #include "core/logging/logger.h"
 #include <core/caseManager/casemanager.h>
 
@@ -8,6 +11,8 @@
 #include <QApplication>
 #include <QDebug>
 #include <QDate>
+#include <QMessageBox>
+
 
 int main(int argc, char *argv[])
 {
@@ -31,8 +36,31 @@ int main(int argc, char *argv[])
     CaseManager caseManager;
 
     //Program Start
-    startupDialog startup(nullptr,caseManager);
-    if (startup.exec() != QDialog::Accepted) return 0;
+    while (true)
+    {
+        startupDialog startup(nullptr, caseManager);
+
+        if (startup.exec() != QDialog::Accepted)
+            return 0;
+
+        if (!caseManager.getCurrentCase().isEnvInitialized)
+        {
+            caseDetailWizard wizard(&caseManager);
+
+            if (wizard.exec() != QDialog::Accepted)
+            {
+                QMessageBox::warning(
+                    nullptr,
+                    "Case Initialization Required",
+                    "Case Initialization Was Cancelled."
+                    );
+
+                continue;
+            }
+        }
+
+        break;
+    }
 
     MainWindow w(nullptr,caseManager);
     w.show();
