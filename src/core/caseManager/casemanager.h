@@ -18,17 +18,7 @@
 #include "core/logging/logger.h"
 
 
-struct CaseInfo {
-    QString caseId;
-    QString caseName;
-    QString createdDate;
-    QString updatedDate;
-    QString notes;
-    int caseState;
-    bool isEnvInitialized;
-    QString casePath;
-};
-
+#include "data/case/caseInformationData.h"
 
 //TODO: Implement a Case Validation Func that Checks if Cases are Valid (DBs exist, JSON Valid, etc...)
 //TODO: Delete Case Func
@@ -56,6 +46,7 @@ public:
     bool saveInvestigator(const InvestigatorData& inv);
     bool saveOrganization(const OrganizationData& org);
     bool saveDataSource(const DataSourceData& ds);
+    bool saveCaseInfo(const CaseInfo& c);
 
 private:
     bool initEnvironment();

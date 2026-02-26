@@ -26,14 +26,14 @@ bool CaseDBManager::createSchema()
 
         IBPP::Statement st = IBPP::StatementFactory(fb_db, tr);
 
-        // CASE Table
+        // Case Table
         st->Execute(R"(
             CREATE TABLE CaseTable (
                 CASEID VARCHAR(64) PRIMARY KEY,
                 NAME VARCHAR(255),
                 FILESAVEPATH VARCHAR(1024),
                 NOTES BLOB SUB_TYPE TEXT,
-                STATE BOOLEAN DEFAULT TRUE,
+                STATE SMALLINT DEFAULT 0,
                 CREATIONDATE TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 MODIFIEDDATE TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )

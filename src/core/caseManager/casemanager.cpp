@@ -327,6 +327,18 @@ bool CaseManager::saveDataSource(const DataSourceData& ds)
 }
 
 
+bool CaseManager::saveCaseInfo(const CaseInfo& c)
+{
+
+    if (!currentCaseDB) {
+        qCritical() << "No Case Database Open!";
+        return false;
+    }
+
+    return currentCaseDB->caseInfoRepo().insert(c);
+}
+
+
 //###########################################################################################
 // Case Setter/Getter
 

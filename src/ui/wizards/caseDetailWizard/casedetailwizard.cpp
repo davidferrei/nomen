@@ -261,6 +261,12 @@ void caseDetailWizard::done(int result)
 
         bool allOk = true;
 
+        qDebug() << "Saving Case Info to Case DB ...";
+        if (!currentCaseManager->saveCaseInfo(currentCaseManager->getCurrentCase())) {
+            allOk = false;
+            qCritical() << "Failed To Save Case Info";
+        }
+
         qDebug() << "Saving Insvestigators to Case DB ...";
         for (int i = 0; i < investigators.size(); ++i) {
             const InvestigatorData &inv = investigators[i];
