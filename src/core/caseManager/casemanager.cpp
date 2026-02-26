@@ -22,6 +22,7 @@ bool CaseManager::createCaseInfo(const CaseInfo& info)
     if (!caseDir.mkpath("case_db")) return false;
     if (!caseDir.mkpath("evidence")) return false;
     if (!caseDir.mkpath("logs")) return false;
+    if (!caseDir.mkpath("logs/app")) return false;
     if (!caseDir.mkpath("logs/ingest")) return false;
     if (!caseDir.mkpath("logs/index")) return false;
     if (!caseDir.mkpath("reports")) return false;
@@ -218,6 +219,7 @@ bool CaseManager::openCase(const QString& casePath)
         if (currentCase.isEnvInitialized)
         {
             qCritical() << "Case DB is not Present But Environment is Marked as Initialized";
+            currentCaseDB = nullptr;
             return false;
         }
 
@@ -295,7 +297,7 @@ bool CaseManager::saveInvestigator(const InvestigatorData& inv)
 {
 
     if (!currentCaseDB) {
-        qCritical() << "No case database open!";
+        qCritical() << "No Case Database Open!";
         return false;
     }
 
@@ -306,11 +308,22 @@ bool CaseManager::saveOrganization(const OrganizationData& org)
 {
 
     if (!currentCaseDB) {
-        qCritical() << "No case database open!";
+        qCritical() << "No Case Database Open!";
         return false;
     }
 
     return currentCaseDB->organizationRepo().insert(org);
+}
+
+bool CaseManager::saveDataSource(const DataSourceData& ds)
+{
+
+    if (!currentCaseDB) {
+        qCritical() << "No Case Database Open!";
+        return false;
+    }
+
+    return currentCaseDB->dataSourceRepo().insert(ds);
 }
 
 

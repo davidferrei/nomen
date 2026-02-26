@@ -7,6 +7,7 @@
 
 #include "core/caseDBManager/repositories/investigatorRepository.h"
 #include "core/caseDBManager/repositories/organizationRepository.h"
+#include "core/caseDBManager/repositories/datasourceRepository.h"
 
 class CaseDBManager
 {
@@ -25,6 +26,7 @@ public:
     //Repos
     InvestigatorRepository investigatorRepo() { return InvestigatorRepository(fb_db); };
     OrganizationRepository organizationRepo() { return OrganizationRepository(fb_db); };
+    DataSourceRepository dataSourceRepo() { return DataSourceRepository(fb_db); };
 
 private:
     IBPP::Database fb_db;

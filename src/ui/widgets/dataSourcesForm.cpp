@@ -80,6 +80,11 @@ void DataSourcesForm::refreshDataSourceTable()
         addDataSourceRow(dataSources[i], i);
 }
 
+QList<DataSourceData> DataSourcesForm::getDataSources() const
+{
+    return dataSources;
+}
+
 //#####################################################################################
 // Signals
 

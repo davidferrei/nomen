@@ -10,6 +10,8 @@
 
 #include "ui/dialogs/addInvestigatorDialog/addinvestigatordialog.h"
 #include "ui/dialogs/addOrganizationDialog/addorganizationdialog.h"
+#include "../../widgets/dataSourcesForm.h"
+
 
 
 namespace Ui {
@@ -40,6 +42,7 @@ private:
 
     QList<InvestigatorData> investigators;
     QList<OrganizationData> organizations;
+    DataSourcesForm* dataSourceWidget;
 
     void LoadCaseData();
     void setupInvestigatorTable();

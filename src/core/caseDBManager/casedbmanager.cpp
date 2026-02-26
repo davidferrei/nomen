@@ -61,12 +61,32 @@ bool CaseDBManager::createSchema()
             )
         )");
 
+        // DataSource Table
+        st->Execute(R"(
+            CREATE TABLE DataSource (
+                DATASOURCEID VARCHAR(64) PRIMARY KEY,
+                NAME VARCHAR(255),
+                DISKSIZE BIGINT,
+                SECTORSIZE INTEGER,
+                HASH VARCHAR(1024),
+                HASH_TYPE VARCHAR(32),
+                FORMAT VARCHAR(64),
+                FILEPATH VARCHAR(1024),
+                TIMEZONE VARCHAR(128),
+                NOTES BLOB SUB_TYPE TEXT,
+                INDEXED SMALLINT DEFAULT 0
+            )
+        )");
+
         // Increment IDs
         st->Execute("CREATE GENERATOR GEN_INVESTIGATOR_ID");
         st->Execute("SET GENERATOR GEN_INVESTIGATOR_ID TO 0");
 
         st->Execute("CREATE GENERATOR GEN_ORGANIZATION_ID");
         st->Execute("SET GENERATOR GEN_ORGANIZATION_ID TO 0");
+
+        st->Execute("CREATE GENERATOR GEN_DATASOURCE_ID");
+        st->Execute("SET GENERATOR GEN_DATASOURCE_ID TO 0");
 
         // Triggers
         st->Execute(R"(
@@ -86,6 +106,16 @@ bool CaseDBManager::createSchema()
             BEGIN
                 IF (NEW.ORGANIZATIONID IS NULL) THEN
                     NEW.ORGANIZATIONID = GEN_ID(GEN_ORGANIZATION_ID, 1);
+            END
+        )");
+
+        st->Execute(R"(
+            CREATE TRIGGER BI_DATASOURCE FOR DATASOURCE
+            BEFORE INSERT
+            AS
+            BEGIN
+                IF (NEW.DATASOURCEID IS NULL) THEN
+                    NEW.DATASOURCEID = GEN_ID(GEN_DATASOURCE_ID, 1);
             END
         )");
 

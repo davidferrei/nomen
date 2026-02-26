@@ -3,7 +3,6 @@
 
 #include <QMessageBox>
 
-#include "../../widgets/dataSourcesForm.h"
 
 //TODO: Make the Data Source Widget
 //TODO: Hava a way to Assign a Investigator to one or many Organizations
@@ -30,7 +29,7 @@ caseDetailWizard::caseDetailWizard(CaseManager* caseManager, QWidget *parent) :
 
     connect(ui->checkBox_skip, &QCheckBox::toggled, ui->dataSourceWidgetGrid, &QWidget::setDisabled);
 
-    DataSourcesForm *dataSourceWidget = new DataSourcesForm(this);
+    dataSourceWidget = new DataSourcesForm(this);
     ui->dataSourceWidgetLayout->addWidget(dataSourceWidget);
 }
 
@@ -210,9 +209,26 @@ bool caseDetailWizard::validateCurrentPage()
     }
 
     // Page 03 - Data Source
-    // case 2:
-    // {
-    // }
+    case 2:
+    {
+        qDebug() << "#########################";
+        qDebug() << "##### DATA SOURCES #####";
+
+        QList<DataSourceData> dataSources = dataSourceWidget->getDataSources();
+
+        for (int i = 0; i < dataSources.size(); ++i)
+        {
+            const DataSourceData &ds = dataSources[i];
+
+            qDebug() << "Index:" << i
+                     << "| Name:" << ds.name
+                     << "| File:" << ds.filePath
+                     << "| TimeZone:" << ds.timeZone;
+        }
+
+        qDebug() << "#########################";
+        break;
+    }
 
     default:
         break;
@@ -226,6 +242,9 @@ bool caseDetailWizard::validateCurrentPage()
 
 void caseDetailWizard::done(int result)
 {
+
+    //TODO: Save Case to DB
+
     if (result == QDialog::Accepted) {
         if (!currentCaseManager) {
             QMessageBox::critical(this, "Error", "CaseManager Not Found");
@@ -233,14 +252,16 @@ void caseDetailWizard::done(int result)
             return;
         }
 
-        if (!ui->checkBox_skip->isChecked())
-        {
+        QList<DataSourceData> dataSources = dataSourceWidget->getDataSources();
+
+        if (!ui->checkBox_skip->isChecked() && dataSources.isEmpty()) {
             QMessageBox::warning(this, "Data Source Required", "You must provide a data source or check 'Skip this step'.");
             return;
         }
 
         bool allOk = true;
 
+        qDebug() << "Saving Insvestigators to Case DB ...";
         for (int i = 0; i < investigators.size(); ++i) {
             const InvestigatorData &inv = investigators[i];
             if (!currentCaseManager->saveInvestigator(inv)) {
@@ -249,11 +270,22 @@ void caseDetailWizard::done(int result)
             }
         }
 
+        qDebug() << "Saving Organizations to Case DB ...";
         for (int i = 0; i < organizations.size(); ++i) {
             const OrganizationData &org = organizations[i];
             if (!currentCaseManager->saveOrganization(org)) {
                 allOk = false;
                 qCritical() << "Failed to Save Organization:" << org.name;
+            }
+        }
+
+        qDebug() << "Saving DataSources to Case DB ...";
+        for (int i = 0; i < dataSources.size(); ++i)
+        {
+            const DataSourceData &ds = dataSources[i];
+            if (!currentCaseManager->saveDataSource(ds)) {
+                allOk = false;
+                qCritical() << "Failed To Save Data Source:" << ds.name;
             }
         }
 

@@ -21,6 +21,8 @@ public:
     explicit DataSourcesForm(QWidget *parent = nullptr);
     ~DataSourcesForm();
 
+    QList<DataSourceData> getDataSources() const;
+
 private slots:
     void on_bttn_create_DS_clicked();
 

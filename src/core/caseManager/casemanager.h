@@ -54,7 +54,8 @@ public:
     
     //Access DB
     bool saveInvestigator(const InvestigatorData& inv);
-    bool saveOrganization(const OrganizationData& inv);
+    bool saveOrganization(const OrganizationData& org);
+    bool saveDataSource(const DataSourceData& ds);
 
 private:
     bool initEnvironment();
