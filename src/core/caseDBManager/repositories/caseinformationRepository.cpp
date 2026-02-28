@@ -69,7 +69,7 @@ bool CaseInformationRepository::remove(const QString& caseId)
     return true;
 }
 
-//TODO: Move this to CaseDBManager
+//TODO: Make this usable to other Repos
 
 IBPP::Timestamp CaseInformationRepository::toIBPPTimestamp(const QString& dateStr)
 {
