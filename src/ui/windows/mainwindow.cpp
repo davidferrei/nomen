@@ -18,6 +18,13 @@ MainWindow::MainWindow(QWidget *parent, CaseManager& caseManager)
 
     setupUiElements();
 
+    //################################
+    // Indexing
+
+    indexManager = new IndexManager(this);
+
+    loadDataSources();
+
 }
 
 MainWindow::~MainWindow()
@@ -109,3 +116,30 @@ void MainWindow::setupUiElements()
         );
     ui->statusbar->addPermanentWidget(userLabel);
 }
+
+//############################################################################################
+// Logic
+
+void MainWindow::loadDataSources()
+{
+
+    QList<DataSourceData> dataSources = caseManager.getDataSources();
+
+    qDebug() << "Total Disks Found:" << dataSources.size();
+
+    for (const DataSourceData& ds : dataSources)
+    {
+        if (ds.indexed)
+        {
+            qDebug() << "Disk Already Indexed:" << ds.filePath;
+            // TODO: FS View?
+        }
+        else
+        {
+            qDebug() << "Disk Requires Ingest:" << ds.filePath;
+            //TODO: Ingest
+        }
+    }
+}
+
+

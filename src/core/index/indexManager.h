@@ -1,10 +1,17 @@
 #ifndef INDEXMANAGER_H
 #define INDEXMANAGER_H
 
-class IndexManager
+#include <QObject>
+
+#include "data/evidence/dataSourceData.h"
+
+class IndexManager : public QObject
 {
+    Q_OBJECT
+
 public:
-    IndexManager();
+    IndexManager(QObject* parent = nullptr);
+
 };
 
 #endif // INDEXMANAGER_H

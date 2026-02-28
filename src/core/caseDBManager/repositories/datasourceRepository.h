@@ -15,6 +15,8 @@ public:
     bool update(long long id, const DataSourceData& ds);
     bool remove(long long id);
 
+    QList<DataSourceData> GetAll();
+
 private:
     IBPP::Database fb_db;
 
