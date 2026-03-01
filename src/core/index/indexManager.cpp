@@ -6,6 +6,9 @@ IndexManager::IndexManager(QObject* parent) : QObject(parent)
 }
 
 
+//############################################################################################
+// Logic
+
 void IndexManager::CreateJob(const DataSourceData& ds)
 {
     qDebug() << "[IndexManager] Creating Job for:" << ds.filePath;
@@ -14,30 +17,37 @@ void IndexManager::CreateJob(const DataSourceData& ds)
     jobs.append(job);
 
     // Signals
+        connect(job, &IndexJob::started, this, [this, job]() {
+            qDebug() << "[IndexManager] Job Started";
+            emit jobStarted(job->getDSFilePath());
+        });
 
-    connect(job, &IndexJob::started, this, [job]() {
-        qDebug() << "[IndexManager] Job Started";
-    });
+        connect(job, &IndexJob::finished, this, [this, job]() {
+            qDebug() << "[IndexManager] Job Finished";
 
-    connect(job, &IndexJob::finished, this, [this, job]() {
-        qDebug() << "[IndexManager] Job Finished";
+            emit jobFinished(job->getDSFilePath());
 
-        jobs.removeOne(job);
-        job->deleteLater();
-    });
+            jobs.removeOne(job);
+            job->deleteLater();
+        });
 
-    connect(job, &IndexJob::failed, this, [this, job](const QString& error) {
-        qDebug() << "[IndexManager] Job Failed:" << error;
+        connect(job, &IndexJob::failed, this, [this, job](const QString& error) {
+            qDebug() << "[IndexManager] Job Failed:" << error;
 
-        jobs.removeOne(job);
-        job->deleteLater();
-    });
+            emit jobFailed(job->getDSFilePath(), error);
 
-    // emit JobStarted(ds.filePath);
-
+            jobs.removeOne(job);
+            job->deleteLater();
+        });
 
     job->start();
 
+}
 
-    // emit JobFinished(ds.filePath);
+//############################################################################################
+// Setters/Getters
+
+int IndexManager::getJobsCount() const
+{
+    return jobs.size();
 }

@@ -2,8 +2,11 @@
 #define INDEXJOB_H
 
 #include <QObject>
+#include <QUuid>
 
 #include "data/evidence/dataSourceData.h"
+
+#include "indexWorker.h"
 
 
 class IndexJob : public QObject
@@ -15,6 +18,8 @@ public:
 
     void start();
 
+    QString getDSFilePath() const;
+
 signals:
     void started();
     void finished();
@@ -23,6 +28,9 @@ signals:
 private:
     DataSourceData dataSource;
     bool isRunning = false;
+
+    QThread* thread = nullptr;
+    IndexWorker* worker = nullptr;
 };
 
 #endif // INDEXJOB_H

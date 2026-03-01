@@ -16,9 +16,12 @@ public:
 
     void CreateJob(const DataSourceData& ds);
 
+    int getJobsCount() const;
+
 signals:
-    // void JobStarted(const QString& filePath);
-    // void JobFinished(const QString& filePath);
+    void jobStarted(const QString& filePath);
+    void jobFinished(const QString& filePath);
+    void jobFailed(const QString& filePath, const QString& error);
 
 private:
     QList<IndexJob*> jobs;

@@ -1,10 +1,27 @@
 #ifndef INDEXWORKER_H
 #define INDEXWORKER_H
 
-class IndexWorker
+#include <QObject>
+#include <QThread>
+
+#include "data/evidence/dataSourceData.h"
+
+class IndexWorker : public QObject
 {
+    Q_OBJECT
+
 public:
-    IndexWorker();
+    IndexWorker(const DataSourceData& ds, QObject* parent = nullptr);
+
+public slots:
+    void run();
+
+signals:
+    void finished();
+    void failed(const QString& error);
+
+private:
+    DataSourceData dataSource;
 };
 
 #endif // INDEXWORKER_H

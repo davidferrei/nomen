@@ -86,9 +86,12 @@ void MainWindow::setupUiElements()
     addView->addAction(viewCaseInfoAction);
     QAction* viewDSAction = new QAction("Data Sources", this);
     addView->addAction(viewDSAction);
+    QAction* viewJobsAction = new QAction("Jobs", this);
+    addView->addAction(viewJobsAction);
 
     viewCaseInfoAction->setEnabled(false);
     viewDSAction->setEnabled(false);
+    viewJobsAction->setEnabled(false);
 
     QMenu* addSettings = ui->menubar->addMenu("&Settings");
     QAction* settingsNomenAction = new QAction("Nomen", this);
