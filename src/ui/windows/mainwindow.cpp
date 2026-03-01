@@ -122,7 +122,7 @@ void MainWindow::setupUiElements()
 
 void MainWindow::loadDataSources()
 {
-
+    //TODO: Save DataSources Window wide?
     QList<DataSourceData> dataSources = caseManager.getDataSources();
 
     qDebug() << "Total Disks Found:" << dataSources.size();
@@ -137,7 +137,7 @@ void MainWindow::loadDataSources()
         else
         {
             qDebug() << "Disk Requires Ingest:" << ds.filePath;
-            //TODO: Ingest
+            indexManager->CreateJob(ds);
         }
     }
 }
