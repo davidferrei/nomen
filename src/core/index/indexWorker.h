@@ -6,12 +6,14 @@
 
 #include "data/evidence/dataSourceData.h"
 
+#include "core/lmdb/lmdbManager.h"
+
 class IndexWorker : public QObject
 {
     Q_OBJECT
 
 public:
-    IndexWorker(const DataSourceData& ds, QObject* parent = nullptr);
+    IndexWorker(const DataSourceData& ds, const QString& casePath, QObject* parent = nullptr);
 
 public slots:
     void run();
@@ -22,6 +24,7 @@ signals:
 
 private:
     DataSourceData dataSource;
+    QString caseFolderPath;
 };
 
 #endif // INDEXWORKER_H

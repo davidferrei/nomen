@@ -1,43 +1,6 @@
 #include "indexJob.h"
 
-IndexJob::IndexJob(const DataSourceData& ds, QObject* parent) : QObject(parent), dataSource(ds) {}
-
-// void IndexJob::start()
-// {
-//     if (isRunning)
-//     {
-//         qWarning() << "[IndexJob] Already Running for" << dataSource.filePath;
-//         return;
-//     }
-
-//     isRunning = true;
-
-//     thread = new QThread(this);
-//     worker = new IndexWorker(dataSource);
-//     QString jobId = QUuid::createUuid().toString(QUuid::WithoutBraces);
-
-//     worker->moveToThread(thread);
-
-//     connect(thread, &QThread::started, worker, &IndexWorker::run);
-//     connect(worker, &IndexWorker::finished, thread, &QThread::quit);
-//     connect(worker, &IndexWorker::finished, this, &IndexJob::finished);
-//     connect(worker, &IndexWorker::finished, worker, &QObject::deleteLater);
-//     connect(thread, &QThread::finished, thread, &QObject::deleteLater);
-
-//     qDebug() << "[IndexJob] Job Started for:" << dataSource.filePath << "With Thread ID:" << jobId;
-//     emit started();
-
-//     thread->start();
-//     thread->setObjectName("IndexJob-" + jobId);
-
-
-//     #if defined(Q_OS_WIN)
-//         //TODO: Test This
-//         ::SetThreadDescription(reinterpret_cast<HANDLE>(thread->currentThreadId()), (LPCWSTR)QString("IndexJob").utf16());
-//     #elif defined(Q_OS_UNIX)
-//         pthread_setname_np(pthread_self(), "IndexJob");
-//     #endif
-// }
+IndexJob::IndexJob(const DataSourceData& ds, const QString& casePath, QObject* parent) : QObject(parent), dataSource(ds), caseFolderPath(casePath) {}
 
 void IndexJob::start()
 {
@@ -53,7 +16,7 @@ void IndexJob::start()
     QString jobId = QUuid::createUuid().toString(QUuid::WithoutBraces);
     thread->setObjectName("IndexJob-" + jobId);
 
-    worker = new IndexWorker(dataSource);
+    worker = new IndexWorker(dataSource, caseFolderPath);
 
     worker->moveToThread(thread);
 

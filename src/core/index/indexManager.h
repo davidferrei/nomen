@@ -14,7 +14,7 @@ class IndexManager : public QObject
 public:
     IndexManager(QObject* parent = nullptr);
 
-    void CreateJob(const DataSourceData& ds);
+    void CreateJob(const DataSourceData& ds, const QString& caseFolder);
 
     int getJobsCount() const;
 

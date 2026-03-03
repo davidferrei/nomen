@@ -1,6 +1,6 @@
 #include "indexWorker.h"
 
-IndexWorker::IndexWorker(const DataSourceData& ds, QObject* parent) : QObject(parent), dataSource(ds) {}
+IndexWorker::IndexWorker(const DataSourceData& ds, const QString& casePath, QObject* parent) : QObject(parent), dataSource(ds), caseFolderPath(casePath) {}
 
 void IndexWorker::run()
 {
@@ -8,8 +8,19 @@ void IndexWorker::run()
 
     try
     {
-        //TODO: This
-        QThread::sleep(10);
+        QString lmdbPath = caseFolderPath + "/indexes/" + dataSource.name;
+
+        LMDBManager lmdb;
+        if (!lmdb.initialize(lmdbPath)) {
+            emit failed("Failed to initialize LMDB at " + lmdbPath);
+            return;
+        }
+
+        lmdb.writeTestData();
+        lmdb.readTestData();
+
+        // Simulate indexing
+        // QThread::sleep(10);
 
         qDebug() << "[IndexWorker] Indexing Finished for:" << dataSource.filePath;
         emit finished();

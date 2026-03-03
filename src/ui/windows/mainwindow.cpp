@@ -140,7 +140,7 @@ void MainWindow::loadDataSources()
         else
         {
             qDebug() << "Disk Requires Ingest:" << ds.filePath;
-            indexManager->CreateJob(ds);
+            indexManager->CreateJob(ds, caseManager.getCurrentCase().casePath);
         }
     }
 }

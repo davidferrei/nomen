@@ -14,7 +14,7 @@ class IndexJob : public QObject
     Q_OBJECT
 
 public:
-    IndexJob(const DataSourceData& ds, QObject* parent = nullptr);
+    IndexJob(const DataSourceData& ds, const QString& caseFolder, QObject* parent = nullptr);
 
     void start();
 
@@ -27,6 +27,7 @@ signals:
 
 private:
     DataSourceData dataSource;
+    QString caseFolderPath;
     bool isRunning = false;
 
     QThread* thread = nullptr;

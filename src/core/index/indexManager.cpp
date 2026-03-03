@@ -9,11 +9,11 @@ IndexManager::IndexManager(QObject* parent) : QObject(parent)
 //############################################################################################
 // Logic
 
-void IndexManager::CreateJob(const DataSourceData& ds)
+void IndexManager::CreateJob(const DataSourceData& ds, const QString& caseFolder)
 {
     qDebug() << "[IndexManager] Creating Job for:" << ds.filePath;
 
-    IndexJob* job = new IndexJob(ds, this);
+    IndexJob* job = new IndexJob(ds, caseFolder, this);
     jobs.append(job);
 
     // Signals
