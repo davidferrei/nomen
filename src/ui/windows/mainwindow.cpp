@@ -132,6 +132,20 @@ void MainWindow::loadDataSources()
 
     for (const DataSourceData& ds : dataSources)
     {
+        qDebug().noquote() << "========== DataSource ==========";
+        qDebug().noquote() << "ID          :" << ds.id;
+        qDebug().noquote() << "Name        :" << ds.name;
+        qDebug().noquote() << "Disk Size   :" << ds.diskSize << "bytes";
+        qDebug().noquote() << "Sector Size :" << ds.sectorSize;
+        qDebug().noquote() << "Hash        :" << ds.hash;
+        qDebug().noquote() << "Hash Type   :" << ds.hashType;
+        qDebug().noquote() << "Format      :" << ds.format;
+        qDebug().noquote() << "File Path   :" << ds.filePath;
+        qDebug().noquote() << "Time Zone   :" << ds.timeZone;
+        qDebug().noquote() << "Indexed     :" << (ds.indexed ? "YES" : "NO");
+        qDebug().noquote() << "Notes       :" << ds.notes;
+        qDebug().noquote() << "================================";
+
         if (ds.indexed)
         {
             qDebug() << "Disk Already Indexed:" << ds.filePath;

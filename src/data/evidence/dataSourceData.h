@@ -17,6 +17,7 @@ struct DataSourceData {
     QString timeZone;
     QString notes;
     bool indexed = false;
+    qint64 id = 0;
 };
 
 

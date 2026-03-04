@@ -42,7 +42,7 @@ bool CaseDBManager::createSchema()
         // Organization Table
         st->Execute(R"(
             CREATE TABLE Organization (
-                ORGANIZATIONID VARCHAR(64) PRIMARY KEY,
+                ORGANIZATIONID BIGINT PRIMARY KEY,
                 NAME VARCHAR(255),
                 PHONENUMBER VARCHAR(50),
                 EMAIL VARCHAR(255),
@@ -53,7 +53,7 @@ bool CaseDBManager::createSchema()
         // Investigator Table
         st->Execute(R"(
             CREATE TABLE Investigator (
-                INVESTIGATORID VARCHAR(64) PRIMARY KEY,
+                INVESTIGATORID BIGINT PRIMARY KEY,
                 NAME VARCHAR(255),
                 PHONENUMBER VARCHAR(50),
                 EMAIL VARCHAR(255),
@@ -64,7 +64,7 @@ bool CaseDBManager::createSchema()
         // DataSource Table
         st->Execute(R"(
             CREATE TABLE DataSource (
-                DATASOURCEID VARCHAR(64) PRIMARY KEY,
+                DATASOURCEID BIGINT PRIMARY KEY,
                 NAME VARCHAR(255),
                 DISKSIZE BIGINT,
                 SECTORSIZE INTEGER,
@@ -79,6 +79,9 @@ bool CaseDBManager::createSchema()
         )");
 
         // Increment IDs
+        // st->Execute("CREATE GENERATOR GEN_CASE_ID;");
+        // st->Execute("SET GENERATOR GEN_CASE_ID TO 0;");
+
         st->Execute("CREATE GENERATOR GEN_INVESTIGATOR_ID");
         st->Execute("SET GENERATOR GEN_INVESTIGATOR_ID TO 0");
 
@@ -89,6 +92,16 @@ bool CaseDBManager::createSchema()
         st->Execute("SET GENERATOR GEN_DATASOURCE_ID TO 0");
 
         // Triggers
+        // st->Execute(R"(
+        //     CREATE TRIGGER BI_CASE FOR CASETABLE
+        //     BEFORE INSERT
+        //     AS
+        //     BEGIN
+        //         IF (NEW.CASEID IS NULL) THEN
+        //             NEW.CASEID = GEN_ID(GEN_CASE_ID, 1);
+        //     END
+        // )");
+
         st->Execute(R"(
             CREATE TRIGGER BI_INVESTIGATORS FOR INVESTIGATOR
             BEFORE INSERT

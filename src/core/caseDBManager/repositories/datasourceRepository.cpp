@@ -83,6 +83,7 @@ bool DataSourceRepository::remove(long long id)
 //############################################################################################
 // Getters
 
+
 QList<DataSourceData> DataSourceRepository::GetAll()
 {
     QList<DataSourceData> result;
@@ -93,7 +94,7 @@ QList<DataSourceData> DataSourceRepository::GetAll()
     IBPP::Statement st = IBPP::StatementFactory(fb_db, tr);
 
     st->Prepare(
-        "SELECT NAME, DISKSIZE, SECTORSIZE, HASH, HASH_TYPE, FORMAT, "
+        "SELECT DATASOURCEID, NAME, DISKSIZE, SECTORSIZE, HASH, HASH_TYPE, FORMAT, "
         "FILEPATH, TIMEZONE, NOTES, INDEXED "
         "FROM DATASOURCE"
         );
@@ -106,36 +107,41 @@ QList<DataSourceData> DataSourceRepository::GetAll()
         std::string tmpString;
         int indexedValue = 0;
 
+        int64_t idTmp;
+        st->Get(1, idTmp);
+        ds.id = static_cast<qint64>(idTmp);
 
-        st->Get(1, tmpString);
+        st->Get(2, tmpString);
         ds.name = QString::fromUtf8(tmpString.data(), tmpString.size());
 
-        st->Get(4, tmpString);
-        ds.hash = QString::fromUtf8(tmpString.data(), tmpString.size());
-
-        st->Get(5, tmpString);
-        ds.hashType = QString::fromUtf8(tmpString.data(), tmpString.size());
-
-        st->Get(6, tmpString);
-        ds.format = QString::fromUtf8(tmpString.data(), tmpString.size());
-
-        st->Get(7, tmpString);
-        ds.filePath = QString::fromUtf8(tmpString.data(), tmpString.size());
-
-        st->Get(8, tmpString);
-        ds.timeZone = QString::fromUtf8(tmpString.data(), tmpString.size());
-
-        st->Get(9, tmpString);
-        ds.notes = QString::fromUtf8(tmpString.data(), tmpString.size());
-
-
         int64_t diskSizeTmp;
-        st->Get(2, diskSizeTmp); ds.diskSize = static_cast<quint64>(diskSizeTmp);
+        st->Get(3, diskSizeTmp);
+        ds.diskSize = static_cast<quint64>(diskSizeTmp);
 
         int32_t sectorSizeTmp;
-        st->Get(3, sectorSizeTmp); ds.sectorSize = static_cast<quint32>(sectorSizeTmp);
+        st->Get(4, sectorSizeTmp);
+        ds.sectorSize = static_cast<quint32>(sectorSizeTmp);
 
-        st->Get(10, indexedValue); ds.indexed = (indexedValue == 1);
+        st->Get(5, tmpString);
+        ds.hash = QString::fromUtf8(tmpString.data(), tmpString.size());
+
+        st->Get(6, tmpString);
+        ds.hashType = QString::fromUtf8(tmpString.data(), tmpString.size());
+
+        st->Get(7, tmpString);
+        ds.format = QString::fromUtf8(tmpString.data(), tmpString.size());
+
+        st->Get(8, tmpString);
+        ds.filePath = QString::fromUtf8(tmpString.data(), tmpString.size());
+
+        st->Get(9, tmpString);
+        ds.timeZone = QString::fromUtf8(tmpString.data(), tmpString.size());
+
+        st->Get(10, tmpString);
+        ds.notes = QString::fromUtf8(tmpString.data(), tmpString.size());
+
+        st->Get(11, indexedValue);
+        ds.indexed = (indexedValue == 1);
 
         result.append(ds);
     }
