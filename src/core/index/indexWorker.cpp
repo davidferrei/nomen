@@ -22,8 +22,8 @@ void IndexWorker::run()
             return;
         }
 
-        // lmdb.debug_dumpAllLmdbTest(lmdbPath);
-        // lmdb.debug_dumpLmdbFirst20(lmdbPath);
+        lmdb.debug_dumpAllLmdbTest(lmdbPath);
+        lmdb.debug_dumpLmdbFirst20(lmdbPath);
         
 
         qDebug() << "[IndexWorker] Indexing Finished for:" << dataSource.filePath;

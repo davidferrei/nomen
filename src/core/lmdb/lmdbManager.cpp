@@ -29,7 +29,7 @@ bool LMDBManager::initialize(const QString& path)
     }
 
     mdb_env_set_maxdbs(env, 16);
-    mdb_env_set_mapsize(env, 1024ULL * 1024ULL * 1024ULL * 10ULL); // 10 GB
+    mdb_env_set_mapsize(env, 1024ULL * 1024ULL * 1024ULL * 1ULL); // 1 GB
 
     QDir dir;
     if (!dir.exists(path))
@@ -285,7 +285,28 @@ bool LMDBManager::debug_dumpLmdbFirst20(const QString& lmdbPath)
     if (nodes_dbi && mdb_cursor_open(txn, nodes_dbi, &cursor) == 0) {
         while (count < 20 && mdb_cursor_get(cursor, &k, &v, MDB_NEXT) == 0) {
             uint64_t id = read_u64(k);
-            qInfo() << "id:" << id << "val_size:" << (int)v.mv_size;
+
+            struct NodeMetadata {
+                uint64_t inode;
+                uint64_t size;
+                uint64_t ctime;
+                uint64_t mtime;
+                uint8_t type;
+                uint8_t is_dir;
+            } meta{};
+
+            if (v.mv_size >= (int)sizeof(meta)) {
+                memcpy(&meta, v.mv_data, sizeof(meta));
+                qInfo() << "id:" << id
+                        << "inode:" << meta.inode
+                        << "size:" << meta.size
+                        << "ctime:" << meta.ctime
+                        << "mtime:" << meta.mtime
+                        << "type:" << (int)meta.type
+                        << "is_dir:" << (int)meta.is_dir;
+            } else {
+                qInfo() << "id:" << id << "(raw size:" << (int)v.mv_size << ")";
+            }
             count++;
         }
         mdb_cursor_close(cursor);

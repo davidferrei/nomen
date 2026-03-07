@@ -90,7 +90,12 @@ static TSK_WALK_RET_ENUM file_callback(
         mdb_put(ctx->txn, ctx->children_dbi, &ck, &cv, 0);
     }
 
-        if (ctx->commit_batch > 0 && (ctx->next_node_id % ctx->commit_batch) == 0) {
+    // Debug
+    // if ((ctx->next_node_id % 1000) == 0) {
+    //     qInfo() << "[TskWalker] Processed Nodes:" << ctx->next_node_id << "Files:" << ctx->file_count << "Dirs:" << ctx->dir_count;
+    // }
+
+    if (ctx->commit_batch > 0 && (ctx->next_node_id % ctx->commit_batch) == 0) {
                 int rc = mdb_txn_commit(ctx->txn);
                 if (rc != 0) {
                     qWarning() << "[TskWalker]: Commit Failed During Walk" << node_id << ":" << mdb_strerror(rc);
@@ -119,18 +124,23 @@ bool TskWalker::walkImage(const QString &imagePath, LMDBManager &lmdb)
         return false;
     }
 
+    qInfo() << "[TskWalker] Image Opened Successfully";
+
     TSK_FS_INFO *fs = nullptr;
     TSK_VS_INFO *vs = tsk_vs_open(img, 0, TSK_VS_TYPE_DETECT);
+    qInfo() << "[TskWalker] Volume System Probe Returned" << (vs ? "Present" : "None");
     if (vs) {
         for (TSK_PNUM_T i = 0; i < vs->part_count; i++) {
             const TSK_VS_PART_INFO *part = tsk_vs_part_get(vs, i);
             if (!part) continue;
             fs = tsk_fs_open_vol(part, TSK_FS_TYPE_DETECT);
+            qInfo() << "[TskWalker] Probing Partition" << i << "FS=" << (fs ? "OK" : "No");
             if (fs) break;
         }
         tsk_vs_close(vs);
     } else {
         fs = tsk_fs_open_img(img, 0, TSK_FS_TYPE_DETECT);
+        qInfo() << "[TskWalker] Probing Image-Level Filesystem, Result=" << (fs ? "OK" : "No");
     }
 
     if (!fs) {
@@ -154,6 +164,8 @@ bool TskWalker::walkImage(const QString &imagePath, LMDBManager &lmdb)
         tsk_img_close(img);
         return false;
     }
+
+    qInfo() << "[TskWalker] LMDB Write Txn Begun";
 
     MDB_dbi nodes_dbi, children_dbi, paths_dbi, inode_map_dbi;
     if (mdb_dbi_open(txn, "nodes", MDB_CREATE, &nodes_dbi) != 0) nodes_dbi = 0;
@@ -197,7 +209,9 @@ bool TskWalker::walkImage(const QString &imagePath, LMDBManager &lmdb)
 
     PerformanceTimer pt(QString("TSK walkImage %1").arg(imagePath));
 
+    qInfo() << "[TskWalker] Starting Directory Walk";
     tsk_fs_dir_walk(fs, fs->root_inum, TSK_FS_DIR_WALK_FLAG_RECURSE, file_callback, &ctx);
+    qInfo() << "[TskWalker] Directory Walk Returned";
 
     if (ctx.txn) {
         int rc = mdb_txn_commit(ctx.txn);
@@ -215,10 +229,10 @@ bool TskWalker::walkImage(const QString &imagePath, LMDBManager &lmdb)
     tsk_fs_close(fs);
     tsk_img_close(img);
 
-    qInfo() << "Disk walk completed:";
-    qInfo() << "Directories:" << ctx.dir_count;
-    qInfo() << "Files:" << ctx.file_count;
-    qInfo() << "Total nodes:" << (ctx.file_count + ctx.dir_count + 1);
+    qInfo() << "[TskWalker] Disk Walk Completed:";
+    qInfo() << "[TskWalker] Directories:" << ctx.dir_count;
+    qInfo() << "[TskWalker] Files:" << ctx.file_count;
+    qInfo() << "[TskWalker] Total Nodes:" << (ctx.file_count + ctx.dir_count + 1);
 
     return true;
 }

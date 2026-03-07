@@ -2,6 +2,18 @@
 
 IndexJob::IndexJob(const DataSourceData& ds, const QString& casePath, QObject* parent) : QObject(parent), dataSource(ds), caseFolderPath(casePath) {}
 
+IndexJob::~IndexJob()
+{
+    if (thread && thread->isRunning()) {
+        disconnect(thread, nullptr, this, nullptr);
+        disconnect(worker, nullptr, this, nullptr);
+        thread->quit();
+        thread->wait();
+    }
+    delete worker;
+    delete thread;
+}
+
 void IndexJob::start()
 {
     if (isRunning)
@@ -12,7 +24,7 @@ void IndexJob::start()
 
     isRunning = true;
 
-    thread = new QThread(this);
+    thread = new QThread();
     QString jobId = QUuid::createUuid().toString(QUuid::WithoutBraces);
     thread->setObjectName("IndexJob-" + jobId);
 
@@ -22,27 +34,35 @@ void IndexJob::start()
 
     // Signals
         connect(thread, &QThread::started, worker, &IndexWorker::run);
-        connect(worker, &IndexWorker::finished, thread, &QThread::quit);
 
         connect(worker, &IndexWorker::finished, this, [this]() {
             qDebug() << "[IndexJob] Worker Finished for" << dataSource.filePath;
-            isRunning = false;
-            emit finished();
+            workerSucceeded = true;
         });
 
         connect(worker, &IndexWorker::failed, this, [this](const QString& error) {
             qDebug() << "[IndexJob] Worker Failed for" << dataSource.filePath << ":" << error;
+            workerError = error;
+        });
+
+        connect(worker, &IndexWorker::finished, thread, &QThread::quit);
+        connect(worker, &IndexWorker::failed, thread, &QThread::quit);
+
+        connect(thread, &QThread::finished, this, [this]() {
+            qDebug() << "[IndexJob] Thread Stopped for" << dataSource.filePath;
+
             isRunning = false;
-            emit failed(error);
-        });
 
-        connect(worker, &QObject::destroyed, this, [this]() {
-            qDebug() << "[IndexJob] Worker Deleted for" << dataSource.filePath;
-        });
+            worker->deleteLater();
+            thread->deleteLater();
+            worker = nullptr;
+            thread = nullptr;
 
-        connect(thread, &QThread::finished, thread, &QObject::deleteLater);
-        connect(thread, &QObject::destroyed, this, [this]() {
-            qDebug() << "[IndexJob] Thread Deleted for" << dataSource.filePath;
+            if (workerSucceeded) {
+                emit finished();
+            } else {
+                emit failed(workerError);
+            }
         });
 
     qDebug() << "[IndexJob] Starting Job for" << dataSource.filePath << "in Thread" << thread->objectName();

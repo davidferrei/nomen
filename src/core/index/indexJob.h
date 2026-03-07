@@ -15,10 +15,12 @@ class IndexJob : public QObject
 
 public:
     IndexJob(const DataSourceData& ds, const QString& caseFolder, QObject* parent = nullptr);
+    ~IndexJob();
 
     void start();
 
     QString getDSFilePath() const;
+
 
 signals:
     void started();
@@ -29,6 +31,8 @@ private:
     DataSourceData dataSource;
     QString caseFolderPath;
     bool isRunning = false;
+    bool workerSucceeded = false;
+    QString workerError;
 
     QThread* thread = nullptr;
     IndexWorker* worker = nullptr;
