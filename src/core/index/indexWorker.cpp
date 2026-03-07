@@ -1,4 +1,5 @@
 #include "indexWorker.h"
+#include "core/forensic/tsk/tskwalker.h"
 
 IndexWorker::IndexWorker(const DataSourceData& ds, const QString& casePath, QObject* parent) : QObject(parent), dataSource(ds), caseFolderPath(casePath) {}
 
@@ -8,19 +9,22 @@ void IndexWorker::run()
 
     try
     {
-        QString lmdbPath = caseFolderPath + "/indexes/" + dataSource.name;
+        QString lmdbPath = caseFolderPath + "/indexes/" + "disk-" % QString::number(dataSource.id);
 
         LMDBManager lmdb;
         if (!lmdb.initialize(lmdbPath)) {
-            emit failed("Failed to initialize LMDB at " + lmdbPath);
+            emit failed("Failed to Initialize LMDB at " + lmdbPath);
             return;
         }
 
-        lmdb.writeTestData();
-        lmdb.readTestData();
+        if (!TskWalker::walkImage(dataSource.filePath, lmdb)) {
+            emit failed("TSK Disk Walk Failed for " + dataSource.filePath);
+            return;
+        }
 
-        // Simulate indexing
-        // QThread::sleep(10);
+        // lmdb.debug_dumpAllLmdbTest(lmdbPath);
+        // lmdb.debug_dumpLmdbFirst20(lmdbPath);
+        
 
         qDebug() << "[IndexWorker] Indexing Finished for:" << dataSource.filePath;
         emit finished();

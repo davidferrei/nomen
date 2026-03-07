@@ -1,9 +1,14 @@
 #ifndef LMDBMANAGER_H
 #define LMDBMANAGER_H
 
+#include "../logging/performancemeasure.h"
+
+#include <QByteArray>
 #include <QDebug>
 #include <QString>
 #include <QDir>
+#include <QDir>
+
 
 extern "C" {
 #include <liblmdb/lmdb.h>
@@ -20,6 +25,14 @@ public:
     bool writeTestData();
     bool readTestData();
     void close();
+    
+    bool putBytes(const QByteArray& key, const QByteArray& value);
+    bool getBytes(const QByteArray& key, QByteArray& outValue);
+
+    MDB_env* envHandle() const { return env; }
+    
+    bool debug_dumpAllLmdbTest(const QString& lmdbPath);
+    bool debug_dumpLmdbFirst20(const QString& lmdbPath);
 
 private:
     MDB_env* env;
