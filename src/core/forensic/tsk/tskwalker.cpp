@@ -43,11 +43,12 @@ static TSK_WALK_RET_ENUM file_callback(
     QByteArray fullUtf8 = fullPath.toUtf8();
 
     uint64_t parent_id = 0;
+    uint64_t par_addr = 0;
     if (fs_file->name->par_addr != 0) {
         unsigned char ikbuf[24];
         uint64_t part = (uint64_t)ctx->partitionId;
         uint64_t fsIdx = 0;
-        uint64_t par_addr = (uint64_t)fs_file->name->par_addr;
+        par_addr = (uint64_t)fs_file->name->par_addr;
         memcpy(ikbuf, &part, sizeof(part));
         memcpy(ikbuf + sizeof(part), &fsIdx, sizeof(fsIdx));
         memcpy(ikbuf + sizeof(part) + sizeof(fsIdx), &par_addr, sizeof(par_addr));
@@ -57,8 +58,10 @@ static TSK_WALK_RET_ENUM file_callback(
             parent_id = *static_cast<uint64_t*>(pv.mv_data);
     }
 
-    if (parent_id == 0)
+    if (parent_id == 0) {
+        qWarning() << "[TskWalker] Parent Lookup Failed" << "part:" << ctx->partitionId << "par_addr:" << par_addr << "path:" << fullPath;
         return TSK_WALK_CONT;
+    }
 
     uint64_t node_id = ctx->next_node_id++;
     uint64_t inode = fs_file->name->meta_addr;
@@ -71,7 +74,7 @@ static TSK_WALK_RET_ENUM file_callback(
     memcpy(ikbuf2 + sizeof(part) + sizeof(fsIdx), &inode, sizeof(inode));
     MDB_val ik{ sizeof(ikbuf2), ikbuf2 };
     MDB_val iv{ sizeof(node_id), &node_id };
-    mdb_put(ctx->txn, ctx->inode_map_dbi, &ik, &iv, 0);
+    mdb_put(ctx->txn, ctx->inode_map_dbi, &ik, &iv, MDB_NOOVERWRITE);
 
     NodeMetadata meta{};
 
@@ -199,8 +202,13 @@ bool TskWalker::walkImage(const QString &imagePath, LMDBManager &lmdb)
     qInfo() << "[TskWalker] Starting Directory Walk";
 
     uint64_t top_root_id = ctx.next_node_id++;
-    struct RootMeta { uint8_t is_dir; } toproot{};
+    NodeMetadata toproot{};
     toproot.is_dir = 1;
+    toproot.inode = 0;
+    toproot.size = 0;
+    toproot.type = 0;
+    toproot.ctime = 0;
+    toproot.mtime = 0;
     if (nodes_dbi) {
         MDB_val trk{ sizeof(top_root_id), &top_root_id };
         MDB_val trv{ sizeof(toproot), &toproot };
@@ -219,8 +227,13 @@ bool TskWalker::walkImage(const QString &imagePath, LMDBManager &lmdb)
         ctx.partitionId = partIdx;
 
         uint64_t part_root_id = ctx.next_node_id++;
-        struct RootMeta { uint8_t is_dir; } root{};
+        NodeMetadata root{};
         root.is_dir = 1;
+        root.inode = curfs->root_inum;
+        root.size = 0;
+        root.type = 0;
+        root.ctime = 0;
+        root.mtime = 0;
         MDB_val rk{ sizeof(part_root_id), &part_root_id };
         MDB_val rv{ sizeof(root), &root };
         if (nodes_dbi) mdb_put(txn, nodes_dbi, &rk, &rv, 0);

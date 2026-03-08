@@ -22,6 +22,7 @@ void IndexWorker::run()
             return;
         }
 
+        //TODO: Print only in Debug Build
         lmdb.debug_dumpAllLmdbTest(lmdbPath);
         lmdb.debug_dumpLmdbFirst20(lmdbPath);
         

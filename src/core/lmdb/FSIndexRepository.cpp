@@ -172,3 +172,68 @@ bool FSIndexRepository::getPathForNode(uint64_t nodeId, QString &outPath)
     return false;
 }
 
+void FSIndexRepository::debugListChildrenInDb(uint64_t parentId)
+{
+    if (!env) {
+        qWarning() << "[FSIndexRepository] debugListChildrenInDb: env Not Open";
+        return;
+    }
+
+    MDB_txn *txn = nullptr;
+    if (mdb_txn_begin(env, nullptr, MDB_RDONLY, &txn) != 0) {
+        qWarning() << "[FSIndexRepository] debugListChildrenInDb: txn Begin Failed";
+        return;
+    }
+
+    MDB_dbi children_dbi = 0;
+    if (mdb_dbi_open(txn, "children", 0, &children_dbi) != 0) children_dbi = 0;
+    if (!children_dbi) { mdb_txn_abort(txn); qWarning() << "[FSIndexRepository] debugListChildrenInDb: Children DB Missing"; return; }
+
+    MDB_cursor *cursor = nullptr;
+    if (mdb_cursor_open(txn, children_dbi, &cursor) != 0) { mdb_txn_abort(txn); qWarning() << "[FSIndexRepository] debugListChildrenInDb: cursor Open Failed"; return; }
+
+    MDB_val k{ sizeof(parentId), &parentId };
+    MDB_val v{};
+    int rc = mdb_cursor_get(cursor, &k, &v, MDB_SET);
+    if (rc != 0) {
+        qInfo() << "[FSIndexRepository] debugListChildrenInDb: no children for parent" << parentId;
+        mdb_cursor_close(cursor);
+        mdb_txn_abort(txn);
+        return;
+    }
+
+    qInfo() << "[FSIndexRepository] debugListChildrenInDb: Children in DB for parent" << parentId << ":";
+    do {
+        uint64_t child = read_u64_from_val(v);
+        qInfo() << "  ->" << child;
+        rc = mdb_cursor_get(cursor, &k, &v, MDB_NEXT_DUP);
+    } while (rc == 0);
+
+    mdb_cursor_close(cursor);
+    mdb_txn_abort(txn);
+}
+
+bool FSIndexRepository::getNodeByInode(uint64_t part, uint64_t fsIdx, uint64_t inode, uint64_t &outNodeId)
+{
+    if (!env) return false;
+    MDB_txn *txn = nullptr;
+    if (mdb_txn_begin(env, nullptr, MDB_RDONLY, &txn) != 0) return false;
+
+    MDB_dbi inode_map_dbi = 0;
+    if (mdb_dbi_open(txn, "inode_map", 0, &inode_map_dbi) != 0) inode_map_dbi = 0;
+    if (!inode_map_dbi) { mdb_txn_abort(txn); return false; }
+
+    unsigned char ikbuf[24];
+    memcpy(ikbuf, &part, sizeof(part));
+    memcpy(ikbuf + sizeof(part), &fsIdx, sizeof(fsIdx));
+    memcpy(ikbuf + sizeof(part) + sizeof(fsIdx), &inode, sizeof(inode));
+    MDB_val k{ sizeof(ikbuf), ikbuf };
+    MDB_val v{};
+    int rc = mdb_get(txn, inode_map_dbi, &k, &v);
+    if (rc != 0) { mdb_txn_abort(txn); return false; }
+
+    outNodeId = read_u64_from_val(v);
+    mdb_txn_abort(txn);
+    return true;
+}
+

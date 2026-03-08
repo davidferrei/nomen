@@ -198,6 +198,7 @@ void MainWindow::loadDataSources()
                     }
                     auto children = repo.getChildren(partRootId);
                     qInfo() << partRoot << " Children Count:" << children.size();
+                    repo.debugListChildrenInDb(partRootId);
                     for (uint64_t cid : children) {
                         QString childPath;
                         NodeMetadata childMeta{};
@@ -231,6 +232,7 @@ void MainWindow::loadDataSources()
                     }
                     auto children = repo.getChildren(bootId);
                     qInfo() << bootPath << " Children Count:" << children.size();
+                    repo.debugListChildrenInDb(bootId);
                     for (uint64_t cid : children) {
                         QString childPath;
                         NodeMetadata childMeta{};
