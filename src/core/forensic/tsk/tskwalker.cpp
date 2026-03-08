@@ -1,4 +1,6 @@
 #include "tskwalker.h"
+#include <cstring>
+#include <vector>
 
 struct WalkContext {
     MDB_txn* txn;
@@ -44,7 +46,12 @@ static TSK_WALK_RET_ENUM file_callback(
 
     uint64_t parent_id = 0;
     if (fs_file->name->par_addr != 0) {
-        MDB_val pk{ sizeof(fs_file->name->par_addr), &fs_file->name->par_addr };
+        unsigned char ikbuf[16];
+        uint64_t part = (uint64_t)ctx->partitionId;
+        uint64_t par_addr = (uint64_t)fs_file->name->par_addr;
+        memcpy(ikbuf, &part, sizeof(part));
+        memcpy(ikbuf + sizeof(part), &par_addr, sizeof(par_addr));
+        MDB_val pk{ sizeof(ikbuf), ikbuf };
         MDB_val pv{};
         if (mdb_get(ctx->txn, ctx->inode_map_dbi, &pk, &pv) == 0)
             parent_id = *static_cast<uint64_t*>(pv.mv_data);
@@ -56,7 +63,11 @@ static TSK_WALK_RET_ENUM file_callback(
     uint64_t node_id = ctx->next_node_id++;
     uint64_t inode = fs_file->name->meta_addr;
 
-    MDB_val ik{ sizeof(inode), &inode };
+    unsigned char ikbuf2[16];
+    uint64_t part = (uint64_t)ctx->partitionId;
+    memcpy(ikbuf2, &part, sizeof(part));
+    memcpy(ikbuf2 + sizeof(part), &inode, sizeof(inode));
+    MDB_val ik{ sizeof(ikbuf2), ikbuf2 };
     MDB_val iv{ sizeof(node_id), &node_id };
     mdb_put(ctx->txn, ctx->inode_map_dbi, &ik, &iv, 0);
 
@@ -129,21 +140,24 @@ bool TskWalker::walkImage(const QString &imagePath, LMDBManager &lmdb)
     TSK_FS_INFO *fs = nullptr;
     TSK_VS_INFO *vs = tsk_vs_open(img, 0, TSK_VS_TYPE_DETECT);
     qInfo() << "[TskWalker] Volume System Probe Returned" << (vs ? "Present" : "None");
+
+    std::vector<std::pair<TSK_FS_INFO*, int>> fslist;
     if (vs) {
         for (TSK_PNUM_T i = 0; i < vs->part_count; i++) {
             const TSK_VS_PART_INFO *part = tsk_vs_part_get(vs, i);
             if (!part) continue;
-            fs = tsk_fs_open_vol(part, TSK_FS_TYPE_DETECT);
-            qInfo() << "[TskWalker] Probing Partition" << i << "FS=" << (fs ? "OK" : "No");
-            if (fs) break;
+            TSK_FS_INFO* pfs = tsk_fs_open_vol(part, TSK_FS_TYPE_DETECT);
+            qInfo() << "[TskWalker] Probing Partition" << i << "FS=" << (pfs ? "OK" : "No");
+            if (pfs) fslist.emplace_back(pfs, (int)i);
         }
         tsk_vs_close(vs);
     } else {
-        fs = tsk_fs_open_img(img, 0, TSK_FS_TYPE_DETECT);
-        qInfo() << "[TskWalker] Probing Image-Level Filesystem, Result=" << (fs ? "OK" : "No");
+        TSK_FS_INFO* pfs = tsk_fs_open_img(img, 0, TSK_FS_TYPE_DETECT);
+        qInfo() << "[TskWalker] Probing Image-Level Filesystem, Result=" << (pfs ? "OK" : "No");
+        if (pfs) fslist.emplace_back(pfs, 0);
     }
 
-    if (!fs) {
+    if (fslist.empty()) {
         qWarning() << "[TskWalker] Failed to Open Filesystem";
         tsk_img_close(img);
         return false;
@@ -152,7 +166,6 @@ bool TskWalker::walkImage(const QString &imagePath, LMDBManager &lmdb)
     MDB_env* env = lmdb.envHandle();
     if (!env) {
         qWarning() << "[TskWalker] LMDB environment not available";
-        tsk_fs_close(fs);
         tsk_img_close(img);
         return false;
     }
@@ -160,7 +173,6 @@ bool TskWalker::walkImage(const QString &imagePath, LMDBManager &lmdb)
     MDB_txn* txn = nullptr;
     if (mdb_txn_begin(env, nullptr, 0, &txn) != 0) {
         qWarning() << "[TskWalker] Failed to begin LMDB txn";
-        tsk_fs_close(fs);
         tsk_img_close(img);
         return false;
     }
@@ -185,33 +197,46 @@ bool TskWalker::walkImage(const QString &imagePath, LMDBManager &lmdb)
     ctx.partitionId = 0;
     ctx.env = env;
     ctx.commit_batch = 10000; 
-
-    // Root node
-    uint64_t root_id = ctx.next_node_id++;
-    struct RootMeta { uint8_t is_dir; } root{};
-    root.is_dir = 1;
-    MDB_val rk{ sizeof(root_id), &root_id };
-    MDB_val rv{ sizeof(root), &root };
-    if (nodes_dbi) mdb_put(txn, nodes_dbi, &rk, &rv, 0);
-
-    if (paths_dbi) {
-        MDB_val pk{ 1, const_cast<char*>((char*)"/") };
-        MDB_val pv{ sizeof(root_id), &root_id };
-        mdb_put(txn, paths_dbi, &pk, &pv, 0);
-    }
-
-    if (inode_map_dbi) {
-        uint64_t root_inode = fs->root_inum;
-        MDB_val ik{ sizeof(root_inode), &root_inode };
-        MDB_val iv{ sizeof(root_id), &root_id };
-        mdb_put(txn, inode_map_dbi, &ik, &iv, 0);
-    }
-
     PerformanceTimer pt(QString("TSK walkImage %1").arg(imagePath));
 
     qInfo() << "[TskWalker] Starting Directory Walk";
-    tsk_fs_dir_walk(fs, fs->root_inum, TSK_FS_DIR_WALK_FLAG_RECURSE, file_callback, &ctx);
-    qInfo() << "[TskWalker] Directory Walk Returned";
+
+    for (auto &p : fslist) {
+        TSK_FS_INFO* curfs = p.first;
+        int partIdx = p.second;
+        ctx.partitionId = partIdx;
+
+        uint64_t part_root_id = ctx.next_node_id++;
+        struct RootMeta { uint8_t is_dir; } root{};
+        root.is_dir = 1;
+        MDB_val rk{ sizeof(part_root_id), &part_root_id };
+        MDB_val rv{ sizeof(root), &root };
+        if (nodes_dbi) mdb_put(txn, nodes_dbi, &rk, &rv, 0);
+
+        QString partPath = QString("/part%1").arg(partIdx);
+        QByteArray partUtf8 = partPath.toUtf8();
+        if (paths_dbi) {
+            MDB_val pk{ static_cast<size_t>(partUtf8.size()), const_cast<char*>(partUtf8.data()) };
+            MDB_val pv{ sizeof(part_root_id), &part_root_id };
+            mdb_put(txn, paths_dbi, &pk, &pv, 0);
+        }
+
+        if (inode_map_dbi) {
+            unsigned char ikbuf[16];
+            uint64_t part = (uint64_t)partIdx;
+            uint64_t root_inode = curfs->root_inum;
+            memcpy(ikbuf, &part, sizeof(part));
+            memcpy(ikbuf + sizeof(part), &root_inode, sizeof(root_inode));
+            MDB_val ik{ sizeof(ikbuf), ikbuf };
+            MDB_val iv{ sizeof(part_root_id), &part_root_id };
+            mdb_put(txn, inode_map_dbi, &ik, &iv, 0);
+        }
+
+        tsk_fs_dir_walk(curfs, curfs->root_inum, TSK_FS_DIR_WALK_FLAG_RECURSE, file_callback, &ctx);
+        qInfo() << "[TskWalker] Directory Walk Returned for partition" << partIdx;
+
+        tsk_fs_close(curfs);
+    }
 
     if (ctx.txn) {
         int rc = mdb_txn_commit(ctx.txn);

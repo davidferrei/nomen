@@ -178,7 +178,7 @@ bool LMDBManager::debug_dumpAllLmdbTest(const QString& lmdbPath)
 
     MDB_env* env = nullptr;
     MDB_txn* txn = nullptr;
-    MDB_dbi nodes_dbi = 0, children_dbi = 0, paths_dbi = 0;
+    MDB_dbi nodes_dbi = 0, children_dbi = 0, paths_dbi = 0, inode_map_dbi = 0;
 
     if (mdb_env_create(&env) != 0) {
         qCritical() << "[LMDBManager] Debug: env Create Failed";
@@ -204,6 +204,7 @@ bool LMDBManager::debug_dumpAllLmdbTest(const QString& lmdbPath)
     if (mdb_dbi_open(txn, "nodes", 0, &nodes_dbi) != 0) nodes_dbi = 0;
     if (mdb_dbi_open(txn, "children", 0, &children_dbi) != 0) children_dbi = 0;
     if (mdb_dbi_open(txn, "paths", 0, &paths_dbi) != 0) paths_dbi = 0;
+    if (mdb_dbi_open(txn, "inode_map", 0, &inode_map_dbi) != 0) inode_map_dbi = 0;
 
     MDB_cursor* cursor = nullptr;
     MDB_val k, v;
@@ -249,7 +250,7 @@ bool LMDBManager::debug_dumpLmdbFirst20(const QString& lmdbPath)
 
     MDB_env* env = nullptr;
     MDB_txn* txn = nullptr;
-    MDB_dbi nodes_dbi = 0, children_dbi = 0, paths_dbi = 0;
+    MDB_dbi nodes_dbi = 0, children_dbi = 0, paths_dbi = 0, inode_map_dbi = 0;
 
     if (mdb_env_create(&env) != 0) {
         qCritical() << "[LMDBManager] Debug: env Create Failed";
@@ -275,6 +276,7 @@ bool LMDBManager::debug_dumpLmdbFirst20(const QString& lmdbPath)
     if (mdb_dbi_open(txn, "nodes", 0, &nodes_dbi) != 0) nodes_dbi = 0;
     if (mdb_dbi_open(txn, "children", 0, &children_dbi) != 0) children_dbi = 0;
     if (mdb_dbi_open(txn, "paths", 0, &paths_dbi) != 0) paths_dbi = 0;
+    if (mdb_dbi_open(txn, "inode_map", 0, &inode_map_dbi) != 0) inode_map_dbi = 0;
 
     MDB_cursor* cursor = nullptr;
     MDB_val k, v;
@@ -331,6 +333,25 @@ bool LMDBManager::debug_dumpLmdbFirst20(const QString& lmdbPath)
             QString keyStr = QString::fromUtf8(static_cast<char*>(k.mv_data), (int)k.mv_size);
             uint64_t mapped = read_u64(v);
             qInfo() << keyStr << "=>" << mapped;
+            count++;
+        }
+        mdb_cursor_close(cursor);
+    }
+
+    qInfo() << "---- INODE_MAP (first 20) ----";
+    count = 0;
+    if (inode_map_dbi && mdb_cursor_open(txn, inode_map_dbi, &cursor) == 0) {
+        while (count < 20 && mdb_cursor_get(cursor, &k, &v, MDB_NEXT) == 0) {
+            if (k.mv_size >= (int)(sizeof(uint64_t) * 2)) {
+                uint64_t part = 0;
+                uint64_t inode = 0;
+                memcpy(&part, k.mv_data, sizeof(part));
+                memcpy(&inode, (char*)k.mv_data + sizeof(part), sizeof(inode));
+                uint64_t mapped = read_u64(v);
+                qInfo() << "part:" << part << "inode:" << inode << "=> node_id:" << mapped;
+            } else {
+                qInfo() << "(inode_map Raw Key Size:" << (int)k.mv_size << ")";
+            }
             count++;
         }
         mdb_cursor_close(cursor);

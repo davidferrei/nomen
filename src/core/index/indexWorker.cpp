@@ -25,6 +25,7 @@ void IndexWorker::run()
         lmdb.debug_dumpAllLmdbTest(lmdbPath);
         lmdb.debug_dumpLmdbFirst20(lmdbPath);
         
+        //FIXME: Save Ingested = True to DS in DB
 
         qDebug() << "[IndexWorker] Indexing Finished for:" << dataSource.filePath;
         emit finished();
