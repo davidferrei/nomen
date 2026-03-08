@@ -288,14 +288,7 @@ bool LMDBManager::debug_dumpLmdbFirst20(const QString& lmdbPath)
         while (count < 20 && mdb_cursor_get(cursor, &k, &v, MDB_NEXT) == 0) {
             uint64_t id = read_u64(k);
 
-            struct NodeMetadata {
-                uint64_t inode;
-                uint64_t size;
-                uint64_t ctime;
-                uint64_t mtime;
-                uint8_t type;
-                uint8_t is_dir;
-            } meta{};
+            NodeMetadata meta{};
 
             if (v.mv_size >= (int)sizeof(meta)) {
                 memcpy(&meta, v.mv_data, sizeof(meta));
@@ -342,13 +335,15 @@ bool LMDBManager::debug_dumpLmdbFirst20(const QString& lmdbPath)
     count = 0;
     if (inode_map_dbi && mdb_cursor_open(txn, inode_map_dbi, &cursor) == 0) {
         while (count < 20 && mdb_cursor_get(cursor, &k, &v, MDB_NEXT) == 0) {
-            if (k.mv_size >= (int)(sizeof(uint64_t) * 2)) {
+            if (k.mv_size >= (int)(sizeof(uint64_t) * 3)) {
                 uint64_t part = 0;
+                uint64_t fsIdx = 0;
                 uint64_t inode = 0;
                 memcpy(&part, k.mv_data, sizeof(part));
-                memcpy(&inode, (char*)k.mv_data + sizeof(part), sizeof(inode));
+                memcpy(&fsIdx, (char*)k.mv_data + sizeof(part), sizeof(fsIdx));
+                memcpy(&inode, (char*)k.mv_data + sizeof(part) + sizeof(fsIdx), sizeof(inode));
                 uint64_t mapped = read_u64(v);
-                qInfo() << "part:" << part << "inode:" << inode << "=> node_id:" << mapped;
+                qInfo() << "part:" << part << "fs:" << fsIdx << "inode:" << inode << "=> node_id:" << mapped;
             } else {
                 qInfo() << "(inode_map Raw Key Size:" << (int)k.mv_size << ")";
             }

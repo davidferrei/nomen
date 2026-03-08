@@ -2,6 +2,8 @@
 #define LMDBMANAGER_H
 
 #include "../logging/performancemeasure.h"
+#include "data/index/nodeMetaData.h"
+
 
 #include <QByteArray>
 #include <QDebug>

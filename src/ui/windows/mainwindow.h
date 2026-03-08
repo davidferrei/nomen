@@ -4,8 +4,10 @@
 #include "core/caseManager/casemanager.h"
 #include "core/index/indexManager.h"
 #include "core/caseDBManager/repositories/datasourceRepository.h"
+#include "../../core/lmdb/FSIndexRepository.h"
 
-
+#include <QLabel>
+#include <QMessageBox>
 #include <QMainWindow>
 
 QT_BEGIN_NAMESPACE

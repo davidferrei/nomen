@@ -1,4 +1,0 @@
-#ifndef INDEXJOBDATA_H
-#define INDEXJOBDATA_H
-
-#endif // INDEXJOBDATA_H

@@ -1,6 +1,4 @@
 #include "tskwalker.h"
-#include <cstring>
-#include <vector>
 
 struct WalkContext {
     MDB_txn* txn;
@@ -46,11 +44,13 @@ static TSK_WALK_RET_ENUM file_callback(
 
     uint64_t parent_id = 0;
     if (fs_file->name->par_addr != 0) {
-        unsigned char ikbuf[16];
+        unsigned char ikbuf[24];
         uint64_t part = (uint64_t)ctx->partitionId;
+        uint64_t fsIdx = 0;
         uint64_t par_addr = (uint64_t)fs_file->name->par_addr;
         memcpy(ikbuf, &part, sizeof(part));
-        memcpy(ikbuf + sizeof(part), &par_addr, sizeof(par_addr));
+        memcpy(ikbuf + sizeof(part), &fsIdx, sizeof(fsIdx));
+        memcpy(ikbuf + sizeof(part) + sizeof(fsIdx), &par_addr, sizeof(par_addr));
         MDB_val pk{ sizeof(ikbuf), ikbuf };
         MDB_val pv{};
         if (mdb_get(ctx->txn, ctx->inode_map_dbi, &pk, &pv) == 0)
@@ -63,22 +63,17 @@ static TSK_WALK_RET_ENUM file_callback(
     uint64_t node_id = ctx->next_node_id++;
     uint64_t inode = fs_file->name->meta_addr;
 
-    unsigned char ikbuf2[16];
+    unsigned char ikbuf2[24];
     uint64_t part = (uint64_t)ctx->partitionId;
+    uint64_t fsIdx = 0;
     memcpy(ikbuf2, &part, sizeof(part));
-    memcpy(ikbuf2 + sizeof(part), &inode, sizeof(inode));
+    memcpy(ikbuf2 + sizeof(part), &fsIdx, sizeof(fsIdx));
+    memcpy(ikbuf2 + sizeof(part) + sizeof(fsIdx), &inode, sizeof(inode));
     MDB_val ik{ sizeof(ikbuf2), ikbuf2 };
     MDB_val iv{ sizeof(node_id), &node_id };
     mdb_put(ctx->txn, ctx->inode_map_dbi, &ik, &iv, 0);
 
-    struct NodeMetadata {
-        uint64_t inode;
-        uint64_t size;
-        uint64_t ctime;
-        uint64_t mtime;
-        uint8_t type;
-        uint8_t is_dir;
-    } meta{};
+    NodeMetadata meta{};
 
     meta.inode = fs_file->name->meta_addr;
     meta.size  = fs_file->meta ? fs_file->meta->size : 0;
@@ -91,7 +86,9 @@ static TSK_WALK_RET_ENUM file_callback(
     MDB_val nv{ sizeof(meta), &meta };
     mdb_put(ctx->txn, ctx->nodes_dbi, &nk, &nv, 0);
 
-    MDB_val pkpath{ static_cast<size_t>(fullUtf8.size()), const_cast<char*>(fullUtf8.data()) };
+    QString namespaced = QString("%1:%2:%3").arg((uint64_t)part).arg((uint64_t)0).arg(fullPath);
+    QByteArray nsUtf8 = namespaced.toUtf8();
+    MDB_val pkpath{ static_cast<size_t>(nsUtf8.size()), const_cast<char*>(nsUtf8.data()) };
     MDB_val pvpath{ sizeof(node_id), &node_id };
     mdb_put(ctx->txn, ctx->paths_dbi, &pkpath, &pvpath, 0);
 
@@ -201,6 +198,21 @@ bool TskWalker::walkImage(const QString &imagePath, LMDBManager &lmdb)
 
     qInfo() << "[TskWalker] Starting Directory Walk";
 
+    uint64_t top_root_id = ctx.next_node_id++;
+    struct RootMeta { uint8_t is_dir; } toproot{};
+    toproot.is_dir = 1;
+    if (nodes_dbi) {
+        MDB_val trk{ sizeof(top_root_id), &top_root_id };
+        MDB_val trv{ sizeof(toproot), &toproot };
+        mdb_put(ctx.txn, nodes_dbi, &trk, &trv, 0);
+    }
+    if (paths_dbi) {
+        QByteArray slash = QByteArray("/");
+        MDB_val pk{ static_cast<size_t>(slash.size()), const_cast<char*>(slash.data()) };
+        MDB_val pv{ sizeof(top_root_id), &top_root_id };
+        mdb_put(ctx.txn, paths_dbi, &pk, &pv, 0);
+    }
+
     for (auto &p : fslist) {
         TSK_FS_INFO* curfs = p.first;
         int partIdx = p.second;
@@ -213,7 +225,8 @@ bool TskWalker::walkImage(const QString &imagePath, LMDBManager &lmdb)
         MDB_val rv{ sizeof(root), &root };
         if (nodes_dbi) mdb_put(txn, nodes_dbi, &rk, &rv, 0);
 
-        QString partPath = QString("/part%1").arg(partIdx);
+        uint64_t fsIdx = 0;
+        QString partPath = QString("%1:%2:/").arg((uint64_t)partIdx).arg((uint64_t)fsIdx);
         QByteArray partUtf8 = partPath.toUtf8();
         if (paths_dbi) {
             MDB_val pk{ static_cast<size_t>(partUtf8.size()), const_cast<char*>(partUtf8.data()) };
@@ -222,14 +235,22 @@ bool TskWalker::walkImage(const QString &imagePath, LMDBManager &lmdb)
         }
 
         if (inode_map_dbi) {
-            unsigned char ikbuf[16];
+            unsigned char ikbuf[24];
             uint64_t part = (uint64_t)partIdx;
             uint64_t root_inode = curfs->root_inum;
+            uint64_t fsIdxLocal = fsIdx;
             memcpy(ikbuf, &part, sizeof(part));
-            memcpy(ikbuf + sizeof(part), &root_inode, sizeof(root_inode));
+            memcpy(ikbuf + sizeof(part), &fsIdxLocal, sizeof(fsIdxLocal));
+            memcpy(ikbuf + sizeof(part) + sizeof(fsIdxLocal), &root_inode, sizeof(root_inode));
             MDB_val ik{ sizeof(ikbuf), ikbuf };
             MDB_val iv{ sizeof(part_root_id), &part_root_id };
             mdb_put(txn, inode_map_dbi, &ik, &iv, 0);
+        }
+
+        if (children_dbi) {
+            MDB_val ck{ sizeof(top_root_id), &top_root_id };
+            MDB_val cv{ sizeof(part_root_id), &part_root_id };
+            mdb_put(ctx.txn, children_dbi, &ck, &cv, 0);
         }
 
         tsk_fs_dir_walk(curfs, curfs->root_inum, TSK_FS_DIR_WALK_FLAG_RECURSE, file_callback, &ctx);

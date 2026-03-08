@@ -5,12 +5,15 @@
 
 #include "../../lmdb/lmdbManager.h"
 
+#include "data/index/nodeMetaData.h"
+
+
 #include <QString>
 #include <QDebug>
 #include <QList>
 
 #include <cstring>
-
+#include <vector>
 
 class LMDBManager;
 
