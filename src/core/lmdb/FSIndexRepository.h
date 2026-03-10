@@ -29,8 +29,14 @@ public:
     bool getNode(uint64_t nodeId, NodeMetadata &out);
     QVector<uint64_t> getChildren(uint64_t parentId);
     bool getPathForNode(uint64_t nodeId, QString &outPath);
-    void debugListChildrenInDb(uint64_t parentId);
     bool getNodeByInode(uint64_t part, uint64_t fsIdx, uint64_t inode, uint64_t &outNodeId);
+
+    //Getters
+    
+
+    //Debug
+    void debugListChildrenInDb(uint64_t parentId);
+
 
 private:
     QString path;

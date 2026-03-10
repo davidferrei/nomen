@@ -24,12 +24,7 @@ public:
     ~LMDBManager();
 
     bool initialize(const QString& path);
-    bool writeTestData();
-    bool readTestData();
     void close();
-    
-    bool putBytes(const QByteArray& key, const QByteArray& value);
-    bool getBytes(const QByteArray& key, QByteArray& outValue);
 
     MDB_env* envHandle() const { return env; }
     
