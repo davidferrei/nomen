@@ -1,6 +1,5 @@
 #include "tskwalker.h"
 
-
 static TSK_WALK_RET_ENUM file_callback(
     TSK_FS_FILE* fs_file,
     const char* path,
@@ -34,7 +33,7 @@ static TSK_WALK_RET_ENUM file_callback(
     if (fs_file->name->par_addr != 0) {
         unsigned char ikbuf[24];
         uint64_t part = (uint64_t)ctx->partitionId;
-        uint64_t fsIdx = 0;
+        uint64_t fsIdx = (uint64_t)ctx->fsIndex;
         par_addr = (uint64_t)fs_file->name->par_addr;
         memcpy(ikbuf, &part, sizeof(part));
         memcpy(ikbuf + sizeof(part), &fsIdx, sizeof(fsIdx));
@@ -55,7 +54,7 @@ static TSK_WALK_RET_ENUM file_callback(
 
     unsigned char ikbuf2[24];
     uint64_t part = (uint64_t)ctx->partitionId;
-    uint64_t fsIdx = 0;
+    uint64_t fsIdx = (uint64_t)ctx->fsIndex;
     memcpy(ikbuf2, &part, sizeof(part));
     memcpy(ikbuf2 + sizeof(part), &fsIdx, sizeof(fsIdx));
     memcpy(ikbuf2 + sizeof(part) + sizeof(fsIdx), &inode, sizeof(inode));
@@ -76,7 +75,7 @@ static TSK_WALK_RET_ENUM file_callback(
     MDB_val nv{ sizeof(meta), &meta };
     mdb_put(ctx->lmdb_txn, ctx->lmdb_nodes_dbi, &nk, &nv, 0);
 
-    QString namespaced = QString("%1:%2:%3").arg((uint64_t)part).arg((uint64_t)0).arg(fullPath);
+    QString namespaced = QString::number((qulonglong)part) + ":" + QString::number((qulonglong)fsIdx) + ":" + fullPath;
     QByteArray nsUtf8 = namespaced.toUtf8();
     MDB_val pkpath{ static_cast<size_t>(nsUtf8.size()), const_cast<char*>(nsUtf8.data()) };
     MDB_val pvpath{ sizeof(node_id), &node_id };
@@ -206,7 +205,10 @@ bool TskWalker::walkImage(const QString &imagePath, LMDBManager &lmdb)
 
     qInfo() << "[TskWalker] Volume System Probe Returned" << (vs ? "Present" : "None");
 
-    std::vector<std::pair<TSK_FS_INFO*, int>> fslist;
+    std::vector<std::tuple<TSK_FS_INFO*, int, int>> fsVector;
+                     //[fsInfo, partitionID, fsIndex]
+
+    std::unordered_map<int,int> fsIndex;
 
     if (vs) 
     {
@@ -220,7 +222,11 @@ bool TskWalker::walkImage(const QString &imagePath, LMDBManager &lmdb)
 
             qInfo() << "[TskWalker] Probing Partition" << i << "FS=" << (pfs ? "OK" : "No");
 
-            if (pfs) fslist.emplace_back(pfs, (int)i);
+            if (pfs) 
+            {
+                int partitionID = (int)i;
+                fsVector.emplace_back(pfs, partitionID, fsIndex[partitionID]++);
+            }
         }
 
         tsk_vs_close(vs);
@@ -231,10 +237,13 @@ bool TskWalker::walkImage(const QString &imagePath, LMDBManager &lmdb)
 
         qInfo() << "[TskWalker] Probing Image-Level Filesystem, Result=" << (pfs ? "OK" : "No");
 
-        if (pfs) fslist.emplace_back(pfs, 0);
+        if (pfs) 
+        {
+            fsVector.emplace_back(pfs, 0, fsIndex[0]++);
+        }
     }
 
-    if (fslist.empty()) 
+    if (fsVector.empty()) 
     {
         qWarning() << "[TskWalker] Failed to Find Filesystems in:" << imagePath;
 
@@ -292,10 +301,12 @@ bool TskWalker::walkImage(const QString &imagePath, LMDBManager &lmdb)
 
 
     // Iterate Filesystems
-    for (auto& [fsInfo, partitionID] : fslist) 
+    for (auto& [fsInfo, partitionID, fsIndex] : fsVector) 
     {
         walk_ctx.partitionId = partitionID;
+        walk_ctx.fsIndex = fsIndex;
 
+        // Create a Node for the FS Root
         uint64_t part_root_id = walk_ctx.next_node_id++;
         NodeMetadata fsRoot{};
         fsRoot.is_dir = 1;
@@ -308,43 +319,47 @@ bool TskWalker::walkImage(const QString &imagePath, LMDBManager &lmdb)
         MDB_val rv{ sizeof(fsRoot), &fsRoot };
         mdb_put(walk_ctx.lmdb_txn, walk_ctx.lmdb_nodes_dbi, &rk, &rv, 0);
 
-        uint64_t fsIdx = 0; //FIXME: Handle Multiple FS per Partition
-        QString partPath = QString("%1:%2:/").arg((uint64_t)partitionID).arg((uint64_t)fsIdx);
-        QByteArray partUtf8 = partPath.toUtf8();
+        uint64_t fsIdx64 = (uint64_t)walk_ctx.fsIndex;
+        QString partitionPath = QString::number((qulonglong)partitionID) + ":" + QString::number((qulonglong)fsIdx64) + ":/";
+        QByteArray partitionUtf8 = partitionPath.toUtf8();
 
 
-        if (paths_dbi) {
-            MDB_val pk{ static_cast<size_t>(partUtf8.size()), const_cast<char*>(partUtf8.data()) };
-            MDB_val pv{ sizeof(part_root_id), &part_root_id };
-            mdb_put(walk_ctx.lmdb_txn, walk_ctx.lmdb_paths_dbi, &pk, &pv, 0);
-        }
+        MDB_val pk{ static_cast<size_t>(partitionUtf8.size()), const_cast<char*>(partitionUtf8.data()) };
+        MDB_val pv{ sizeof(part_root_id), &part_root_id };
+        mdb_put(walk_ctx.lmdb_txn, walk_ctx.lmdb_paths_dbi, &pk, &pv, 0);
+        
 
-        if (inode_map_dbi) {
-            unsigned char ikbuf[24];
-            uint64_t part = (uint64_t)partitionID;
-            uint64_t root_inode = fsInfo->root_inum;
-            uint64_t fsIdxLocal = fsIdx;
-            memcpy(ikbuf, &part, sizeof(part));
-            memcpy(ikbuf + sizeof(part), &fsIdxLocal, sizeof(fsIdxLocal));
-            memcpy(ikbuf + sizeof(part) + sizeof(fsIdxLocal), &root_inode, sizeof(root_inode));
-            MDB_val ik{ sizeof(ikbuf), ikbuf };
-            MDB_val iv{ sizeof(part_root_id), &part_root_id };
-            mdb_put(walk_ctx.lmdb_txn, walk_ctx.lmdb_inode_map_dbi, &ik, &iv, 0);
-        }
+        unsigned char iNodeArray[24];
+        uint64_t part = (uint64_t)partitionID;
+        uint64_t root_inode = fsInfo->root_inum;
+        uint64_t fsIdxLocal = fsIdx64;
+        memcpy(iNodeArray, &part, sizeof(part));
+        memcpy(iNodeArray + sizeof(part), &fsIdxLocal, sizeof(fsIdxLocal));
+        memcpy(iNodeArray + sizeof(part) + sizeof(fsIdxLocal), &root_inode, sizeof(root_inode));
+        MDB_val ik{ sizeof(iNodeArray), iNodeArray };
+        MDB_val iv{ sizeof(part_root_id), &part_root_id };
+        mdb_put(walk_ctx.lmdb_txn, walk_ctx.lmdb_inode_map_dbi, &ik, &iv, 0);
+    
 
         MDB_val ck{ sizeof(top_root_id), &top_root_id };
         MDB_val cv{ sizeof(part_root_id), &part_root_id };
         mdb_put(walk_ctx.lmdb_txn, walk_ctx.lmdb_children_dbi, &ck, &cv, 0);
 
+        //HERE
         tsk_fs_dir_walk(fsInfo, fsInfo->root_inum, TSK_FS_DIR_WALK_FLAG_RECURSE, file_callback, &walk_ctx);
-        qInfo() << "[TskWalker] Directory Walk Returned for partition" << partitionID;
 
         tsk_fs_close(fsInfo);
+
+        qInfo() << "[TskWalker] Directory Walk Returned for Partition" << partitionID;
+
     }
 
-    if (walk_ctx.lmdb_txn) {
+
+    if (walk_ctx.lmdb_txn) 
+    {
         int rc = mdb_txn_commit(walk_ctx.lmdb_txn);
-        if (rc != 0) {
+        if (rc != 0) 
+        {
             qWarning() << "[TskWalker] Failed to Commit LMDB txn:" << mdb_strerror(rc);
             mdb_txn_abort(walk_ctx.lmdb_txn);
         }
@@ -358,10 +373,13 @@ bool TskWalker::walkImage(const QString &imagePath, LMDBManager &lmdb)
     tsk_fs_close(fs);
     tsk_img_close(img);
 
+    qInfo() << "[TskWalker] ########################################################";
     qInfo() << "[TskWalker] Disk Walk Completed:";
     qInfo() << "[TskWalker] Directories:" << walk_ctx.dir_count;
     qInfo() << "[TskWalker] Files:" << walk_ctx.file_count;
-    qInfo() << "[TskWalker] Total Nodes:" << (walk_ctx.file_count + walk_ctx.dir_count + 1);
+    qInfo() << "[TskWalker] Total Nodes:" << (walk_ctx.file_count + walk_ctx.dir_count + 1);    
+    qInfo() << "[TskWalker] ########################################################";
+
 
     return true;
 }

@@ -14,6 +14,8 @@
 
 #include <cstring>
 #include <vector>
+#include <unordered_map>
+
 
 class LMDBManager;
 
@@ -28,6 +30,7 @@ struct WalkContext
     uint64_t file_count;
     uint64_t dir_count;
     int partitionId;
+    int fsIndex;
     MDB_env* lmdb_env;
     uint64_t lmdb_commit_batch;
 };
