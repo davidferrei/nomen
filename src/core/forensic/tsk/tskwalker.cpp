@@ -271,78 +271,75 @@ bool TskWalker::walkImage(const QString &imagePath, LMDBManager &lmdb)
 
     qInfo() << "[TskWalker] Starting Directory Walk ...";
 
-    // HERE
-
+    // Defining a Syntetic Root Node for the DS
     uint64_t top_root_id = walk_ctx.next_node_id++;
-    NodeMetadata toproot{};
-    toproot.is_dir = 1;
-    toproot.inode = 0;
-    toproot.size = 0;
-    toproot.type = 0;
-    toproot.ctime = 0;
-    toproot.mtime = 0;
+    NodeMetadata diskRootNode{};
+    diskRootNode.is_dir = 1;
+    diskRootNode.inode = 0;
+    diskRootNode.size = 0;
+    diskRootNode.type = 0;
+    diskRootNode.ctime = 0;
+    diskRootNode.mtime = 0;
 
-    if (nodes_dbi) {
-        MDB_val trk{ sizeof(top_root_id), &top_root_id };
-        MDB_val trv{ sizeof(toproot), &toproot };
-        mdb_put(walk_ctx.lmdb_txn, nodes_dbi, &trk, &trv, 0);
-    }
-    if (paths_dbi) {
-        QByteArray slash = QByteArray("/");
-        MDB_val pk{ static_cast<size_t>(slash.size()), const_cast<char*>(slash.data()) };
-        MDB_val pv{ sizeof(top_root_id), &top_root_id };
-        mdb_put(walk_ctx.lmdb_txn, paths_dbi, &pk, &pv, 0);
-    }
+    MDB_val trk{ sizeof(top_root_id), &top_root_id };
+    MDB_val trv{ sizeof(diskRootNode), &diskRootNode };
+    mdb_put(walk_ctx.lmdb_txn, walk_ctx.lmdb_nodes_dbi, &trk, &trv, 0);
 
-    for (auto &p : fslist) {
-        TSK_FS_INFO* curfs = p.first;
-        int partIdx = p.second;
-        walk_ctx.partitionId = partIdx;
+    QByteArray slash = QByteArray("/");
+    MDB_val pk{ static_cast<size_t>(slash.size()), const_cast<char*>(slash.data()) };
+    MDB_val pv{ sizeof(top_root_id), &top_root_id };
+    mdb_put(walk_ctx.lmdb_txn, walk_ctx.lmdb_paths_dbi, &pk, &pv, 0);
+
+
+    // Iterate Filesystems
+    for (auto& [fsInfo, partitionID] : fslist) 
+    {
+        walk_ctx.partitionId = partitionID;
 
         uint64_t part_root_id = walk_ctx.next_node_id++;
-        NodeMetadata root{};
-        root.is_dir = 1;
-        root.inode = curfs->root_inum;
-        root.size = 0;
-        root.type = 0;
-        root.ctime = 0;
-        root.mtime = 0;
+        NodeMetadata fsRoot{};
+        fsRoot.is_dir = 1;
+        fsRoot.inode = fsInfo->root_inum;
+        fsRoot.size = 0;
+        fsRoot.type = 0;
+        fsRoot.ctime = 0;
+        fsRoot.mtime = 0;
         MDB_val rk{ sizeof(part_root_id), &part_root_id };
-        MDB_val rv{ sizeof(root), &root };
-        if (nodes_dbi) mdb_put(walk_ctx.lmdb_txn, nodes_dbi, &rk, &rv, 0);
+        MDB_val rv{ sizeof(fsRoot), &fsRoot };
+        mdb_put(walk_ctx.lmdb_txn, walk_ctx.lmdb_nodes_dbi, &rk, &rv, 0);
 
-        uint64_t fsIdx = 0;
-        QString partPath = QString("%1:%2:/").arg((uint64_t)partIdx).arg((uint64_t)fsIdx);
+        uint64_t fsIdx = 0; //FIXME: Handle Multiple FS per Partition
+        QString partPath = QString("%1:%2:/").arg((uint64_t)partitionID).arg((uint64_t)fsIdx);
         QByteArray partUtf8 = partPath.toUtf8();
+
+
         if (paths_dbi) {
             MDB_val pk{ static_cast<size_t>(partUtf8.size()), const_cast<char*>(partUtf8.data()) };
             MDB_val pv{ sizeof(part_root_id), &part_root_id };
-            mdb_put(walk_ctx.lmdb_txn, paths_dbi, &pk, &pv, 0);
+            mdb_put(walk_ctx.lmdb_txn, walk_ctx.lmdb_paths_dbi, &pk, &pv, 0);
         }
 
         if (inode_map_dbi) {
             unsigned char ikbuf[24];
-            uint64_t part = (uint64_t)partIdx;
-            uint64_t root_inode = curfs->root_inum;
+            uint64_t part = (uint64_t)partitionID;
+            uint64_t root_inode = fsInfo->root_inum;
             uint64_t fsIdxLocal = fsIdx;
             memcpy(ikbuf, &part, sizeof(part));
             memcpy(ikbuf + sizeof(part), &fsIdxLocal, sizeof(fsIdxLocal));
             memcpy(ikbuf + sizeof(part) + sizeof(fsIdxLocal), &root_inode, sizeof(root_inode));
             MDB_val ik{ sizeof(ikbuf), ikbuf };
             MDB_val iv{ sizeof(part_root_id), &part_root_id };
-            mdb_put(walk_ctx.lmdb_txn, inode_map_dbi, &ik, &iv, 0);
+            mdb_put(walk_ctx.lmdb_txn, walk_ctx.lmdb_inode_map_dbi, &ik, &iv, 0);
         }
 
-        if (children_dbi) {
-            MDB_val ck{ sizeof(top_root_id), &top_root_id };
-            MDB_val cv{ sizeof(part_root_id), &part_root_id };
-            mdb_put(walk_ctx.lmdb_txn, children_dbi, &ck, &cv, 0);
-        }
+        MDB_val ck{ sizeof(top_root_id), &top_root_id };
+        MDB_val cv{ sizeof(part_root_id), &part_root_id };
+        mdb_put(walk_ctx.lmdb_txn, walk_ctx.lmdb_children_dbi, &ck, &cv, 0);
 
-        tsk_fs_dir_walk(curfs, curfs->root_inum, TSK_FS_DIR_WALK_FLAG_RECURSE, file_callback, &walk_ctx);
-        qInfo() << "[TskWalker] Directory Walk Returned for partition" << partIdx;
+        tsk_fs_dir_walk(fsInfo, fsInfo->root_inum, TSK_FS_DIR_WALK_FLAG_RECURSE, file_callback, &walk_ctx);
+        qInfo() << "[TskWalker] Directory Walk Returned for partition" << partitionID;
 
-        tsk_fs_close(curfs);
+        tsk_fs_close(fsInfo);
     }
 
     if (walk_ctx.lmdb_txn) {
