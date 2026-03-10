@@ -22,6 +22,7 @@ bool LMDBManager::initialize(const QString& path)
     qInfo() << "[LMDBManager] Initializing Environment";
 
     int rc = mdb_env_create(&env);
+
     if (rc != 0)
     {
         qCritical() << "[LMDBManager] Env Create Failed:" << mdb_strerror(rc);
@@ -29,7 +30,7 @@ bool LMDBManager::initialize(const QString& path)
     }
 
     mdb_env_set_maxdbs(env, 16);
-    mdb_env_set_mapsize(env, 1024ULL * 1024ULL * 1024ULL * 1ULL); // 1 GB
+    mdb_env_set_mapsize(env, 1024ULL * 1024ULL * 1024ULL * 1ULL); // 1 GB //TODO: Make this configurable
 
     QDir dir;
     if (!dir.exists(path))
@@ -80,7 +81,10 @@ bool LMDBManager::initialize(const QString& path)
 void LMDBManager::close()
 {
     if (!initialized)
+    {
+        qInfo() << "[LMDBManager] Environment Not Initialized, Nothing to Close";
         return;
+    }
 
     qInfo() << "[LMDBManager] Closing Environment";
 
@@ -212,7 +216,7 @@ bool LMDBManager::debug_dumpLmdbFirst20(const QString& lmdbPath)
     MDB_val k, v;
     int count = 0;
 
-    qInfo() << "---- NODES (first 20) ----";
+    qInfo() << "---- NODES (First 20) ----";
     count = 0;
     if (nodes_dbi && mdb_cursor_open(txn, nodes_dbi, &cursor) == 0) {
         while (count < 20 && mdb_cursor_get(cursor, &k, &v, MDB_NEXT) == 0) {
@@ -237,7 +241,7 @@ bool LMDBManager::debug_dumpLmdbFirst20(const QString& lmdbPath)
         mdb_cursor_close(cursor);
     }
 
-    qInfo() << "---- CHILDREN (first 20) ----";
+    qInfo() << "---- CHILDREN (First 20) ----";
     count = 0;
     if (children_dbi && mdb_cursor_open(txn, children_dbi, &cursor) == 0) {
         while (count < 20 && mdb_cursor_get(cursor, &k, &v, MDB_NEXT) == 0) {
@@ -249,7 +253,7 @@ bool LMDBManager::debug_dumpLmdbFirst20(const QString& lmdbPath)
         mdb_cursor_close(cursor);
     }
 
-    qInfo() << "---- PATHS (first 20) ----";
+    qInfo() << "---- PATHS (First 20) ----";
     count = 0;
     if (paths_dbi && mdb_cursor_open(txn, paths_dbi, &cursor) == 0) {
         while (count < 20 && mdb_cursor_get(cursor, &k, &v, MDB_NEXT) == 0) {
@@ -261,7 +265,7 @@ bool LMDBManager::debug_dumpLmdbFirst20(const QString& lmdbPath)
         mdb_cursor_close(cursor);
     }
 
-    qInfo() << "---- INODE_MAP (first 20) ----";
+    qInfo() << "---- INODE_MAP (First 20) ----";
     count = 0;
     if (inode_map_dbi && mdb_cursor_open(txn, inode_map_dbi, &cursor) == 0) {
         while (count < 20 && mdb_cursor_get(cursor, &k, &v, MDB_NEXT) == 0) {
@@ -284,5 +288,6 @@ bool LMDBManager::debug_dumpLmdbFirst20(const QString& lmdbPath)
 
     mdb_txn_abort(txn);
     mdb_env_close(env);
+    
     return true;
 }

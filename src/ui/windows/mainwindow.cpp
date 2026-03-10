@@ -147,9 +147,9 @@ void MainWindow::loadDataSources()
 
         // if (ds.indexed)
         // {
-            qDebug() << "Disk Already Indexed:" << ds.filePath;
+            // qDebug() << "Disk Already Indexed:" << ds.filePath;
 
-            FSIndexRepository repo(caseManager.getCurrentCase().casePath + "/indexes/disk-" % QString::number(ds.id));
+            // FSIndexRepository repo(caseManager.getCurrentCase().casePath + "/indexes/disk-" % QString::number(ds.id));
 
             // if (repo.open())
             // {
@@ -254,17 +254,17 @@ void MainWindow::loadDataSources()
             //         qWarning() << bootPath << "not Found in LMDB";
             //     }
 
-                repo.close();
-            }
-            else
-            {
-                qWarning() << "Failed to Open FS Index Repository for:" << lmdbPath;
-            }
+                // repo.close();
+            // }
+            // else
+            // {
+            //     qWarning() << "Failed to Open FS Index Repository for:" << lmdbPath;
+            // }
         // }
         // else
         // {
-        //     qDebug() << "Disk Requires Ingest:" << ds.filePath;
-        //     indexManager->CreateJob(ds, caseManager.getCurrentCase().casePath);
+            qDebug() << "Disk Requires Ingest:" << ds.filePath;
+            indexManager->CreateJob(ds, caseManager.getCurrentCase().casePath);
         // }
     }
 }

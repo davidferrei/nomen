@@ -12,6 +12,7 @@ void IndexWorker::run()
         QString lmdbPath = caseFolderPath + "/indexes/" + "disk-" % QString::number(dataSource.id);
 
         LMDBManager lmdb;
+        
         if (!lmdb.initialize(lmdbPath)) {
             emit failed("Failed to Initialize LMDB at " + lmdbPath);
             return;
@@ -22,9 +23,10 @@ void IndexWorker::run()
             return;
         }
 
-        //TODO: Print only in Debug Build
-        lmdb.debug_dumpAllLmdbTest(lmdbPath);
-        lmdb.debug_dumpLmdbFirst20(lmdbPath);
+        #ifdef QT_DEBUG
+            lmdb.debug_dumpAllLmdbTest(lmdbPath);
+            lmdb.debug_dumpLmdbFirst20(lmdbPath);
+        #endif
         
         //FIXME: Save Ingested = True to DS in DB
 

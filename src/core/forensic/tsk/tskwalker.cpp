@@ -1,18 +1,5 @@
 #include "tskwalker.h"
 
-struct WalkContext {
-    MDB_txn* txn;
-    MDB_dbi nodes_dbi;
-    MDB_dbi children_dbi;
-    MDB_dbi paths_dbi;
-    MDB_dbi inode_map_dbi;
-    uint64_t next_node_id;
-    uint64_t file_count;
-    uint64_t dir_count;
-    int partitionId;
-    MDB_env* env;
-    uint64_t commit_batch;
-};
 
 static TSK_WALK_RET_ENUM file_callback(
     TSK_FS_FILE* fs_file,
@@ -27,7 +14,7 @@ static TSK_WALK_RET_ENUM file_callback(
         return TSK_WALK_CONT;
 
     auto* ctx = static_cast<WalkContext*>(ptr);
-    if (!ctx || !ctx->txn) return TSK_WALK_CONT;
+    if (!ctx || !ctx->lmdb_txn) return TSK_WALK_CONT;
 
     bool is_dir = (fs_file->meta && fs_file->meta->type == TSK_FS_META_TYPE_DIR);
     if (is_dir) ctx->dir_count++; else ctx->file_count++;
@@ -54,7 +41,7 @@ static TSK_WALK_RET_ENUM file_callback(
         memcpy(ikbuf + sizeof(part) + sizeof(fsIdx), &par_addr, sizeof(par_addr));
         MDB_val pk{ sizeof(ikbuf), ikbuf };
         MDB_val pv{};
-        if (mdb_get(ctx->txn, ctx->inode_map_dbi, &pk, &pv) == 0)
+        if (mdb_get(ctx->lmdb_txn, ctx->lmdb_inode_map_dbi, &pk, &pv) == 0)
             parent_id = *static_cast<uint64_t*>(pv.mv_data);
     }
 
@@ -74,7 +61,7 @@ static TSK_WALK_RET_ENUM file_callback(
     memcpy(ikbuf2 + sizeof(part) + sizeof(fsIdx), &inode, sizeof(inode));
     MDB_val ik{ sizeof(ikbuf2), ikbuf2 };
     MDB_val iv{ sizeof(node_id), &node_id };
-    mdb_put(ctx->txn, ctx->inode_map_dbi, &ik, &iv, MDB_NOOVERWRITE);
+    mdb_put(ctx->lmdb_txn, ctx->lmdb_inode_map_dbi, &ik, &iv, MDB_NOOVERWRITE);
 
     NodeMetadata meta{};
 
@@ -87,18 +74,18 @@ static TSK_WALK_RET_ENUM file_callback(
 
     MDB_val nk{ sizeof(node_id), &node_id };
     MDB_val nv{ sizeof(meta), &meta };
-    mdb_put(ctx->txn, ctx->nodes_dbi, &nk, &nv, 0);
+    mdb_put(ctx->lmdb_txn, ctx->lmdb_nodes_dbi, &nk, &nv, 0);
 
     QString namespaced = QString("%1:%2:%3").arg((uint64_t)part).arg((uint64_t)0).arg(fullPath);
     QByteArray nsUtf8 = namespaced.toUtf8();
     MDB_val pkpath{ static_cast<size_t>(nsUtf8.size()), const_cast<char*>(nsUtf8.data()) };
     MDB_val pvpath{ sizeof(node_id), &node_id };
-    mdb_put(ctx->txn, ctx->paths_dbi, &pkpath, &pvpath, 0);
+    mdb_put(ctx->lmdb_txn, ctx->lmdb_paths_dbi, &pkpath, &pvpath, 0);
 
     if (parent_id != 0) {
         MDB_val ck{ sizeof(parent_id), &parent_id };
         MDB_val cv{ sizeof(node_id), &node_id };
-        mdb_put(ctx->txn, ctx->children_dbi, &ck, &cv, 0);
+        mdb_put(ctx->lmdb_txn, ctx->lmdb_children_dbi, &ck, &cv, 0);
     }
 
     // Debug
@@ -106,24 +93,100 @@ static TSK_WALK_RET_ENUM file_callback(
     //     qInfo() << "[TskWalker] Processed Nodes:" << ctx->next_node_id << "Files:" << ctx->file_count << "Dirs:" << ctx->dir_count;
     // }
 
-    if (ctx->commit_batch > 0 && (ctx->next_node_id % ctx->commit_batch) == 0) {
-                int rc = mdb_txn_commit(ctx->txn);
+    if (ctx->lmdb_commit_batch > 0 && (ctx->next_node_id % ctx->lmdb_commit_batch) == 0) {
+                int rc = mdb_txn_commit(ctx->lmdb_txn);
                 if (rc != 0) {
                     qWarning() << "[TskWalker]: Commit Failed During Walk" << node_id << ":" << mdb_strerror(rc);
-                    mdb_txn_abort(ctx->txn);
+                    mdb_txn_abort(ctx->lmdb_txn);
                     return TSK_WALK_STOP;
             }
             MDB_txn* newtxn = nullptr;
-                int rc2 = mdb_txn_begin(ctx->env, nullptr, 0, &newtxn);
+                int rc2 = mdb_txn_begin(ctx->lmdb_env, nullptr, 0, &newtxn);
                 if (rc2 != 0) {
                     qWarning() << "[TskWalker]: Failed to Begin New txn After Commit:" << mdb_strerror(rc2);
                     return TSK_WALK_STOP;
             }
-            ctx->txn = newtxn;
+            ctx->lmdb_txn = newtxn;
         }
 
         return TSK_WALK_CONT;
 }
+
+
+//############################################################################################
+// Helper Functions
+
+static bool setup_lmdb_connection(LMDBManager &lmdb, TSK_IMG_INFO* img, MDB_env*& env, MDB_txn*& txn,
+                                  MDB_dbi &nodes_dbi, MDB_dbi &children_dbi, MDB_dbi &paths_dbi, MDB_dbi &inode_map_dbi)
+{
+    env = lmdb.envHandle();
+    if (!env) 
+    {
+        qWarning() << "[TskWalker] LMDB Environment not Available";
+
+        tsk_img_close(img);
+
+        return false;
+    }
+
+    txn = nullptr;
+    if (mdb_txn_begin(env, nullptr, 0, &txn) != 0) 
+    {
+        qWarning() << "[TskWalker] Failed to Begin LMDB txn";
+
+        tsk_img_close(img);
+
+        return false;
+    }
+
+    qInfo() << "[TskWalker] LMDB Write txn Begin";
+
+    nodes_dbi = 0; children_dbi = 0; paths_dbi = 0; inode_map_dbi = 0;
+    int rc = 0;
+
+    rc = mdb_dbi_open(txn, "nodes", MDB_CREATE, &nodes_dbi);
+    if (rc != 0) 
+    {
+        qWarning() << "[TskWalker] Failed to open LMDB 'nodes' DB:" << mdb_strerror(rc);
+        mdb_txn_abort(txn);
+        tsk_img_close(img);
+        return false;
+    }
+
+    rc = mdb_dbi_open(txn, "children", MDB_CREATE | MDB_DUPSORT, &children_dbi);
+    if (rc != 0) 
+    {
+        qWarning() << "[TskWalker] Failed to open LMDB 'children' DB:" << mdb_strerror(rc);
+        mdb_txn_abort(txn);
+        tsk_img_close(img);
+        return false;
+    }
+
+    rc = mdb_dbi_open(txn, "paths", MDB_CREATE, &paths_dbi);
+    if (rc != 0) 
+    {
+        qWarning() << "[TskWalker] Failed to open LMDB 'paths' DB:" << mdb_strerror(rc);
+        mdb_txn_abort(txn);
+        tsk_img_close(img);
+        return false;
+    }
+
+    rc = mdb_dbi_open(txn, "inode_map", MDB_CREATE, &inode_map_dbi);
+    if (rc != 0) 
+    {
+        qWarning() << "[TskWalker] Failed to open LMDB 'inode_map' DB:" << mdb_strerror(rc);
+        mdb_txn_abort(txn);
+        tsk_img_close(img);
+        return false;
+    }
+
+    return true;
+}
+
+
+
+//############################################################################################
+// TSK walker
 
 bool TskWalker::walkImage(const QString &imagePath, LMDBManager &lmdb)
 {
@@ -131,77 +194,86 @@ bool TskWalker::walkImage(const QString &imagePath, LMDBManager &lmdb)
 
     TSK_IMG_INFO *img = tsk_img_open_sing(imagePath.toUtf8().data(), TSK_IMG_TYPE_DETECT, 0);
     if (!img) {
-        qWarning() << "[TskWalker] Failed to Open Image";
+        qWarning() << "[TskWalker] Failed to Open Image" << imagePath << ":" << tsk_error_get();
         return false;
     }
 
     qInfo() << "[TskWalker] Image Opened Successfully";
 
+
     TSK_FS_INFO *fs = nullptr;
     TSK_VS_INFO *vs = tsk_vs_open(img, 0, TSK_VS_TYPE_DETECT);
+
     qInfo() << "[TskWalker] Volume System Probe Returned" << (vs ? "Present" : "None");
 
     std::vector<std::pair<TSK_FS_INFO*, int>> fslist;
-    if (vs) {
-        for (TSK_PNUM_T i = 0; i < vs->part_count; i++) {
+
+    if (vs) 
+    {
+        for (TSK_PNUM_T i = 0; i < vs->part_count; i++) 
+        {
             const TSK_VS_PART_INFO *part = tsk_vs_part_get(vs, i);
+
             if (!part) continue;
+            
             TSK_FS_INFO* pfs = tsk_fs_open_vol(part, TSK_FS_TYPE_DETECT);
+
             qInfo() << "[TskWalker] Probing Partition" << i << "FS=" << (pfs ? "OK" : "No");
+
             if (pfs) fslist.emplace_back(pfs, (int)i);
         }
+
         tsk_vs_close(vs);
-    } else {
+    } 
+    else 
+    {
         TSK_FS_INFO* pfs = tsk_fs_open_img(img, 0, TSK_FS_TYPE_DETECT);
+
         qInfo() << "[TskWalker] Probing Image-Level Filesystem, Result=" << (pfs ? "OK" : "No");
+
         if (pfs) fslist.emplace_back(pfs, 0);
     }
 
-    if (fslist.empty()) {
-        qWarning() << "[TskWalker] Failed to Open Filesystem";
+    if (fslist.empty()) 
+    {
+        qWarning() << "[TskWalker] Failed to Find Filesystems in:" << imagePath;
+
         tsk_img_close(img);
+
         return false;
     }
 
-    MDB_env* env = lmdb.envHandle();
-    if (!env) {
-        qWarning() << "[TskWalker] LMDB environment not available";
-        tsk_img_close(img);
-        return false;
-    }
-
+    MDB_env* env = nullptr;
     MDB_txn* txn = nullptr;
-    if (mdb_txn_begin(env, nullptr, 0, &txn) != 0) {
-        qWarning() << "[TskWalker] Failed to begin LMDB txn";
-        tsk_img_close(img);
+    MDB_dbi nodes_dbi = 0, children_dbi = 0, paths_dbi = 0, inode_map_dbi = 0;
+
+    if (!setup_lmdb_connection(lmdb, img, env, txn, nodes_dbi, children_dbi, paths_dbi, inode_map_dbi)) 
+    {
+        qWarning() << "[TskWalker] Failed to Setup LMDB Connection";
         return false;
     }
 
-    qInfo() << "[TskWalker] LMDB Write Txn Begun";
+    WalkContext walk_ctx{};
+    walk_ctx.lmdb_txn = txn;
+    walk_ctx.lmdb_env = env;
+    walk_ctx.lmdb_commit_batch = 10000;
 
-    MDB_dbi nodes_dbi, children_dbi, paths_dbi, inode_map_dbi;
-    if (mdb_dbi_open(txn, "nodes", MDB_CREATE, &nodes_dbi) != 0) nodes_dbi = 0;
-    if (mdb_dbi_open(txn, "children", MDB_CREATE | MDB_DUPSORT, &children_dbi) != 0) children_dbi = 0;
-    if (mdb_dbi_open(txn, "paths", MDB_CREATE, &paths_dbi) != 0) paths_dbi = 0;
-    if (mdb_dbi_open(txn, "inode_map", MDB_CREATE, &inode_map_dbi) != 0) inode_map_dbi = 0;
+    walk_ctx.lmdb_nodes_dbi = nodes_dbi;
+    walk_ctx.lmdb_children_dbi = children_dbi;
+    walk_ctx.lmdb_paths_dbi = paths_dbi;
+    walk_ctx.lmdb_inode_map_dbi = inode_map_dbi;
+    walk_ctx.next_node_id = 1;
+    walk_ctx.file_count = 0;
+    walk_ctx.dir_count = 0;
+    walk_ctx.partitionId = 0;
 
-    WalkContext ctx{};
-    ctx.txn = txn;
-    ctx.nodes_dbi = nodes_dbi;
-    ctx.children_dbi = children_dbi;
-    ctx.paths_dbi = paths_dbi;
-    ctx.inode_map_dbi = inode_map_dbi;
-    ctx.next_node_id = 1;
-    ctx.file_count = 0;
-    ctx.dir_count = 0;
-    ctx.partitionId = 0;
-    ctx.env = env;
-    ctx.commit_batch = 10000; 
-    PerformanceTimer pt(QString("TSK walkImage %1").arg(imagePath));
+    PerformanceTimer pt("Total Disk Walk Time (" + imagePath + ")");
 
-    qInfo() << "[TskWalker] Starting Directory Walk";
+    qInfo() << "[TskWalker] Starting Directory Walk ...";
 
-    uint64_t top_root_id = ctx.next_node_id++;
+    // HERE
+
+    uint64_t top_root_id = walk_ctx.next_node_id++;
     NodeMetadata toproot{};
     toproot.is_dir = 1;
     toproot.inode = 0;
@@ -209,24 +281,25 @@ bool TskWalker::walkImage(const QString &imagePath, LMDBManager &lmdb)
     toproot.type = 0;
     toproot.ctime = 0;
     toproot.mtime = 0;
+
     if (nodes_dbi) {
         MDB_val trk{ sizeof(top_root_id), &top_root_id };
         MDB_val trv{ sizeof(toproot), &toproot };
-        mdb_put(ctx.txn, nodes_dbi, &trk, &trv, 0);
+        mdb_put(walk_ctx.lmdb_txn, nodes_dbi, &trk, &trv, 0);
     }
     if (paths_dbi) {
         QByteArray slash = QByteArray("/");
         MDB_val pk{ static_cast<size_t>(slash.size()), const_cast<char*>(slash.data()) };
         MDB_val pv{ sizeof(top_root_id), &top_root_id };
-        mdb_put(ctx.txn, paths_dbi, &pk, &pv, 0);
+        mdb_put(walk_ctx.lmdb_txn, paths_dbi, &pk, &pv, 0);
     }
 
     for (auto &p : fslist) {
         TSK_FS_INFO* curfs = p.first;
         int partIdx = p.second;
-        ctx.partitionId = partIdx;
+        walk_ctx.partitionId = partIdx;
 
-        uint64_t part_root_id = ctx.next_node_id++;
+        uint64_t part_root_id = walk_ctx.next_node_id++;
         NodeMetadata root{};
         root.is_dir = 1;
         root.inode = curfs->root_inum;
@@ -236,7 +309,7 @@ bool TskWalker::walkImage(const QString &imagePath, LMDBManager &lmdb)
         root.mtime = 0;
         MDB_val rk{ sizeof(part_root_id), &part_root_id };
         MDB_val rv{ sizeof(root), &root };
-        if (nodes_dbi) mdb_put(txn, nodes_dbi, &rk, &rv, 0);
+        if (nodes_dbi) mdb_put(walk_ctx.lmdb_txn, nodes_dbi, &rk, &rv, 0);
 
         uint64_t fsIdx = 0;
         QString partPath = QString("%1:%2:/").arg((uint64_t)partIdx).arg((uint64_t)fsIdx);
@@ -244,7 +317,7 @@ bool TskWalker::walkImage(const QString &imagePath, LMDBManager &lmdb)
         if (paths_dbi) {
             MDB_val pk{ static_cast<size_t>(partUtf8.size()), const_cast<char*>(partUtf8.data()) };
             MDB_val pv{ sizeof(part_root_id), &part_root_id };
-            mdb_put(txn, paths_dbi, &pk, &pv, 0);
+            mdb_put(walk_ctx.lmdb_txn, paths_dbi, &pk, &pv, 0);
         }
 
         if (inode_map_dbi) {
@@ -257,26 +330,26 @@ bool TskWalker::walkImage(const QString &imagePath, LMDBManager &lmdb)
             memcpy(ikbuf + sizeof(part) + sizeof(fsIdxLocal), &root_inode, sizeof(root_inode));
             MDB_val ik{ sizeof(ikbuf), ikbuf };
             MDB_val iv{ sizeof(part_root_id), &part_root_id };
-            mdb_put(txn, inode_map_dbi, &ik, &iv, 0);
+            mdb_put(walk_ctx.lmdb_txn, inode_map_dbi, &ik, &iv, 0);
         }
 
         if (children_dbi) {
             MDB_val ck{ sizeof(top_root_id), &top_root_id };
             MDB_val cv{ sizeof(part_root_id), &part_root_id };
-            mdb_put(ctx.txn, children_dbi, &ck, &cv, 0);
+            mdb_put(walk_ctx.lmdb_txn, children_dbi, &ck, &cv, 0);
         }
 
-        tsk_fs_dir_walk(curfs, curfs->root_inum, TSK_FS_DIR_WALK_FLAG_RECURSE, file_callback, &ctx);
+        tsk_fs_dir_walk(curfs, curfs->root_inum, TSK_FS_DIR_WALK_FLAG_RECURSE, file_callback, &walk_ctx);
         qInfo() << "[TskWalker] Directory Walk Returned for partition" << partIdx;
 
         tsk_fs_close(curfs);
     }
 
-    if (ctx.txn) {
-        int rc = mdb_txn_commit(ctx.txn);
+    if (walk_ctx.lmdb_txn) {
+        int rc = mdb_txn_commit(walk_ctx.lmdb_txn);
         if (rc != 0) {
             qWarning() << "[TskWalker] Failed to Commit LMDB txn:" << mdb_strerror(rc);
-            mdb_txn_abort(ctx.txn);
+            mdb_txn_abort(walk_ctx.lmdb_txn);
         }
     }
 
@@ -289,9 +362,10 @@ bool TskWalker::walkImage(const QString &imagePath, LMDBManager &lmdb)
     tsk_img_close(img);
 
     qInfo() << "[TskWalker] Disk Walk Completed:";
-    qInfo() << "[TskWalker] Directories:" << ctx.dir_count;
-    qInfo() << "[TskWalker] Files:" << ctx.file_count;
-    qInfo() << "[TskWalker] Total Nodes:" << (ctx.file_count + ctx.dir_count + 1);
+    qInfo() << "[TskWalker] Directories:" << walk_ctx.dir_count;
+    qInfo() << "[TskWalker] Files:" << walk_ctx.file_count;
+    qInfo() << "[TskWalker] Total Nodes:" << (walk_ctx.file_count + walk_ctx.dir_count + 1);
 
     return true;
 }
+
