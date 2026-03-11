@@ -9,6 +9,7 @@
 
 
 #include <QString>
+#include <QByteArray>
 #include <QDebug>
 #include <QList>
 
@@ -33,6 +34,7 @@ struct WalkContext
     int fsIndex;
     MDB_env* lmdb_env;
     uint64_t lmdb_commit_batch;
+    QByteArray tmp_key;
 };
 
 class TskWalker
