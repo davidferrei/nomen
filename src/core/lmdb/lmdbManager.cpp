@@ -291,3 +291,85 @@ bool LMDBManager::debug_dumpLmdbFirst20(const QString& lmdbPath)
     
     return true;
 }
+
+bool LMDBManager::debug_dumpSpecialNodes(const QString& lmdbPath)
+{
+    PerformanceTimer timer("Debug Dump Special Nodes");
+
+    MDB_env* env = nullptr;
+    MDB_txn* txn = nullptr;
+    MDB_dbi nodes_dbi = 0;
+
+    if (mdb_env_create(&env) != 0) {
+        qCritical() << "[LMDBManager] Debug: env Create Failed";
+        return false;
+    }
+    mdb_env_set_maxdbs(env, 4);
+    mdb_env_set_mapsize(env, 1024ULL * 1024 * 1024 * 10ULL);
+
+    QDir().mkpath(lmdbPath);
+
+    if (mdb_env_open(env, lmdbPath.toUtf8().constData(), 0, 0664) != 0) {
+        qCritical() << "[LMDBManager] Debug: env Open Failed for" << lmdbPath;
+        mdb_env_close(env);
+        return false;
+    }
+
+    if (mdb_txn_begin(env, nullptr, MDB_RDONLY, &txn) != 0) {
+        qCritical() << "[LMDBManager] Debug: txn Begin Failed";
+        mdb_env_close(env);
+        return false;
+    }
+
+    if (mdb_dbi_open(txn, "nodes", 0, &nodes_dbi) != 0) {
+        qCritical() << "[LMDBManager] Debug: nodes dbi Open Failed";
+        mdb_txn_abort(txn);
+        mdb_env_close(env);
+        return false;
+    }
+
+    struct StatusGroup { int status; const char* label; };
+    const StatusGroup groups[] = { {1, "UNALLOCATED (meta intact)"}, {2, "DELETED (meta lost)"}, {3, "ORPHAN"} };
+
+    for (const auto& group : groups)
+    {
+        qInfo() << "---- Nodes with status" << group.status << "-" << group.label << "(First 20) ----";
+
+        MDB_cursor* cursor = nullptr;
+        MDB_val k, v;
+        int count = 0;
+
+        if (mdb_cursor_open(txn, nodes_dbi, &cursor) != 0) continue;
+
+        while (count < 20 && mdb_cursor_get(cursor, &k, &v, MDB_NEXT) == 0)
+        {
+            if (v.mv_size < sizeof(NodeMetadata)) continue;
+
+            NodeMetadata meta{};
+            memcpy(&meta, v.mv_data, sizeof(meta));
+
+            if (meta.status != group.status) continue;
+
+            uint64_t id = 0;
+            memcpy(&id, k.mv_data, sizeof(id));
+
+            qInfo() << "  node_id:" << id
+                    << "inode:"   << meta.inode
+                    << "size:"    << meta.size
+                    << "type:"    << (int)meta.type
+                    << "is_dir:"  << (int)meta.is_dir
+                    << "ctime:"   << meta.ctime
+                    << "mtime:"   << meta.mtime;
+            ++count;
+        }
+
+        mdb_cursor_close(cursor);
+
+        if (count == 0)
+            qInfo() << "  (none found)";
+    }
+
+    mdb_txn_abort(txn);
+    mdb_env_close(env);
+    return true;
+}

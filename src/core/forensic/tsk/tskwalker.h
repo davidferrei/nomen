@@ -35,6 +35,10 @@ struct WalkContext
     MDB_env* lmdb_env;
     uint64_t lmdb_commit_batch;
     QByteArray tmp_key;
+    std::unordered_map<uint64_t,uint64_t> unalloc_node_ids;
+    std::unordered_map<uint64_t,uint64_t> deleted_node_ids;
+    std::unordered_map<uint64_t,uint64_t> orphan_node_ids;
+    std::unordered_map<uint64_t,uint64_t> root_node_ids;
 };
 
 class TskWalker

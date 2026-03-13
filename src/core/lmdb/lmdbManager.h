@@ -30,6 +30,7 @@ public:
     
     bool debug_dumpAllLmdbTest(const QString& lmdbPath);
     bool debug_dumpLmdbFirst20(const QString& lmdbPath);
+    bool debug_dumpSpecialNodes(const QString& lmdbPath);
 
 private:
     MDB_env* env;

@@ -26,6 +26,7 @@ void IndexWorker::run()
         #ifdef QT_DEBUG
             lmdb.debug_dumpAllLmdbTest(lmdbPath);
             lmdb.debug_dumpLmdbFirst20(lmdbPath);
+            lmdb.debug_dumpSpecialNodes(lmdbPath);
         #endif
         
         //FIXME: Save Ingested = True to DS in DB

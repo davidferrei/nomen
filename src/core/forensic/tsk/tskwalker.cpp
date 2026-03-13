@@ -61,7 +61,12 @@ static TSK_WALK_RET_ENUM file_callback(TSK_FS_FILE* fs_file, const char* path, v
     uint64_t parent_id = 0;
     uint64_t par_addr = 0;
 
-    if (fs_file->name->par_addr != 0) 
+    // 0=allocated, 1=unallocated (meta present), 2=deleted (meta lost), 3=orphan (set below)
+    int status = 0;
+    if (fs_file->name->flags & TSK_FS_NAME_FLAG_UNALLOC)
+        status = (fs_meta != nullptr) ? 1 : 2;
+
+    if (fs_file->name->par_addr != 0)
     {
         unsigned char parentNodeArray[24];
         uint64_t part = (uint64_t)walk_ctx->partitionId;
@@ -76,21 +81,34 @@ static TSK_WALK_RET_ENUM file_callback(TSK_FS_FILE* fs_file, const char* path, v
             parent_id = *static_cast<uint64_t*>(pv.mv_data);
     }
 
-    if (parent_id == 0) 
+
+    if (parent_id == 0)
     {
-        QByteArray tmpPath;
-        if (parentByteArray == "/") {
-            tmpPath.reserve(1 + nameByteArray.size());
-            tmpPath.append('/');
-            tmpPath.append(nameByteArray);
-        } else {
-            tmpPath.reserve(parentByteArray.size() + 1 + nameByteArray.size());
-            tmpPath.append(parentByteArray);
-            tmpPath.append('/');
-            tmpPath.append(nameByteArray);
+        status = (status == 0) ? 3 : status;
+
+        const uint64_t key = ((uint64_t)walk_ctx->partitionId << 32) | (uint64_t)walk_ctx->fsIndex;
+        std::unordered_map<uint64_t, uint64_t>* containerMap = nullptr;
+
+        switch (status)
+        {
+        case 1: 
+            containerMap = &walk_ctx->unalloc_node_ids; 
+            break;
+        case 2: 
+            containerMap = &walk_ctx->deleted_node_ids; 
+            break;
+        case 3: 
+            containerMap = &walk_ctx->orphan_node_ids;  
+            break;
         }
-        qWarning() << "[TskWalker] Parent Lookup Failed" << "part:" << walk_ctx->partitionId << "par_addr:" << par_addr << "path:" << tmpPath;
-        return TSK_WALK_CONT;
+
+        auto it = containerMap->find(key);
+        if (it == containerMap->end())
+        {
+            qWarning() << "[TskWalker] Parent Node missing in Partition:" << walk_ctx->partitionId << "FS:" << walk_ctx->fsIndex << "Status:" << status;
+            return TSK_WALK_CONT;
+        }
+        parent_id = it->second;
     }
 
     uint64_t node_id = walk_ctx->next_node_id++;
@@ -120,6 +138,7 @@ static TSK_WALK_RET_ENUM file_callback(TSK_FS_FILE* fs_file, const char* path, v
     nodeMetadata.ctime = fs_meta ? fs_meta->crtime : 0;
     nodeMetadata.mtime = fs_meta ? fs_meta->mtime : 0;
     nodeMetadata.is_dir = (fs_meta && fs_meta->type == TSK_FS_META_TYPE_DIR) ? 1 : 0;
+    nodeMetadata.status = (uint8_t)status;
 
     MDB_val nk{ sizeof(node_id), &node_id };
     MDB_val nv{ sizeof(nodeMetadata), &nodeMetadata };
@@ -295,6 +314,9 @@ bool TskWalker::walkImage(const QString &imagePath, LMDBManager &lmdb)
 
     std::unordered_map<int,int> fsIndex;
 
+    struct RawPartitionInfo { TSK_PNUM_T addr; uint64_t sizeBytes; std::string desc; };
+    std::vector<RawPartitionInfo> rawPartitions;
+
     if (vs) 
     {
         for (TSK_PNUM_T i = 0; i < vs->part_count; i++) 
@@ -307,10 +329,15 @@ bool TskWalker::walkImage(const QString &imagePath, LMDBManager &lmdb)
 
             qInfo() << "[TskWalker] Probing Partition" << i << "FS=" << (pfs ? "OK" : "No");
 
-            if (pfs) 
+            if (pfs)
             {
                 int partitionID = (int)i;
                 fsVector.emplace_back(pfs, partitionID, fsIndex[partitionID]++);
+            }
+            else
+            {
+                rawPartitions.push_back({ part->addr, (uint64_t)part->len * vs->img_info->sector_size,
+                                          (part->desc ? part->desc : "") });
             }
         }
 
@@ -408,10 +435,100 @@ bool TskWalker::walkImage(const QString &imagePath, LMDBManager &lmdb)
         QString partitionPath = QString::number((qulonglong)partitionID) + ":" + QString::number((qulonglong)fsIdx64) + ":/";
         QByteArray partitionUtf8 = partitionPath.toUtf8();
 
-
         MDB_val pk{ static_cast<size_t>(partitionUtf8.size()), const_cast<char*>(partitionUtf8.data()) };
         MDB_val pv{ sizeof(part_root_id), &part_root_id };
         mdb_put(walk_ctx.lmdb_txn, walk_ctx.lmdb_paths_dbi, &pk, &pv, 0);
+
+        uint64_t keyCombined = ((uint64_t)partitionID << 32) | (uint64_t)fsIdx64;
+        walk_ctx.root_node_ids[keyCombined] = part_root_id;
+
+
+        // UNALLOCATED Path
+        uint64_t unalloc_node = walk_ctx.next_node_id++;
+        NodeMetadata unallocMeta{};
+        unallocMeta.is_dir = 1;
+        unallocMeta.inode = 0;
+        unallocMeta.size = 0;
+        unallocMeta.type = 0;
+        unallocMeta.ctime = 0;
+        unallocMeta.mtime = 0;
+        unallocMeta.status = 1; // Unallocated
+        MDB_val unk{ sizeof(unalloc_node), &unalloc_node };
+        MDB_val unv{ sizeof(unallocMeta), &unallocMeta };
+        mdb_put(walk_ctx.lmdb_txn, walk_ctx.lmdb_nodes_dbi, &unk, &unv, 0);
+
+        walk_ctx.tmp_key.clear();
+        walk_ctx.tmp_key.append(QByteArray::number((qulonglong)partitionID));
+        walk_ctx.tmp_key.append(':');
+        walk_ctx.tmp_key.append(QByteArray::number((qulonglong)fsIdx64));
+        walk_ctx.tmp_key.append(':');
+        walk_ctx.tmp_key.append("UNALLOCATED");
+        MDB_val upk{ static_cast<size_t>(walk_ctx.tmp_key.size()), const_cast<char*>(walk_ctx.tmp_key.data()) };
+        MDB_val upv{ sizeof(unalloc_node), &unalloc_node };
+        mdb_put(walk_ctx.lmdb_txn, walk_ctx.lmdb_paths_dbi, &upk, &upv, 0);
+
+        MDB_val uck{ sizeof(part_root_id), &part_root_id };
+        MDB_val ucv{ sizeof(unalloc_node), &unalloc_node };
+        mdb_put(walk_ctx.lmdb_txn, walk_ctx.lmdb_children_dbi, &uck, &ucv, 0);
+        walk_ctx.unalloc_node_ids[keyCombined] = unalloc_node;
+
+        // DELETED Path
+        uint64_t deleted_node = walk_ctx.next_node_id++;
+        NodeMetadata deletedMeta{};
+        deletedMeta.is_dir = 1;
+        deletedMeta.inode = 0;
+        deletedMeta.size = 0;
+        deletedMeta.type = 0;
+        deletedMeta.ctime = 0;
+        deletedMeta.mtime = 0;
+        deletedMeta.status = 2; // Deleted
+        MDB_val dnk{ sizeof(deleted_node), &deleted_node };
+        MDB_val dnv{ sizeof(deletedMeta), &deletedMeta };
+        mdb_put(walk_ctx.lmdb_txn, walk_ctx.lmdb_nodes_dbi, &dnk, &dnv, 0);
+
+        walk_ctx.tmp_key.clear();
+        walk_ctx.tmp_key.append(QByteArray::number((qulonglong)partitionID));
+        walk_ctx.tmp_key.append(':');
+        walk_ctx.tmp_key.append(QByteArray::number((qulonglong)fsIdx64));
+        walk_ctx.tmp_key.append(':');
+        walk_ctx.tmp_key.append("DELETED");
+        MDB_val dpk{ static_cast<size_t>(walk_ctx.tmp_key.size()), const_cast<char*>(walk_ctx.tmp_key.data()) };
+        MDB_val dpv{ sizeof(deleted_node), &deleted_node };
+        mdb_put(walk_ctx.lmdb_txn, walk_ctx.lmdb_paths_dbi, &dpk, &dpv, 0);
+
+        MDB_val dck{ sizeof(part_root_id), &part_root_id };
+        MDB_val dcv{ sizeof(deleted_node), &deleted_node };
+        mdb_put(walk_ctx.lmdb_txn, walk_ctx.lmdb_children_dbi, &dck, &dcv, 0);
+        walk_ctx.deleted_node_ids[keyCombined] = deleted_node;
+
+        // ORPHAN Path
+        uint64_t orphan_node = walk_ctx.next_node_id++;
+        NodeMetadata orphanMeta{};
+        orphanMeta.is_dir = 1;
+        orphanMeta.inode = 0;
+        orphanMeta.size = 0;
+        orphanMeta.type = 0;
+        orphanMeta.ctime = 0;
+        orphanMeta.mtime = 0;
+        orphanMeta.status = 3; // Orphan
+        MDB_val ok{ sizeof(orphan_node), &orphan_node };
+        MDB_val ov{ sizeof(orphanMeta), &orphanMeta };
+        mdb_put(walk_ctx.lmdb_txn, walk_ctx.lmdb_nodes_dbi, &ok, &ov, 0);
+
+        walk_ctx.tmp_key.clear();
+        walk_ctx.tmp_key.append(QByteArray::number((qulonglong)partitionID));
+        walk_ctx.tmp_key.append(':');
+        walk_ctx.tmp_key.append(QByteArray::number((qulonglong)fsIdx64));
+        walk_ctx.tmp_key.append(':');
+        walk_ctx.tmp_key.append("ORPHAN");
+        MDB_val opk{ static_cast<size_t>(walk_ctx.tmp_key.size()), const_cast<char*>(walk_ctx.tmp_key.data()) };
+        MDB_val opv{ sizeof(orphan_node), &orphan_node };
+        mdb_put(walk_ctx.lmdb_txn, walk_ctx.lmdb_paths_dbi, &opk, &opv, 0);
+
+        MDB_val ock{ sizeof(part_root_id), &part_root_id };
+        MDB_val ocv{ sizeof(orphan_node), &orphan_node };
+        mdb_put(walk_ctx.lmdb_txn, walk_ctx.lmdb_children_dbi, &ock, &ocv, 0);
+        walk_ctx.orphan_node_ids[keyCombined] = orphan_node;
         
 
         unsigned char iNodeArray[24];
@@ -430,8 +547,12 @@ bool TskWalker::walkImage(const QString &imagePath, LMDBManager &lmdb)
         MDB_val cv{ sizeof(part_root_id), &part_root_id };
         mdb_put(walk_ctx.lmdb_txn, walk_ctx.lmdb_children_dbi, &ck, &cv, 0);
 
-        //HERE - check unallocated and deleted entries flags
-        tsk_fs_dir_walk(fsInfo, fsInfo->root_inum, TSK_FS_DIR_WALK_FLAG_RECURSE, file_callback, &walk_ctx);
+        uint8_t walkResult = tsk_fs_dir_walk(fsInfo, fsInfo->root_inum,
+            static_cast<TSK_FS_DIR_WALK_FLAG_ENUM>(TSK_FS_DIR_WALK_FLAG_RECURSE | TSK_FS_DIR_WALK_FLAG_ALLOC | TSK_FS_DIR_WALK_FLAG_UNALLOC),
+            file_callback, &walk_ctx);
+
+        if (walkResult != 0)
+            qWarning() << "[TskWalker] Walk Error on Partition" << partitionID << ":" << tsk_error_get();
 
         tsk_fs_close(fsInfo);
 
@@ -439,6 +560,47 @@ bool TskWalker::walkImage(const QString &imagePath, LMDBManager &lmdb)
 
     }
 
+
+
+    for (const RawPartitionInfo& part : rawPartitions)
+    {
+        uint64_t raw_node_id = walk_ctx.next_node_id++;
+
+        NodeMetadata rawNodeMetadata{};
+        rawNodeMetadata.is_dir  = 1;
+        rawNodeMetadata.status  = 4; // Raw — no filesystem
+        rawNodeMetadata.size    = part.sizeBytes;
+        rawNodeMetadata.inode   = 0;
+        rawNodeMetadata.type    = 0;
+        rawNodeMetadata.ctime   = 0;
+        rawNodeMetadata.mtime   = 0;
+
+        MDB_val rnk{ sizeof(raw_node_id), &raw_node_id };
+        MDB_val rnv{ sizeof(rawNodeMetadata), &rawNodeMetadata };
+        mdb_put(walk_ctx.lmdb_txn, walk_ctx.lmdb_nodes_dbi, &rnk, &rnv, 0);
+
+        walk_ctx.tmp_key.clear();
+        walk_ctx.tmp_key.append(QByteArray::number((qulonglong)part.addr));
+        walk_ctx.tmp_key.append(":RAW");
+        if (!part.desc.empty())
+        {
+            walk_ctx.tmp_key.append('(');
+            walk_ctx.tmp_key.append(part.desc.c_str(), (int)part.desc.size());
+            walk_ctx.tmp_key.append(')');
+        }
+        MDB_val rpk{ static_cast<size_t>(walk_ctx.tmp_key.size()), const_cast<char*>(walk_ctx.tmp_key.data()) };
+        MDB_val rpv{ sizeof(raw_node_id), &raw_node_id };
+        mdb_put(walk_ctx.lmdb_txn, walk_ctx.lmdb_paths_dbi, &rpk, &rpv, 0);
+
+        MDB_val rck{ sizeof(top_root_id), &top_root_id };
+        MDB_val rcv{ sizeof(raw_node_id), &raw_node_id };
+        mdb_put(walk_ctx.lmdb_txn, walk_ctx.lmdb_children_dbi, &rck, &rcv, 0);
+
+        qInfo() << "[TskWalker] Raw Partition Node Created: addr=" << part.addr
+                << "desc=" << part.desc.c_str()
+                << "size=" << part.sizeBytes << "bytes"
+                << "node_id=" << raw_node_id;
+    }
 
     if (walk_ctx.lmdb_txn) 
     {
