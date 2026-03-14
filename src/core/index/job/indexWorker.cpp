@@ -11,7 +11,7 @@ void IndexWorker::run()
     {
         QString lmdbPath = caseFolderPath + "/indexes/" + "disk-" % QString::number(dataSource.id);
 
-        LMDBManager lmdb;
+        lmdbIndexEngine lmdb;
         
         if (!lmdb.initialize(lmdbPath)) {
             emit failed("Failed to Initialize LMDB at " + lmdbPath);

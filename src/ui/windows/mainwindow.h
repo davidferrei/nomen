@@ -2,9 +2,9 @@
 #define MAINWINDOW_H
 
 #include "core/caseManager/casemanager.h"
-#include "core/index/indexManager.h"
+#include "core/index/job/indexManager.h"
 #include "core/caseDBManager/repositories/datasourceRepository.h"
-#include "../../core/lmdb/FSIndexRepository.h"
+#include "../../core/index/repo/IndexDBManager.h"
 
 #include <QLabel>
 #include <QMessageBox>

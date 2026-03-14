@@ -1,7 +1,7 @@
-#ifndef LMDBMANAGER_H
-#define LMDBMANAGER_H
+#ifndef LMDBINDEXENGINE_H
+#define LMDBINDEXENGINE_H
 
-#include "../logging/performancemeasure.h"
+#include "../../logging/performancemeasure.h"
 #include "data/index/nodeMetaData.h"
 
 
@@ -17,11 +17,11 @@ extern "C" {
 }
 
 
-class LMDBManager
+class lmdbIndexEngine
 {
 public:
-    LMDBManager();
-    ~LMDBManager();
+    lmdbIndexEngine();
+    ~lmdbIndexEngine();
 
     bool initialize(const QString& path);
     void close();
@@ -38,4 +38,4 @@ private:
     bool initialized;
 };
 
-#endif // LMDBMANAGER_H
+#endif // LMDBINDEXENGINE_H

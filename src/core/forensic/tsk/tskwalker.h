@@ -3,7 +3,7 @@
 
 #include <tsk/libtsk.h>
 
-#include "../../lmdb/lmdbManager.h"
+#include "../../index/engine/lmdbIndexEngine.h"
 
 #include "data/index/nodeMetaData.h"
 
@@ -18,7 +18,7 @@
 #include <unordered_map>
 
 
-class LMDBManager;
+class lmdbIndexEngine;
 
 struct WalkContext 
 {
@@ -44,7 +44,7 @@ struct WalkContext
 class TskWalker
 {
 public:
-    static bool walkImage(const QString &imagePath, LMDBManager &lmdb);
+    static bool walkImage(const QString &imagePath, lmdbIndexEngine &lmdb);
 };
 
 #endif // TSKWALKER_H

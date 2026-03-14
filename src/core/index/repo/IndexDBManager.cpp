@@ -1,8 +1,8 @@
-#include "FSIndexRepository.h"
+#include "IndexDBManager.h"
 
-FSIndexRepository::FSIndexRepository(const QString &lmdbPath) : path(lmdbPath), env(nullptr) {}
+IndexDBManager::IndexDBManager(const QString &lmdbPath) : path(lmdbPath), env(nullptr) {}
 
-FSIndexRepository::~FSIndexRepository()
+IndexDBManager::~IndexDBManager()
 {
     close();
 }
@@ -19,17 +19,17 @@ static inline uint64_t read_u64_from_val(const MDB_val &v)
 }
 
 
-bool FSIndexRepository::open()
+bool IndexDBManager::open()
 {
     if (env) return true;
 
     if (!QDir().exists(path)) {
-        qWarning() << "[FSIndexRepository]: LMDB Path Does not Exist:" << path;
+        qWarning() << "[IndexDBManager]: LMDB Path Does not Exist:" << path;
         return false;
     }
 
     if (mdb_env_create(&env) != 0) {
-        qWarning() << "[FSIndexRepository]: LMDB: env_create Failed";
+        qWarning() << "[IndexDBManager]: LMDB: env_create Failed";
         env = nullptr;
         return false;
     }
@@ -37,17 +37,17 @@ bool FSIndexRepository::open()
 
     int rc = mdb_env_open(env, path.toUtf8().constData(), MDB_RDONLY, 0664);
     if (rc != 0) {
-        qWarning() << "[FSIndexRepository]: LMDB: env_open Failed:" << mdb_strerror(rc);
+        qWarning() << "[IndexDBManager]: LMDB: env_open Failed:" << mdb_strerror(rc);
         mdb_env_close(env);
         env = nullptr;
         return false;
     }
 
-    qInfo() << "[FSIndexRepository]: LMDB FS Index Repository Opened:" << path;
+    qInfo() << "[IndexDBManager]: LMDB FS Index Repository Opened:" << path;
     return true;
 }
 
-void FSIndexRepository::close()
+void IndexDBManager::close()
 {
     if (!env) return;
     mdb_env_close(env);
@@ -57,7 +57,7 @@ void FSIndexRepository::close()
 //############################################################################################
 // Getters 
 
-bool FSIndexRepository::getNodeByPath(const QString &p, uint64_t &outNodeId)
+bool IndexDBManager::getNodeByPath(const QString &p, uint64_t &outNodeId)
 {
     if (!env) return false;
     MDB_txn *txn = nullptr;
@@ -84,7 +84,7 @@ bool FSIndexRepository::getNodeByPath(const QString &p, uint64_t &outNodeId)
     return true;
 }
 
-bool FSIndexRepository::getNode(uint64_t nodeId, NodeMetadata &out)
+bool IndexDBManager::getNode(uint64_t nodeId, NodeMetadata &out)
 {
     if (!env) return false;
     MDB_txn *txn = nullptr;
@@ -108,7 +108,7 @@ bool FSIndexRepository::getNode(uint64_t nodeId, NodeMetadata &out)
     return false;
 }
 
-QVector<uint64_t> FSIndexRepository::getChildren(uint64_t parentId)
+QVector<uint64_t> IndexDBManager::getChildren(uint64_t parentId)
 {
     QVector<uint64_t> out;
     if (!env) return out;
@@ -140,7 +140,7 @@ QVector<uint64_t> FSIndexRepository::getChildren(uint64_t parentId)
 }
 
 
-bool FSIndexRepository::getPathForNode(uint64_t nodeId, QString &outPath)
+bool IndexDBManager::getPathForNode(uint64_t nodeId, QString &outPath)
 {
     if (!env) return false;
     MDB_txn *txn = nullptr;
@@ -172,37 +172,37 @@ bool FSIndexRepository::getPathForNode(uint64_t nodeId, QString &outPath)
     return false;
 }
 
-void FSIndexRepository::debugListChildrenInDb(uint64_t parentId)
+void IndexDBManager::debugListChildrenInDb(uint64_t parentId)
 {
     if (!env) {
-        qWarning() << "[FSIndexRepository] debugListChildrenInDb: env Not Open";
+        qWarning() << "[IndexDBManager] debugListChildrenInDb: env Not Open";
         return;
     }
 
     MDB_txn *txn = nullptr;
     if (mdb_txn_begin(env, nullptr, MDB_RDONLY, &txn) != 0) {
-        qWarning() << "[FSIndexRepository] debugListChildrenInDb: txn Begin Failed";
+        qWarning() << "[IndexDBManager] debugListChildrenInDb: txn Begin Failed";
         return;
     }
 
     MDB_dbi children_dbi = 0;
     if (mdb_dbi_open(txn, "children", 0, &children_dbi) != 0) children_dbi = 0;
-    if (!children_dbi) { mdb_txn_abort(txn); qWarning() << "[FSIndexRepository] debugListChildrenInDb: Children DB Missing"; return; }
+    if (!children_dbi) { mdb_txn_abort(txn); qWarning() << "[IndexDBManager] debugListChildrenInDb: Children DB Missing"; return; }
 
     MDB_cursor *cursor = nullptr;
-    if (mdb_cursor_open(txn, children_dbi, &cursor) != 0) { mdb_txn_abort(txn); qWarning() << "[FSIndexRepository] debugListChildrenInDb: cursor Open Failed"; return; }
+    if (mdb_cursor_open(txn, children_dbi, &cursor) != 0) { mdb_txn_abort(txn); qWarning() << "[IndexDBManager] debugListChildrenInDb: cursor Open Failed"; return; }
 
     MDB_val k{ sizeof(parentId), &parentId };
     MDB_val v{};
     int rc = mdb_cursor_get(cursor, &k, &v, MDB_SET);
     if (rc != 0) {
-        qInfo() << "[FSIndexRepository] debugListChildrenInDb: no children for parent" << parentId;
+        qInfo() << "[IndexDBManager] debugListChildrenInDb: no children for parent" << parentId;
         mdb_cursor_close(cursor);
         mdb_txn_abort(txn);
         return;
     }
 
-    qInfo() << "[FSIndexRepository] debugListChildrenInDb: Children in DB for parent" << parentId << ":";
+    qInfo() << "[IndexDBManager] debugListChildrenInDb: Children in DB for parent" << parentId << ":";
     do {
         uint64_t child = read_u64_from_val(v);
         qInfo() << "  ->" << child;
@@ -213,7 +213,7 @@ void FSIndexRepository::debugListChildrenInDb(uint64_t parentId)
     mdb_txn_abort(txn);
 }
 
-bool FSIndexRepository::getNodeByInode(uint64_t part, uint64_t fsIdx, uint64_t inode, uint64_t &outNodeId)
+bool IndexDBManager::getNodeByInode(uint64_t part, uint64_t fsIdx, uint64_t inode, uint64_t &outNodeId)
 {
     if (!env) return false;
     MDB_txn *txn = nullptr;

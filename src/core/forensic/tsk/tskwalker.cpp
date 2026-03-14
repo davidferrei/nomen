@@ -229,7 +229,7 @@ static TSK_WALK_RET_ENUM file_callback(TSK_FS_FILE* fs_file, const char* path, v
 //############################################################################################
 // Helper Functions
 
-static bool setup_lmdb_connection(LMDBManager &lmdb, TSK_IMG_INFO* img, MDB_env*& env, MDB_txn*& txn,
+static bool setup_lmdb_connection(lmdbIndexEngine &lmdb, TSK_IMG_INFO* img, MDB_env*& env, MDB_txn*& txn,
                                   MDB_dbi &nodes_dbi, MDB_dbi &children_dbi, MDB_dbi &paths_dbi, MDB_dbi &inode_map_dbi)
 {
     env = lmdb.envHandle();
@@ -301,7 +301,7 @@ static bool setup_lmdb_connection(LMDBManager &lmdb, TSK_IMG_INFO* img, MDB_env*
 //############################################################################################
 // TSK walker
 
-bool TskWalker::walkImage(const QString &imagePath, LMDBManager &lmdb)
+bool TskWalker::walkImage(const QString &imagePath, lmdbIndexEngine &lmdb)
 {
     qInfo() << "[TskWalker] Opening Image:" << imagePath;
 

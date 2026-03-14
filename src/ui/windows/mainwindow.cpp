@@ -1,6 +1,6 @@
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
-#include "../../core/lmdb/FSIndexRepository.h"
+#include "../../core/index/repo/IndexDBManager.h"
 
 
 MainWindow::MainWindow(QWidget *parent, CaseManager& caseManager)
@@ -147,115 +147,115 @@ void MainWindow::loadDataSources()
 
         // if (ds.indexed)
         // {
-            // qDebug() << "Disk Already Indexed:" << ds.filePath;
+            qDebug() << "Disk Already Indexed:" << ds.filePath;
 
-            // FSIndexRepository repo(caseManager.getCurrentCase().casePath + "/indexes/disk-" % QString::number(ds.id));
+            IndexDBManager repo(caseManager.getCurrentCase().casePath + "/indexes/disk-" % QString::number(ds.id));
 
-            // if (repo.open())
-            // {
-            //     uint64_t rootId = 0;
-            //     if (repo.getNodeByPath("/", rootId))
-            //     {
-            //         qInfo() << "Root Node ID:" << rootId;
-            //         NodeMetadata metadata{};
-            //         if (repo.getNode(rootId, metadata))
-            //         {
-            //             qInfo() << "Root Node Metadata: inode=" << metadata.inode << " size=" << metadata.size << " is_dir=" << (int)metadata.is_dir;
-            //         }
+            if (repo.open())
+            {
+                uint64_t rootId = 0;
+                if (repo.getNodeByPath("/", rootId))
+                {
+                    qInfo() << "Root Node ID:" << rootId;
+                    NodeMetadata metadata{};
+                    if (repo.getNode(rootId, metadata))
+                    {
+                        qInfo() << "Root Node Metadata: inode=" << metadata.inode << " size=" << metadata.size << " is_dir=" << (int)metadata.is_dir;
+                    }
 
-            //         auto children = repo.getChildren(rootId);
-            //         qInfo() << "Root Node Children Count:" << children.size();
-            //         for (uint64_t cid : children) {
-            //             QString childPath;
-            //             NodeMetadata childMeta{};
-            //             if (repo.getPathForNode(cid, childPath)) {
-            //                 qInfo() << "  Child Path:" << childPath;
-            //             }
-            //             if (repo.getNode(cid, childMeta)) {
-            //                 qInfo() << "  Child Node ID:" << cid
-            //                         << " inode:" << childMeta.inode
-            //                         << " size:" << childMeta.size
-            //                         << " is_dir:" << (int)childMeta.is_dir;
-            //             } else {
-            //                 qInfo() << "  Child Node ID:" << cid << " (no metadata)";
-            //             }
-            //         }
-            //     }
-            //     else
-            //     {
-            //         qWarning() << "Root Path '/' not Found in LMDB";
-            //     }
+                    auto children = repo.getChildren(rootId);
+                    qInfo() << "Root Node Children Count:" << children.size();
+                    for (uint64_t cid : children) {
+                        QString childPath;
+                        NodeMetadata childMeta{};
+                        if (repo.getPathForNode(cid, childPath)) {
+                            qInfo() << "  Child Path:" << childPath;
+                        }
+                        if (repo.getNode(cid, childMeta)) {
+                            qInfo() << "  Child Node ID:" << cid
+                                    << " inode:" << childMeta.inode
+                                    << " size:" << childMeta.size
+                                    << " is_dir:" << (int)childMeta.is_dir;
+                        } else {
+                            qInfo() << "  Child Node ID:" << cid << " (no metadata)";
+                        }
+                    }
+                }
+                else
+                {
+                    qWarning() << "Root Path '/' not Found in LMDB";
+                }
 
-            //     QString partRoot = "2:0:/";
-            //     uint64_t partRootId = 0;
-            //     if (repo.getNodeByPath(partRoot, partRootId))
-            //     {
-            //         qInfo() << partRoot << "Node ID:" << partRootId;
-            //         NodeMetadata metadata{};
-            //         if (repo.getNode(partRootId, metadata))
-            //         {
-            //             qInfo() << partRoot << "Metadata: inode=" << metadata.inode << " size=" << metadata.size << " is_dir=" << (int)metadata.is_dir;
-            //         }
-            //         auto children = repo.getChildren(partRootId);
-            //         qInfo() << partRoot << " Children Count:" << children.size();
-            //         repo.debugListChildrenInDb(partRootId);
-            //         for (uint64_t cid : children) {
-            //             QString childPath;
-            //             NodeMetadata childMeta{};
-            //             if (repo.getPathForNode(cid, childPath)) {
-            //                 qInfo() << "  Child Path:" << childPath;
-            //             }
-            //             if (repo.getNode(cid, childMeta)) {
-            //                 qInfo() << "  Child Node ID:" << cid
-            //                         << " inode:" << childMeta.inode
-            //                         << " size:" << childMeta.size
-            //                         << " is_dir:" << (int)childMeta.is_dir;
-            //             } else {
-            //                 qInfo() << "  Child Node ID:" << cid << " (no metadata)";
-            //             }
-            //         }
-            //     }
-            //     else
-            //     {
-            //         qWarning() << partRoot << "not Found in LMDB";
-            //     }
+                QString partRoot = "2:0:/";
+                uint64_t partRootId = 0;
+                if (repo.getNodeByPath(partRoot, partRootId))
+                {
+                    qInfo() << partRoot << "Node ID:" << partRootId;
+                    NodeMetadata metadata{};
+                    if (repo.getNode(partRootId, metadata))
+                    {
+                        qInfo() << partRoot << "Metadata: inode=" << metadata.inode << " size=" << metadata.size << " is_dir=" << (int)metadata.is_dir;
+                    }
+                    auto children = repo.getChildren(partRootId);
+                    qInfo() << partRoot << " Children Count:" << children.size();
+                    repo.debugListChildrenInDb(partRootId);
+                    for (uint64_t cid : children) {
+                        QString childPath;
+                        NodeMetadata childMeta{};
+                        if (repo.getPathForNode(cid, childPath)) {
+                            qInfo() << "  Child Path:" << childPath;
+                        }
+                        if (repo.getNode(cid, childMeta)) {
+                            qInfo() << "  Child Node ID:" << cid
+                                    << " inode:" << childMeta.inode
+                                    << " size:" << childMeta.size
+                                    << " is_dir:" << (int)childMeta.is_dir;
+                        } else {
+                            qInfo() << "  Child Node ID:" << cid << " (no metadata)";
+                        }
+                    }
+                }
+                else
+                {
+                    qWarning() << partRoot << "not Found in LMDB";
+                }
 
-            //     QString bootPath = "2:0:/boot";
-            //     uint64_t bootId = 0;
-            //     if (repo.getNodeByPath(bootPath, bootId))
-            //     {
-            //         qInfo() << bootPath << "Node ID:" << bootId;
-            //         NodeMetadata metadata{};
-            //         if (repo.getNode(bootId, metadata))
-            //         {
-            //             qInfo() << bootPath << "Metadata: inode=" << metadata.inode << " size=" << metadata.size << " is_dir=" << (int)metadata.is_dir;
-            //         }
-            //         auto children = repo.getChildren(bootId);
-            //         qInfo() << bootPath << " Children Count:" << children.size();
-            //         repo.debugListChildrenInDb(bootId);
-            //         for (uint64_t cid : children) {
-            //             QString childPath;
-            //             NodeMetadata childMeta{};
-            //             if (repo.getPathForNode(cid, childPath)) {
-            //                 qInfo() << "  Child Path:" << childPath;
-            //             }
-            //             if (repo.getNode(cid, childMeta)) {
-            //                 qInfo() << "  Child Node ID:" << cid
-            //                         << " inode:" << childMeta.inode
-            //                         << " size:" << childMeta.size
-            //                         << " is_dir:" << (int)childMeta.is_dir;
-            //             } else {
-            //                 qInfo() << "  Child Node ID:" << cid << " (no metadata)";
-            //             }
-            //         }
-            //     }
-            //     else
-            //     {
-            //         qWarning() << bootPath << "not Found in LMDB";
-            //     }
+                QString bootPath = "2:0:/boot";
+                uint64_t bootId = 0;
+                if (repo.getNodeByPath(bootPath, bootId))
+                {
+                    qInfo() << bootPath << "Node ID:" << bootId;
+                    NodeMetadata metadata{};
+                    if (repo.getNode(bootId, metadata))
+                    {
+                        qInfo() << bootPath << "Metadata: inode=" << metadata.inode << " size=" << metadata.size << " is_dir=" << (int)metadata.is_dir;
+                    }
+                    auto children = repo.getChildren(bootId);
+                    qInfo() << bootPath << " Children Count:" << children.size();
+                    repo.debugListChildrenInDb(bootId);
+                    for (uint64_t cid : children) {
+                        QString childPath;
+                        NodeMetadata childMeta{};
+                        if (repo.getPathForNode(cid, childPath)) {
+                            qInfo() << "  Child Path:" << childPath;
+                        }
+                        if (repo.getNode(cid, childMeta)) {
+                            qInfo() << "  Child Node ID:" << cid
+                                    << " inode:" << childMeta.inode
+                                    << " size:" << childMeta.size
+                                    << " is_dir:" << (int)childMeta.is_dir;
+                        } else {
+                            qInfo() << "  Child Node ID:" << cid << " (no metadata)";
+                        }
+                    }
+                }
+                else
+                {
+                    qWarning() << bootPath << "not Found in LMDB";
+                }
 
-                // repo.close();
-            // }
+                repo.close();
+            }
             // else
             // {
             //     qWarning() << "Failed to Open FS Index Repository for:" << lmdbPath;
@@ -263,8 +263,8 @@ void MainWindow::loadDataSources()
         // }
         // else
         // {
-            qDebug() << "Disk Requires Ingest:" << ds.filePath;
-            indexManager->CreateJob(ds, caseManager.getCurrentCase().casePath);
+            // qDebug() << "Disk Requires Ingest:" << ds.filePath;
+            // indexManager->CreateJob(ds, caseManager.getCurrentCase().casePath);
         // }
     }
 }

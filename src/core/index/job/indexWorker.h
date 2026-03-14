@@ -6,7 +6,7 @@
 
 #include "data/evidence/dataSourceData.h"
 
-#include "core/lmdb/lmdbManager.h"
+#include "core/index/engine/lmdbIndexEngine.h"
 
 class IndexWorker : public QObject
 {

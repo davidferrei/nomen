@@ -1,5 +1,5 @@
-#ifndef FSINDEXREPOSITORY_H
-#define FSINDEXREPOSITORY_H
+#ifndef INDEXDBMANAGER_H
+#define INDEXDBMANAGER_H
 
 #include <QString>
 #include <QVector>
@@ -15,11 +15,11 @@ extern "C" {
 #include "data/index/nodeMetaData.h"
 
 
-class FSIndexRepository
+class IndexDBManager
 {
 public:
-    explicit FSIndexRepository(const QString &lmdbPath);
-    ~FSIndexRepository();
+    explicit IndexDBManager(const QString &lmdbPath);
+    ~IndexDBManager();
 
     bool open();
     void close();
@@ -43,4 +43,4 @@ private:
     MDB_env *env;
 };
 
-#endif // FSINDEXREPOSITORY_H
+#endif // INDEXDBMANAGER_H

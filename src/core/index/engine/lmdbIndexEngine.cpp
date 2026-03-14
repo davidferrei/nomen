@@ -1,31 +1,31 @@
-#include "lmdbManager.h"
+#include "lmdbIndexEngine.h"
 
-LMDBManager::LMDBManager()
+lmdbIndexEngine::lmdbIndexEngine()
     : env(nullptr),
     dbi(0),
     initialized(false)
 {
-    qInfo() << "[LMDBManager] Constructor Called";
+    qInfo() << "[lmdbIndexEngine] Constructor Called";
 }
 
-LMDBManager::~LMDBManager()
+lmdbIndexEngine::~lmdbIndexEngine()
 {
-    qInfo() << "[LMDBManager] Destructor Called";
+    qInfo() << "[lmdbIndexEngine] Destructor Called";
     close();
 }
 
 //############################################################################################
 // Functions
 
-bool LMDBManager::initialize(const QString& path)
+bool lmdbIndexEngine::initialize(const QString& path)
 {
-    qInfo() << "[LMDBManager] Initializing Environment";
+    qInfo() << "[lmdbIndexEngine] Initializing Environment";
 
     int rc = mdb_env_create(&env);
 
     if (rc != 0)
     {
-        qCritical() << "[LMDBManager] Env Create Failed:" << mdb_strerror(rc);
+        qCritical() << "[lmdbIndexEngine] Env Create Failed:" << mdb_strerror(rc);
         return false;
     }
 
@@ -37,7 +37,7 @@ bool LMDBManager::initialize(const QString& path)
     {
         if (!dir.mkpath(path))
         {
-            qCritical() << "[LMDBManager] Directory Creation Failed";
+            qCritical() << "[lmdbIndexEngine] Directory Creation Failed";
             return false;
         }
     }
@@ -45,7 +45,7 @@ bool LMDBManager::initialize(const QString& path)
     rc = mdb_env_open(env, path.toUtf8().constData(), 0, 0664);
     if (rc != 0)
     {
-        qCritical() << "[LMDBManager] Env Open Failed:" << mdb_strerror(rc);
+        qCritical() << "[lmdbIndexEngine] Env Open Failed:" << mdb_strerror(rc);
         return false;
     }
 
@@ -53,14 +53,14 @@ bool LMDBManager::initialize(const QString& path)
     rc = mdb_txn_begin(env, nullptr, 0, &txn);
     if (rc != 0)
     {
-        qCritical() << "[LMDBManager] Txn Begin Failed:" << mdb_strerror(rc);
+        qCritical() << "[lmdbIndexEngine] Txn Begin Failed:" << mdb_strerror(rc);
         return false;
     }
 
     rc = mdb_dbi_open(txn, nullptr, 0, &dbi);
     if (rc != 0)
     {
-        qCritical() << "[LMDBManager] DBI Open Failed:" << mdb_strerror(rc);
+        qCritical() << "[lmdbIndexEngine] DBI Open Failed:" << mdb_strerror(rc);
         mdb_txn_abort(txn);
         return false;
     }
@@ -68,25 +68,25 @@ bool LMDBManager::initialize(const QString& path)
     rc = mdb_txn_commit(txn);
     if (rc != 0)
     {
-        qCritical() << "[LMDBManager] Txn Commit Failed:" << mdb_strerror(rc);
+        qCritical() << "[lmdbIndexEngine] Txn Commit Failed:" << mdb_strerror(rc);
         return false;
     }
 
     initialized = true;
 
-    qInfo() << "[LMDBManager] Initialization Successful";
+    qInfo() << "[lmdbIndexEngine] Initialization Successful";
     return true;
 }
 
-void LMDBManager::close()
+void lmdbIndexEngine::close()
 {
     if (!initialized)
     {
-        qInfo() << "[LMDBManager] Environment Not Initialized, Nothing to Close";
+        qInfo() << "[lmdbIndexEngine] Environment Not Initialized, Nothing to Close";
         return;
     }
 
-    qInfo() << "[LMDBManager] Closing Environment";
+    qInfo() << "[lmdbIndexEngine] Closing Environment";
 
     mdb_dbi_close(env, dbi);
     mdb_env_close(env);
@@ -106,7 +106,7 @@ static inline uint64_t read_u64(const MDB_val &v)
     return x;
 }
 
-bool LMDBManager::debug_dumpAllLmdbTest(const QString& lmdbPath)
+bool lmdbIndexEngine::debug_dumpAllLmdbTest(const QString& lmdbPath)
 {
     PerformanceTimer timer("Debug Dump All LMDB");
 
@@ -115,7 +115,7 @@ bool LMDBManager::debug_dumpAllLmdbTest(const QString& lmdbPath)
     MDB_dbi nodes_dbi = 0, children_dbi = 0, paths_dbi = 0, inode_map_dbi = 0;
 
     if (mdb_env_create(&env) != 0) {
-        qCritical() << "[LMDBManager] Debug: env Create Failed";
+        qCritical() << "[lmdbIndexEngine] Debug: env Create Failed";
         return false;
     }
     mdb_env_set_maxdbs(env, 4);
@@ -124,13 +124,13 @@ bool LMDBManager::debug_dumpAllLmdbTest(const QString& lmdbPath)
     QDir().mkpath(lmdbPath);
 
     if (mdb_env_open(env, lmdbPath.toUtf8().constData(), 0, 0664) != 0) {
-        qCritical() << "[LMDBManager] Debug: env Open Failed for" << lmdbPath;
+        qCritical() << "[lmdbIndexEngine] Debug: env Open Failed for" << lmdbPath;
         mdb_env_close(env);
         return false;
     }
 
     if (mdb_txn_begin(env, nullptr, MDB_RDONLY, &txn) != 0) {
-        qCritical() << "[LMDBManager] Debug: txn Begin Failed";
+        qCritical() << "[lmdbIndexEngine] Debug: txn Begin Failed";
         mdb_env_close(env);
         return false;
     }
@@ -178,7 +178,7 @@ bool LMDBManager::debug_dumpAllLmdbTest(const QString& lmdbPath)
     return true;
 }
 
-bool LMDBManager::debug_dumpLmdbFirst20(const QString& lmdbPath)
+bool lmdbIndexEngine::debug_dumpLmdbFirst20(const QString& lmdbPath)
 {
     PerformanceTimer timer("Debug Dump First 20 LMDB");
 
@@ -187,7 +187,7 @@ bool LMDBManager::debug_dumpLmdbFirst20(const QString& lmdbPath)
     MDB_dbi nodes_dbi = 0, children_dbi = 0, paths_dbi = 0, inode_map_dbi = 0;
 
     if (mdb_env_create(&env) != 0) {
-        qCritical() << "[LMDBManager] Debug: env Create Failed";
+        qCritical() << "[lmdbIndexEngine] Debug: env Create Failed";
         return false;
     }
     mdb_env_set_maxdbs(env, 4);
@@ -196,13 +196,13 @@ bool LMDBManager::debug_dumpLmdbFirst20(const QString& lmdbPath)
     QDir().mkpath(lmdbPath);
 
     if (mdb_env_open(env, lmdbPath.toUtf8().constData(), 0, 0664) != 0) {
-        qCritical() << "[LMDBManager] Debug: env Open Failed for" << lmdbPath;
+        qCritical() << "[lmdbIndexEngine] Debug: env Open Failed for" << lmdbPath;
         mdb_env_close(env);
         return false;
     }
 
     if (mdb_txn_begin(env, nullptr, MDB_RDONLY, &txn) != 0) {
-        qCritical() << "[LMDBManager] Debug: txn Begin Failed";
+        qCritical() << "[lmdbIndexEngine] Debug: txn Begin Failed";
         mdb_env_close(env);
         return false;
     }
@@ -292,7 +292,7 @@ bool LMDBManager::debug_dumpLmdbFirst20(const QString& lmdbPath)
     return true;
 }
 
-bool LMDBManager::debug_dumpSpecialNodes(const QString& lmdbPath)
+bool lmdbIndexEngine::debug_dumpSpecialNodes(const QString& lmdbPath)
 {
     PerformanceTimer timer("Debug Dump Special Nodes");
 
@@ -301,7 +301,7 @@ bool LMDBManager::debug_dumpSpecialNodes(const QString& lmdbPath)
     MDB_dbi nodes_dbi = 0;
 
     if (mdb_env_create(&env) != 0) {
-        qCritical() << "[LMDBManager] Debug: env Create Failed";
+        qCritical() << "[lmdbIndexEngine] Debug: env Create Failed";
         return false;
     }
     mdb_env_set_maxdbs(env, 4);
@@ -310,19 +310,19 @@ bool LMDBManager::debug_dumpSpecialNodes(const QString& lmdbPath)
     QDir().mkpath(lmdbPath);
 
     if (mdb_env_open(env, lmdbPath.toUtf8().constData(), 0, 0664) != 0) {
-        qCritical() << "[LMDBManager] Debug: env Open Failed for" << lmdbPath;
+        qCritical() << "[lmdbIndexEngine] Debug: env Open Failed for" << lmdbPath;
         mdb_env_close(env);
         return false;
     }
 
     if (mdb_txn_begin(env, nullptr, MDB_RDONLY, &txn) != 0) {
-        qCritical() << "[LMDBManager] Debug: txn Begin Failed";
+        qCritical() << "[lmdbIndexEngine] Debug: txn Begin Failed";
         mdb_env_close(env);
         return false;
     }
 
     if (mdb_dbi_open(txn, "nodes", 0, &nodes_dbi) != 0) {
-        qCritical() << "[LMDBManager] Debug: nodes dbi Open Failed";
+        qCritical() << "[lmdbIndexEngine] Debug: nodes dbi Open Failed";
         mdb_txn_abort(txn);
         mdb_env_close(env);
         return false;
