@@ -208,7 +208,7 @@ bool CaseManager::openCase(const QString& casePath)
     }
 
     QString dateForFile = QDateTime::currentDateTime().toString("dd_MM_yyyy");
-    QString logFilePath = currentCase.casePath + "/logs/nomen_" + dateForFile + ".log";
+    QString logFilePath = currentCase.casePath + "/logs/app/nomen_" + dateForFile + ".log";
 
     setLogFilePath(logFilePath);
 

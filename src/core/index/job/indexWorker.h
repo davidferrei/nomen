@@ -7,6 +7,8 @@
 #include "data/evidence/dataSourceData.h"
 
 #include "core/index/engine/lmdbIndexEngine.h"
+#include "core/forensic/tsk/tskwalker.h"
+#include "core/caseDBManager/caseDBThreadInstance.h"
 
 class IndexWorker : public QObject
 {

@@ -1,5 +1,4 @@
 #include "indexWorker.h"
-#include "core/forensic/tsk/tskwalker.h"
 
 IndexWorker::IndexWorker(const DataSourceData& ds, const QString& casePath, QObject* parent) : QObject(parent), dataSource(ds), caseFolderPath(casePath) {}
 
@@ -9,29 +8,64 @@ void IndexWorker::run()
 
     try
     {
-        QString lmdbPath = caseFolderPath + "/indexes/" + "disk-" % QString::number(dataSource.id);
-
-        lmdbIndexEngine lmdb;
-        
-        if (!lmdb.initialize(lmdbPath)) {
-            emit failed("Failed to Initialize LMDB at " + lmdbPath);
+        CaseDBThreadInstance dbThread(caseFolderPath);
+        if (!dbThread.openDatabase()) 
+        {
+            qWarning() << "IndexWorker: Failed to Open Case DB for" << dataSource.filePath;
+            emit failed("Failed to Open Case DB");
             return;
         }
 
-        if (!TskWalker::walkImage(dataSource.filePath, lmdb)) {
+        QString lmdbPath = caseFolderPath + "/indexes/" + "disk-" % QString::number(dataSource.id);
+
+        lmdbIndexEngine lmdb;
+
+        if (!lmdb.initialize(lmdbPath)) 
+        {
+            emit failed("Failed to Initialize LMDB at " + lmdbPath);
+            dbThread.closeDatabase();
+            return;
+        }
+
+        if (!TskWalker::walkImage(dataSource.filePath, lmdb)) 
+        {
             emit failed("TSK Disk Walk Failed for " + dataSource.filePath);
+            dbThread.closeDatabase();
             return;
         }
 
         #ifdef QT_DEBUG
-            lmdb.debug_dumpAllLmdbTest(lmdbPath);
-            lmdb.debug_dumpLmdbFirst20(lmdbPath);
-            lmdb.debug_dumpSpecialNodes(lmdbPath);
+            // lmdb.debug_dumpAllLmdbTest(lmdbPath);
+            // lmdb.debug_dumpLmdbFirst20(lmdbPath);
+            // lmdb.debug_dumpSpecialNodes(lmdbPath);
         #endif
         
-        //FIXME: Save Ingested = True to DS in DB
+        DataSourceRepository DSRepo = dbThread.dataSourceRepo();
+        DataSourceData updatedDS = dataSource;
+        updatedDS.indexed = true;
+        if (updatedDS.id > 0) 
+        {
+            if (!DSRepo.update(updatedDS.id, updatedDS)) 
+            {
+                qWarning() << "IndexWorker: Failed to Update Datasource for:" << updatedDS.id;
+                emit failed("Failed to Update Datasource in DB");
+                dbThread.closeDatabase();
+                return;
+            }
+        } 
+        else 
+        {
+            if (!DSRepo.insert(updatedDS)) 
+            {
+                qWarning() << "IndexWorker: Failed to Insert Datasource for:" << updatedDS.id;
+                emit failed("Failed to Insert Datasource in DB");
+                dbThread.closeDatabase();
+                return;
+            }
+        }
 
         qDebug() << "[IndexWorker] Indexing Finished for:" << dataSource.filePath;
+        dbThread.closeDatabase();
         emit finished();
     }
     catch (const std::exception& e)

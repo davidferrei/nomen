@@ -1,7 +1,5 @@
 #include "casedbmanager.h"
 
-#include <QDebug>
-#include <QDir>
 
 CaseDBManager::CaseDBManager(const QString& casePath) : dbPath(casePath) {}
 

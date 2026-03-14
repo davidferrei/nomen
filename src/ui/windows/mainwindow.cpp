@@ -145,8 +145,8 @@ void MainWindow::loadDataSources()
         qDebug().noquote() << "Notes       :" << ds.notes;
         qDebug().noquote() << "================================";
 
-        // if (ds.indexed)
-        // {
+        if (ds.indexed)
+        {
             qDebug() << "Disk Already Indexed:" << ds.filePath;
 
             IndexDBManager repo(caseManager.getCurrentCase().casePath + "/indexes/disk-" % QString::number(ds.id));
@@ -256,16 +256,16 @@ void MainWindow::loadDataSources()
 
                 repo.close();
             }
-            // else
-            // {
-            //     qWarning() << "Failed to Open FS Index Repository for:" << lmdbPath;
-            // }
-        // }
-        // else
-        // {
-            // qDebug() << "Disk Requires Ingest:" << ds.filePath;
-            // indexManager->CreateJob(ds, caseManager.getCurrentCase().casePath);
-        // }
+            else
+            {
+                qWarning() << "Failed to Open FS Index Repository";
+            }
+        }
+        else
+        {
+            qDebug() << "Disk Requires Ingest:" << ds.filePath;
+            indexManager->CreateJob(ds, caseManager.getCurrentCase().casePath);
+        }
     }
 }
 
