@@ -40,15 +40,25 @@ static QByteArray normalizeParentPathBytes(const char* path)
 
 static TSK_WALK_RET_ENUM file_callback(TSK_FS_FILE* fs_file, const char* path, void* ptr)
 {
-    if (!fs_file || !fs_file->name || !fs_file->name->name)
+    if (!fs_file || !fs_file->name || !fs_file->name->name) {
+        qWarning() << "[TskWalker] Skipping Entry: Name Information Missing"
+                   << "fs_file:" << (fs_file ? "present" : "null")
+                   << "name:" << (fs_file && fs_file->name ? "present" : "null")
+                   << "name->name:" << (fs_file && fs_file->name && fs_file->name->name ? "present" : "null")
+                   << "path:" << (path ? path : "(null)");
         return TSK_WALK_CONT;
+    }
 
     const char* rawName = fs_file->name->name;
     if (rawName[0] == '.' && (rawName[1] == '\0' || (rawName[1] == '.' && rawName[2] == '\0')))
         return TSK_WALK_CONT;
 
     auto* walk_ctx = static_cast<WalkContext*>(ptr);
-    if (!walk_ctx || !walk_ctx->lmdb_txn) return TSK_WALK_CONT;
+    if (!walk_ctx || !walk_ctx->lmdb_env) {
+        qWarning() << "[TskWalker] Missing Walk Context Pointer or LMDB Environment";
+        return TSK_WALK_STOP;
+    }
+
 
     TSK_FS_META *fs_meta = fs_file->meta;
 
@@ -125,7 +135,7 @@ static TSK_WALK_RET_ENUM file_callback(TSK_FS_FILE* fs_file, const char* path, v
     rc = mdb_put(walk_ctx->lmdb_txn, walk_ctx->lmdb_inode_map_dbi, &ik, &iv, MDB_NOOVERWRITE);
     if (rc != 0 && rc != MDB_KEYEXIST)
     {
-        qWarning() << "[TskWalker] mdb_put inode_map failed:" << mdb_strerror(rc);
+        qWarning() << "[TskWalker] mdb_put inode_map Failed:" << mdb_strerror(rc);
         mdb_txn_abort(walk_ctx->lmdb_txn);
         walk_ctx->lmdb_txn = nullptr;
         return TSK_WALK_STOP;
@@ -145,7 +155,7 @@ static TSK_WALK_RET_ENUM file_callback(TSK_FS_FILE* fs_file, const char* path, v
     rc = mdb_put(walk_ctx->lmdb_txn, walk_ctx->lmdb_nodes_dbi, &nk, &nv, 0);
     if (rc != 0) 
     {
-        qWarning() << "[TskWalker] mdb_put nodes failed:" << mdb_strerror(rc);
+        qWarning() << "[TskWalker] mdb_put nodes Failed:" << mdb_strerror(rc);
         mdb_txn_abort(walk_ctx->lmdb_txn);
         walk_ctx->lmdb_txn = nullptr;
         return TSK_WALK_STOP;
@@ -172,7 +182,7 @@ static TSK_WALK_RET_ENUM file_callback(TSK_FS_FILE* fs_file, const char* path, v
     rc = mdb_put(walk_ctx->lmdb_txn, walk_ctx->lmdb_paths_dbi, &pkpath, &pvpath, 0);
     if (rc != 0) 
     {
-        qWarning() << "[TskWalker] mdb_put paths failed:" << mdb_strerror(rc);
+        qWarning() << "[TskWalker] mdb_put paths Failed:" << mdb_strerror(rc);
         mdb_txn_abort(walk_ctx->lmdb_txn);
         walk_ctx->lmdb_txn = nullptr;
         return TSK_WALK_STOP;
@@ -183,7 +193,7 @@ static TSK_WALK_RET_ENUM file_callback(TSK_FS_FILE* fs_file, const char* path, v
     rc = mdb_put(walk_ctx->lmdb_txn, walk_ctx->lmdb_children_dbi, &ck, &cv, 0);
     if (rc != 0) 
     {
-        qWarning() << "[TskWalker] mdb_put children failed:" << mdb_strerror(rc);
+        qWarning() << "[TskWalker] mdb_put children Failed:" << mdb_strerror(rc);
         mdb_txn_abort(walk_ctx->lmdb_txn);
         walk_ctx->lmdb_txn = nullptr;
         return TSK_WALK_STOP;
