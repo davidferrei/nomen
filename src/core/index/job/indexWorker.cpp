@@ -23,21 +23,19 @@ void IndexWorker::run()
         if (!lmdb.initialize(lmdbPath)) 
         {
             emit failed("Failed to Initialize LMDB at " + lmdbPath);
-            dbThread.closeDatabase();
             return;
         }
 
         if (!TskWalker::walkImage(dataSource.filePath, lmdb)) 
         {
             emit failed("TSK Disk Walk Failed for " + dataSource.filePath);
-            dbThread.closeDatabase();
             return;
         }
 
         #ifdef QT_DEBUG
-            // lmdb.debug_dumpAllLmdbTest(lmdbPath);
-            // lmdb.debug_dumpLmdbFirst20(lmdbPath);
-            // lmdb.debug_dumpSpecialNodes(lmdbPath);
+            lmdb.debug_dumpAllLmdbTest(lmdbPath);
+            lmdb.debug_dumpLmdbFirst20(lmdbPath);
+            lmdb.debug_dumpSpecialNodes(lmdbPath);
         #endif
         
         DataSourceRepository DSRepo = dbThread.dataSourceRepo();
@@ -49,7 +47,6 @@ void IndexWorker::run()
             {
                 qWarning() << "IndexWorker: Failed to Update Datasource for:" << updatedDS.id;
                 emit failed("Failed to Update Datasource in DB");
-                dbThread.closeDatabase();
                 return;
             }
         } 
@@ -59,13 +56,11 @@ void IndexWorker::run()
             {
                 qWarning() << "IndexWorker: Failed to Insert Datasource for:" << updatedDS.id;
                 emit failed("Failed to Insert Datasource in DB");
-                dbThread.closeDatabase();
                 return;
             }
         }
 
         qDebug() << "[IndexWorker] Indexing Finished for:" << dataSource.filePath;
-        dbThread.closeDatabase();
         emit finished();
     }
     catch (const std::exception& e)

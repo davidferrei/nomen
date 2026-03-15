@@ -37,32 +37,62 @@ bool DataSourceRepository::insert(const DataSourceData& ds)
 
 bool DataSourceRepository::update(long long id, const DataSourceData& ds)
 {
+    qDebug() << "[IndexWorker] Updating DS:" << ds.id;
+
     IBPP::Transaction tr = IBPP::TransactionFactory(fb_db);
-    tr->Start();
+    try
+    {
+        tr->Start();
 
-    IBPP::Statement st = IBPP::StatementFactory(fb_db, tr);
-    st->Prepare(
-        "UPDATE DATASOURCE "
-        "SET NAME = ?, DISKSIZE = ?, SECTORSIZE = ?, HASH = ?, FORMAT = ?, "
-        "FILEPATH = ?, TIMEZONE = ?, NOTES = ?, INDEXED = ? "
-        "WHERE DATASOURCEID = ?"
-        );
+        IBPP::Statement st = IBPP::StatementFactory(fb_db, tr);
+        st->Prepare(
+            "UPDATE DATASOURCE "
+            "SET NAME = ?, DISKSIZE = ?, SECTORSIZE = ?, HASH = ?, FORMAT = ?, "
+            "FILEPATH = ?, TIMEZONE = ?, NOTES = ?, INDEXED = ? "
+            "WHERE DATASOURCEID = ?"
+            );
 
-    st->Set(1, ds.name.toStdString());
-    st->Set(2, static_cast<int64_t>(ds.diskSize));
-    st->Set(3, static_cast<int32_t>(ds.sectorSize));
-    st->Set(4, ds.hash.toStdString());
-    st->Set(5, ds.format.toStdString());
-    st->Set(6, ds.filePath.toStdString());
-    st->Set(7, ds.timeZone.toStdString());
-    st->Set(8, ds.notes.toStdString());
-    st->Set(9, static_cast<int16_t>(ds.indexed ? 1 : 0));
-    st->Set(10, static_cast<int64_t>(id));
+        qDebug() << "[IndexWorker] Updated DS - id:" << id
+                 << "name:" << ds.name << "diskSize:" << ds.diskSize
+                 << "sectorSize:" << ds.sectorSize << "hash:" << ds.hash
+                 << "format:" << ds.format << "filePath:" << ds.filePath
+                 << "timeZone:" << ds.timeZone << "indexed:" << ds.indexed;
 
-    st->Execute();
-    tr->Commit();
+        st->Set(1, ds.name.toStdString());
+        st->Set(2, static_cast<int64_t>(ds.diskSize));
+        st->Set(3, static_cast<int32_t>(ds.sectorSize));
+        st->Set(4, ds.hash.toStdString());
+        st->Set(5, ds.format.toStdString());
+        st->Set(6, ds.filePath.toStdString());
+        st->Set(7, ds.timeZone.toStdString());
+        st->Set(8, ds.notes.toStdString());
+        st->Set(9, static_cast<int16_t>(ds.indexed ? 1 : 0));
+        st->Set(10, static_cast<int64_t>(id));
 
-    return true;
+        st->Execute();
+        tr->Commit();
+
+        qDebug() << "[IndexWorker] Updated DS:" << ds.id;
+        return true;
+    }
+    catch (const IBPP::SQLException& ex)
+    {
+        qWarning() << "[IndexWorker] SQLException Updating DS id:" << id << "Error:" << ex.what();
+        try { tr->Rollback(); } catch(...) {}
+        return false;
+    }
+    catch (const std::exception& ex)
+    {
+        qWarning() << "[IndexWorker] std::exception Updating DS id:" << id << "Error:" << ex.what();
+        try { tr->Rollback(); } catch(...) {}
+        return false;
+    }
+    catch (...)
+    {
+        qWarning() << "[IndexWorker] Unknown Exception Updating DS id:" << id;
+        try { tr->Rollback(); } catch(...) {}
+        return false;
+    }
 }
 
 bool DataSourceRepository::remove(long long id)

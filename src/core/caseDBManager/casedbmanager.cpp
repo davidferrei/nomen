@@ -167,21 +167,6 @@ bool CaseDBManager::createDatabase()
         }
     }
 
-
-    //TODO: Windows Fix
-    setenv("FIREBIRD", "/home/admin1/dev/qt6/Nomen/fb_embedded", 1);
-    setenv("LD_LIBRARY_PATH", "/home/admin1/dev/qt6/Nomen/fb_embedded/lib", 1);
-    setenv("FIREBIRD_LOCK", "/tmp/firebird_lock", 1);
-
-    QDir lockDir("/tmp/firebird_lock"); //TODO: Windows Fix
-
-    if (!lockDir.exists()) {
-        if (!lockDir.mkpath(".")) {
-            qCritical() << "Failed to Create Firebird Lock Directory:" << lockDir.absolutePath();
-            return false;
-        }
-    }
-
     try {
         const std::string dbPath = dbFilePath.toStdString();
 
@@ -228,10 +213,6 @@ bool CaseDBManager::openDatabase()
     }
 
     try {
-        setenv("FIREBIRD", "/home/admin1/dev/qt6/Nomen/fb_embedded", 1);
-        setenv("LD_LIBRARY_PATH", "/home/admin1/dev/qt6/Nomen/fb_embedded/lib", 1);
-        setenv("FIREBIRD_LOCK", "/tmp/firebird_lock", 1);
-
         const std::string dbPath = dbFilePath.toStdString();
 
         fb_db = IBPP::DatabaseFactory(
@@ -298,7 +279,7 @@ bool CaseDBManager::openDatabase()
 
 void CaseDBManager::closeDatabase()
 {
-    if (fb_db->Connected()) {
+    if (fb_db != nullptr && fb_db->Connected()) {
         qDebug() << "FIREBIRD: Closing Database Connection";
         try {
             fb_db->Disconnect();

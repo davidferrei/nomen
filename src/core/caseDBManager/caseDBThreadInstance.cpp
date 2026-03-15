@@ -94,7 +94,8 @@ bool CaseDBThreadInstance::openDatabase()
 
 void CaseDBThreadInstance::closeDatabase()
 {
-    if (fb_db->Connected()) {
+    if (fb_db != nullptr && fb_db->Connected())
+    {
         qDebug() << "FIREBIRD: Closing Database Connection";
         try {
             fb_db->Disconnect();
