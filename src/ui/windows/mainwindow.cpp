@@ -153,33 +153,56 @@ void MainWindow::loadDataSources()
 
             if (repo.open())
             {
-                uint64_t rootId = 0;
-                if (repo.getNodeByPath("/", rootId))
+                QPair<bool, quint64> rootResult = repo.getNodeByPath("/");
+
+                if (rootResult.first)
                 {
+                    quint64 rootId = rootResult.second;
                     qInfo() << "Root Node ID:" << rootId;
-                    NodeMetadata metadata{};
-                    if (repo.getNode(rootId, metadata))
+
+                    QPair<bool, NodeMetadata> rootMetaResult = repo.getNode(rootId);
+                    if (rootMetaResult.first)
                     {
+                        NodeMetadata metadata = rootMetaResult.second;
                         qInfo() << "Root Node Metadata: inode=" << metadata.inode << " size=" << metadata.size << " is_dir=" << (int)metadata.is_dir;
                     }
 
-                    auto children = repo.getChildren(rootId);
-                    qInfo() << "Root Node Children Count:" << children.size();
-                    for (uint64_t cid : children) {
-                        QString childPath;
-                        NodeMetadata childMeta{};
-                        if (repo.getPathForNode(cid, childPath)) {
-                            qInfo() << "  Child Path:" << childPath;
+                    QPair<bool, QVector<quint64>> childrenResult = repo.getChildren(rootId);
+                    if (childrenResult.first) 
+                    {
+                        QVector<quint64> children = childrenResult.second;
+                        qInfo() << "Root Node Children Count:" << children.size();
+
+                        for (const quint64 &cid : children) 
+                        {
+                            QPair<bool, QString> childPathResult = repo.getPathForNode(cid);
+                            if (childPathResult.first) 
+                            {
+                                QString childPath = childPathResult.second;
+                                qInfo() << "  Child Path:" << childPath;
+                            }
+
+                            QPair<bool, NodeMetadata> childMetaResult = repo.getNode(cid);
+                            if (childMetaResult.first) 
+                            {
+                                NodeMetadata childMeta = childMetaResult.second;
+                                qInfo() << "  Child Node ID:" << cid
+                                        << " inode:" << childMeta.inode
+                                        << " size:" << childMeta.size
+                                        << " is_dir:" << (int)childMeta.is_dir;
+                            } 
+                            else 
+                            {
+                                qInfo() << "  Child Node ID:" << cid << " (no metadata)";
+                            }
                         }
-                        if (repo.getNode(cid, childMeta)) {
-                            qInfo() << "  Child Node ID:" << cid
-                                    << " inode:" << childMeta.inode
-                                    << " size:" << childMeta.size
-                                    << " is_dir:" << (int)childMeta.is_dir;
-                        } else {
-                            qInfo() << "  Child Node ID:" << cid << " (no metadata)";
-                        }
+
+                    } 
+                    else 
+                    {
+                        qInfo() << "Root Node Children Count: 0";
                     }
+
                 }
                 else
                 {
@@ -187,71 +210,62 @@ void MainWindow::loadDataSources()
                 }
 
                 QString partRoot = "2:0:/";
-                uint64_t partRootId = 0;
-                if (repo.getNodeByPath(partRoot, partRootId))
+                QPair<bool, quint64> partRootResult = repo.getNodeByPath(partRoot);
+
+                if (partRootResult.first)
                 {
+                    quint64 partRootId = partRootResult.second;
                     qInfo() << partRoot << "Node ID:" << partRootId;
-                    NodeMetadata metadata{};
-                    if (repo.getNode(partRootId, metadata))
+
+                    QPair<bool, NodeMetadata> partMetaResult = repo.getNode(partRootId);
+                    if (partMetaResult.first)
                     {
+                        NodeMetadata metadata = partMetaResult.second;
                         qInfo() << partRoot << "Metadata: inode=" << metadata.inode << " size=" << metadata.size << " is_dir=" << (int)metadata.is_dir;
                     }
-                    auto children = repo.getChildren(partRootId);
-                    qInfo() << partRoot << " Children Count:" << children.size();
-                    repo.debugListChildrenInDb(partRootId);
-                    for (uint64_t cid : children) {
-                        QString childPath;
-                        NodeMetadata childMeta{};
-                        if (repo.getPathForNode(cid, childPath)) {
-                            qInfo() << "  Child Path:" << childPath;
+
+                    QPair<bool, QVector<quint64>> childrenResult = repo.getChildren(partRootId);
+                    if (childrenResult.first) 
+                    {
+                        QVector<quint64> children = childrenResult.second;
+                        qInfo() << partRoot << " Children Count:" << children.size();
+
+                        repo.debugListChildrenInDb(partRootId);
+
+                        for (const quint64 &cid : children) 
+                        {
+                            QPair<bool, QString> childPathResult = repo.getPathForNode(cid);
+                            if (childPathResult.first) 
+                            {
+                                QString childPath = childPathResult.second;
+                                qInfo() << "  Child Path:" << childPath;
+                            }
+
+                            QPair<bool, NodeMetadata> childMetaResult = repo.getNode(cid);
+                            if (childMetaResult.first) 
+                            {
+                                NodeMetadata childMeta = childMetaResult.second;
+                                qInfo() << "  Child Node ID:" << cid
+                                        << " inode:" << childMeta.inode
+                                        << " size:" << childMeta.size
+                                        << " is_dir:" << (int)childMeta.is_dir;
+                            } 
+                            else 
+                            {
+                                qInfo() << "  Child Node ID:" << cid << " (no metadata)";
+                            }
                         }
-                        if (repo.getNode(cid, childMeta)) {
-                            qInfo() << "  Child Node ID:" << cid
-                                    << " inode:" << childMeta.inode
-                                    << " size:" << childMeta.size
-                                    << " is_dir:" << (int)childMeta.is_dir;
-                        } else {
-                            qInfo() << "  Child Node ID:" << cid << " (no metadata)";
-                        }
+
+                    } 
+                    else 
+                    {
+                        qInfo() << partRoot << " Children Count: 0";
                     }
+
                 }
                 else
                 {
                     qWarning() << partRoot << "not Found in LMDB";
-                }
-
-                QString bootPath = "2:0:/boot";
-                uint64_t bootId = 0;
-                if (repo.getNodeByPath(bootPath, bootId))
-                {
-                    qInfo() << bootPath << "Node ID:" << bootId;
-                    NodeMetadata metadata{};
-                    if (repo.getNode(bootId, metadata))
-                    {
-                        qInfo() << bootPath << "Metadata: inode=" << metadata.inode << " size=" << metadata.size << " is_dir=" << (int)metadata.is_dir;
-                    }
-                    auto children = repo.getChildren(bootId);
-                    qInfo() << bootPath << " Children Count:" << children.size();
-                    repo.debugListChildrenInDb(bootId);
-                    for (uint64_t cid : children) {
-                        QString childPath;
-                        NodeMetadata childMeta{};
-                        if (repo.getPathForNode(cid, childPath)) {
-                            qInfo() << "  Child Path:" << childPath;
-                        }
-                        if (repo.getNode(cid, childMeta)) {
-                            qInfo() << "  Child Node ID:" << cid
-                                    << " inode:" << childMeta.inode
-                                    << " size:" << childMeta.size
-                                    << " is_dir:" << (int)childMeta.is_dir;
-                        } else {
-                            qInfo() << "  Child Node ID:" << cid << " (no metadata)";
-                        }
-                    }
-                }
-                else
-                {
-                    qWarning() << bootPath << "not Found in LMDB";
                 }
 
                 repo.close();

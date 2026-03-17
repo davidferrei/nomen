@@ -24,18 +24,18 @@ public:
     bool open();
     void close();
 
-    //FIXME: Clean up this messy code
-    bool getNodeByPath(const QString &path, uint64_t &outNodeId);
-    bool getNode(uint64_t nodeId, NodeMetadata &out);
-    QVector<uint64_t> getChildren(uint64_t parentId);
-    bool getPathForNode(uint64_t nodeId, QString &outPath);
-    bool getNodeByInode(uint64_t part, uint64_t fsIdx, uint64_t inode, uint64_t &outNodeId);
+
+    QPair<bool, quint64> getNodeByPath(const QString &path);
+    QPair<bool, NodeMetadata> getNode(quint64 nodeId);
+    QPair<bool, QVector<quint64>> getChildren(quint64 parentId);
+    QPair<bool, QString> getPathForNode(quint64 nodeId);
+    QPair<bool, quint64> getNodeByInode(quint64 part, quint64 fsIdx, quint64 inode);
 
     //Getters
     
 
     //Debug
-    void debugListChildrenInDb(uint64_t parentId);
+    void debugListChildrenInDb(quint64 parentId);
 
 
 private:
