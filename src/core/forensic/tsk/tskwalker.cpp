@@ -188,6 +188,20 @@ static TSK_WALK_RET_ENUM file_callback(TSK_FS_FILE* fs_file, const char* path, v
         return TSK_WALK_STOP;
     }
 
+    
+    MDB_val nkrev{ sizeof(node_id), &node_id };
+    MDB_val nvrev{ static_cast<size_t>(walk_ctx->tmp_key.size()), const_cast<char*>(walk_ctx->tmp_key.data()) };
+    rc = mdb_put(walk_ctx->lmdb_txn, walk_ctx->lmdb_paths_rev_dbi, &nkrev, &nvrev, 0);
+    
+    if (rc != 0) 
+    {
+        qWarning() << "[TskWalker] mdb_put paths_rev Failed:" << mdb_strerror(rc);
+        mdb_txn_abort(walk_ctx->lmdb_txn);
+        walk_ctx->lmdb_txn = nullptr;
+        return TSK_WALK_STOP;
+    }
+    
+
     MDB_val ck{ sizeof(parent_id), &parent_id };
     MDB_val cv{ sizeof(node_id), &node_id };
     rc = mdb_put(walk_ctx->lmdb_txn, walk_ctx->lmdb_children_dbi, &ck, &cv, 0);
@@ -230,7 +244,7 @@ static TSK_WALK_RET_ENUM file_callback(TSK_FS_FILE* fs_file, const char* path, v
 // Helper Functions
 
 static bool setup_lmdb_connection(lmdbIndexEngine &lmdb, TSK_IMG_INFO* img, MDB_env*& env, MDB_txn*& txn,
-                                  MDB_dbi &nodes_dbi, MDB_dbi &children_dbi, MDB_dbi &paths_dbi, MDB_dbi &inode_map_dbi)
+                                  MDB_dbi &nodes_dbi, MDB_dbi &children_dbi, MDB_dbi &paths_dbi, MDB_dbi &paths_rev_dbi, MDB_dbi &inode_map_dbi)
 {
     env = lmdb.envHandle();
     if (!env) 
@@ -254,7 +268,7 @@ static bool setup_lmdb_connection(lmdbIndexEngine &lmdb, TSK_IMG_INFO* img, MDB_
 
     qInfo() << "[TskWalker] LMDB Write txn Begin";
 
-    nodes_dbi = 0; children_dbi = 0; paths_dbi = 0; inode_map_dbi = 0;
+    nodes_dbi = 0; children_dbi = 0; paths_dbi = 0; paths_rev_dbi = 0; inode_map_dbi = 0;
     int rc = 0;
 
     rc = mdb_dbi_open(txn, "nodes", MDB_CREATE, &nodes_dbi);
@@ -279,6 +293,15 @@ static bool setup_lmdb_connection(lmdbIndexEngine &lmdb, TSK_IMG_INFO* img, MDB_
     if (rc != 0) 
     {
         qWarning() << "[TskWalker] Failed to open LMDB 'paths' DB:" << mdb_strerror(rc);
+        mdb_txn_abort(txn);
+        tsk_img_close(img);
+        return false;
+    }
+
+    rc = mdb_dbi_open(txn, "paths_rev", MDB_CREATE, &paths_rev_dbi);
+    if (rc != 0) 
+    {
+        qWarning() << "[TskWalker] Failed to open LMDB 'paths_rev' DB:" << mdb_strerror(rc);
         mdb_txn_abort(txn);
         tsk_img_close(img);
         return false;
@@ -376,9 +399,9 @@ bool TskWalker::walkImage(const QString &imagePath, lmdbIndexEngine &lmdb)
 
     MDB_env* env = nullptr;
     MDB_txn* txn = nullptr;
-    MDB_dbi nodes_dbi = 0, children_dbi = 0, paths_dbi = 0, inode_map_dbi = 0;
+    MDB_dbi nodes_dbi = 0, children_dbi = 0, paths_dbi = 0, paths_rev_dbi = 0, inode_map_dbi = 0;
 
-    if (!setup_lmdb_connection(lmdb, img, env, txn, nodes_dbi, children_dbi, paths_dbi, inode_map_dbi)) 
+    if (!setup_lmdb_connection(lmdb, img, env, txn, nodes_dbi, children_dbi, paths_dbi, paths_rev_dbi, inode_map_dbi)) 
     {
         qWarning() << "[TskWalker] Failed to Setup LMDB Connection";
         return false;
@@ -392,6 +415,7 @@ bool TskWalker::walkImage(const QString &imagePath, lmdbIndexEngine &lmdb)
     walk_ctx.lmdb_nodes_dbi = nodes_dbi;
     walk_ctx.lmdb_children_dbi = children_dbi;
     walk_ctx.lmdb_paths_dbi = paths_dbi;
+    walk_ctx.lmdb_paths_rev_dbi = paths_rev_dbi;
     walk_ctx.lmdb_inode_map_dbi = inode_map_dbi;
     walk_ctx.next_node_id = 1;
     walk_ctx.file_count = 0;
@@ -625,6 +649,7 @@ bool TskWalker::walkImage(const QString &imagePath, lmdbIndexEngine &lmdb)
     if (nodes_dbi) mdb_dbi_close(env, nodes_dbi);
     if (children_dbi) mdb_dbi_close(env, children_dbi);
     if (paths_dbi) mdb_dbi_close(env, paths_dbi);
+    if (paths_rev_dbi) mdb_dbi_close(env, paths_rev_dbi);
     if (inode_map_dbi) mdb_dbi_close(env, inode_map_dbi);
 
     tsk_img_close(img);

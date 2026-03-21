@@ -36,6 +36,7 @@ void IndexWorker::run()
             lmdb.debug_dumpAllLmdbTest(lmdbPath);
             lmdb.debug_dumpLmdbFirst20(lmdbPath);
             lmdb.debug_dumpSpecialNodes(lmdbPath);
+            lmdb.debug_dumpPathsRevFirst20(lmdbPath);
         #endif
         
         DataSourceRepository DSRepo = dbThread.dataSourceRepo();

@@ -292,6 +292,59 @@ bool lmdbIndexEngine::debug_dumpLmdbFirst20(const QString& lmdbPath)
     return true;
 }
 
+bool lmdbIndexEngine::debug_dumpPathsRevFirst20(const QString& lmdbPath)
+{
+    PerformanceTimer timer("Debug Dump paths_rev First 20");
+
+    MDB_env* env = nullptr;
+    MDB_txn* txn = nullptr;
+    MDB_dbi paths_rev_dbi = 0;
+
+    if (mdb_env_create(&env) != 0) {
+        qCritical() << "[lmdbIndexEngine] Debug: env Create Failed";
+        return false;
+    }
+    mdb_env_set_maxdbs(env, 8);
+    mdb_env_set_mapsize(env, 1024ULL * 1024 * 1024 * 10ULL);
+
+    QDir().mkpath(lmdbPath);
+
+    if (mdb_env_open(env, lmdbPath.toUtf8().constData(), 0, 0664) != 0) {
+        qCritical() << "[lmdbIndexEngine] Debug: env Open Failed for" << lmdbPath;
+        mdb_env_close(env);
+        return false;
+    }
+
+    if (mdb_txn_begin(env, nullptr, MDB_RDONLY, &txn) != 0) {
+        qCritical() << "[lmdbIndexEngine] Debug: txn Begin Failed";
+        mdb_env_close(env);
+        return false;
+    }
+
+    if (mdb_dbi_open(txn, "paths_rev", 0, &paths_rev_dbi) != 0) paths_rev_dbi = 0;
+
+    MDB_cursor* cursor = nullptr;
+    MDB_val k, v;
+    int count = 0;
+
+    qInfo() << "---- PATHS_REV (First 20) ----";
+    if (paths_rev_dbi && mdb_cursor_open(txn, paths_rev_dbi, &cursor) == 0) {
+        while (count < 20 && mdb_cursor_get(cursor, &k, &v, MDB_NEXT) == 0) {
+            uint64_t id = read_u64(k);
+            QString pathStr = QString::fromUtf8(static_cast<char*>(v.mv_data), (int)v.mv_size);
+            qInfo() << id << "=>" << pathStr;
+            count++;
+        }
+        mdb_cursor_close(cursor);
+    } else {
+        qInfo() << "paths_rev DB not Present or Could not Open Cursor";
+    }
+
+    mdb_txn_abort(txn);
+    mdb_env_close(env);
+    return true;
+}
+
 bool lmdbIndexEngine::debug_dumpSpecialNodes(const QString& lmdbPath)
 {
     PerformanceTimer timer("Debug Dump Special Nodes");

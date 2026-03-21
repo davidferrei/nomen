@@ -26,6 +26,7 @@ struct WalkContext
     MDB_dbi lmdb_nodes_dbi;
     MDB_dbi lmdb_children_dbi;
     MDB_dbi lmdb_paths_dbi;
+    MDB_dbi lmdb_paths_rev_dbi;
     MDB_dbi lmdb_inode_map_dbi;
     uint64_t next_node_id;
     uint64_t file_count;
