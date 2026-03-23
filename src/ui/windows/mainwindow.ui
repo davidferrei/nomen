@@ -37,14 +37,17 @@
         </item>
         <item>
          <widget class="QTabWidget" name="MainTabGroup">
-          <widget class="QWidget" name="tab_3">
+          <property name="currentIndex">
+           <number>0</number>
+          </property>
+          <widget class="QWidget" name="fileViewerTab">
            <attribute name="title">
-            <string>Tab 1</string>
+            <string>Content Viewer</string>
            </attribute>
           </widget>
           <widget class="QWidget" name="tab_4">
            <attribute name="title">
-            <string>Tab 2</string>
+            <string>Stats</string>
            </attribute>
           </widget>
          </widget>
@@ -59,14 +62,20 @@
           <height>0</height>
          </size>
         </property>
-        <widget class="QWidget" name="tab">
+        <property name="currentIndex">
+         <number>1</number>
+        </property>
+        <property name="tabBarAutoHide">
+         <bool>false</bool>
+        </property>
+        <widget class="QWidget" name="fsViewerTab">
          <attribute name="title">
-          <string>Tab 1</string>
+          <string>Filesystem</string>
          </attribute>
         </widget>
-        <widget class="QWidget" name="tab_2">
+        <widget class="QWidget" name="metadataViewerTab">
          <attribute name="title">
-          <string>Tab 2</string>
+          <string>Metadata</string>
          </attribute>
         </widget>
        </widget>

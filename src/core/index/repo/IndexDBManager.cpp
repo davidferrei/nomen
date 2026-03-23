@@ -46,6 +46,19 @@ bool IndexDBManager::open()
         return false;
     }
 
+    MDB_txn *txn = nullptr;
+    if (mdb_txn_begin(env, nullptr, MDB_RDONLY, &txn) == 0)
+    {
+        if (mdb_dbi_open(txn, "paths", 0, &paths_dbi) != 0) paths_dbi = 0;
+        if (mdb_dbi_open(txn, "paths_rev", 0, &paths_rev_dbi) != 0) paths_rev_dbi = 0;
+        if (mdb_dbi_open(txn, "nodes", 0, &nodes_dbi) != 0) nodes_dbi = 0;
+        if (mdb_dbi_open(txn, "children", 0, &children_dbi) != 0) children_dbi = 0;
+        if (mdb_dbi_open(txn, "inode_map", 0, &inode_map_dbi) != 0) inode_map_dbi = 0;
+
+        
+        mdb_txn_commit(txn);
+    }
+
     qInfo() << "[IndexDBManager]: LMDB FS Index Repository Opened:" << path;
     return true;
 }
@@ -53,6 +66,15 @@ bool IndexDBManager::open()
 void IndexDBManager::close()
 {
     if (!env) return;
+
+    if (paths_dbi) mdb_dbi_close(env, paths_dbi);
+    if (paths_rev_dbi) mdb_dbi_close(env, paths_rev_dbi);
+    if (nodes_dbi) mdb_dbi_close(env, nodes_dbi);
+    if (children_dbi) mdb_dbi_close(env, children_dbi);
+    if (inode_map_dbi) mdb_dbi_close(env, inode_map_dbi);
+
+    paths_dbi = paths_rev_dbi = nodes_dbi = children_dbi = inode_map_dbi = 0;
+
     mdb_env_close(env);
     env = nullptr;
 }
@@ -62,19 +84,10 @@ void IndexDBManager::close()
 
 QPair<bool, quint64> IndexDBManager::getNodeByPath(const QString &p)
 {
-    if (!env) return QPair<bool, quint64>(false, 0);
+    if (!env || !paths_dbi) return QPair<bool, quint64>(false, 0);
 
     MDB_txn *txn = nullptr;
     if (mdb_txn_begin(env, nullptr, MDB_RDONLY, &txn) != 0) return QPair<bool, quint64>(false, 0);
-
-    MDB_dbi paths_dbi = 0;
-    if (mdb_dbi_open(txn, "paths", 0, &paths_dbi) != 0) paths_dbi = 0;
-
-    if (!paths_dbi) 
-    {
-        mdb_txn_abort(txn);
-        return QPair<bool, quint64>(false, 0);
-    }
 
     QByteArray key = p.toUtf8();
     MDB_val k{ static_cast<size_t>(key.size()), const_cast<char*>(key.data()) };
@@ -95,20 +108,10 @@ QPair<bool, quint64> IndexDBManager::getNodeByPath(const QString &p)
 
 QPair<bool, NodeMetadata> IndexDBManager::getNode(quint64 nodeId)
 {
-    if (!env) return QPair<bool, NodeMetadata>(false, NodeMetadata());
-
+    if (!env || !nodes_dbi) return QPair<bool, NodeMetadata>(false, NodeMetadata());
 
     MDB_txn *txn = nullptr;
     if (mdb_txn_begin(env, nullptr, MDB_RDONLY, &txn) != 0) return QPair<bool, NodeMetadata>(false, NodeMetadata());
-
-    MDB_dbi nodes_dbi = 0;
-    if (mdb_dbi_open(txn, "nodes", 0, &nodes_dbi) != 0) nodes_dbi = 0;
-
-    if (!nodes_dbi) 
-    { 
-        mdb_txn_abort(txn); 
-        return QPair<bool, NodeMetadata>(false, NodeMetadata()); 
-    }
 
     MDB_val k{ sizeof(nodeId), &nodeId };
     MDB_val v{};
@@ -133,20 +136,10 @@ QPair<bool, NodeMetadata> IndexDBManager::getNode(quint64 nodeId)
 QPair<bool, QVector<quint64>> IndexDBManager::getChildren(quint64 parentId)
 {
     QVector<quint64> out;
-
-    if (!env) return QPair<bool, QVector<quint64>>(false, out);
+    if (!env || !children_dbi) return QPair<bool, QVector<quint64>>(false, out);
 
     MDB_txn *txn = nullptr;
     if (mdb_txn_begin(env, nullptr, MDB_RDONLY, &txn) != 0) return QPair<bool, QVector<quint64>>(false, out);
-
-    MDB_dbi children_dbi = 0;
-    if (mdb_dbi_open(txn, "children", 0, &children_dbi) != 0) children_dbi = 0;
-
-    if (!children_dbi) 
-    { 
-        mdb_txn_abort(txn); 
-        return QPair<bool, QVector<quint64>>(false, out); 
-    }
 
     MDB_cursor *cursor = nullptr;
     if (mdb_cursor_open(txn, children_dbi, &cursor) != 0) 
@@ -176,66 +169,53 @@ QPair<bool, QVector<quint64>> IndexDBManager::getChildren(quint64 parentId)
 }
 
 
+
 QPair<bool, QString> IndexDBManager::getPathForNode(quint64 nodeId)
 {
-    if (!env) return QPair<bool, QString>(false, QString());
+    if (!env || !paths_rev_dbi) return QPair<bool, QString>(false, QString());
 
     MDB_txn *txn = nullptr;
-    if (mdb_txn_begin(env, nullptr, MDB_RDONLY, &txn) != 0) return QPair<bool, QString>(false, QString());
+    if (mdb_txn_begin(env, nullptr, MDB_RDONLY, &txn) != 0)
+        return QPair<bool, QString>(false, QString());
 
-    MDB_dbi paths_dbi = 0;
-    if (mdb_dbi_open(txn, "paths", 0, &paths_dbi) != 0) paths_dbi = 0;
-
-    if (!paths_dbi) 
-    {
-        mdb_txn_abort(txn); 
-        return QPair<bool, QString>(false, QString()); 
-    }
-
-    MDB_cursor *cursor = nullptr;
-    if (mdb_cursor_open(txn, paths_dbi, &cursor) != 0) 
-    { 
-        mdb_txn_abort(txn); 
-        return QPair<bool, QString>(false, QString()); 
-    }
-
-    MDB_val k{};
+    MDB_val k{ sizeof(nodeId), &nodeId };
     MDB_val v{};
-    int rc = mdb_cursor_get(cursor, &k, &v, MDB_FIRST);
-
-    while (rc == 0) 
+    int rc = mdb_get(txn, paths_rev_dbi, &k, &v);
+    if (rc != 0)
     {
-        uint64_t val = read_u64_from_val(v);
-
-        if (val == nodeId) 
-        {
-            QString outPath = QString::fromUtf8(reinterpret_cast<const char*>(k.mv_data), (int)k.mv_size);
-            mdb_cursor_close(cursor);
-            mdb_txn_abort(txn);
-            return QPair<bool, QString>(true, outPath);
-        }
-        rc = mdb_cursor_get(cursor, &k, &v, MDB_NEXT);
+        mdb_txn_abort(txn);
+        return QPair<bool, QString>(false, QString());
     }
 
-    mdb_cursor_close(cursor);
+    QString outPath = QString::fromUtf8(reinterpret_cast<const char*>(v.mv_data), (int)v.mv_size);
     mdb_txn_abort(txn);
-    return QPair<bool, QString>(false, QString());
+    return QPair<bool, QString>(true, outPath);
+}
+
+QPair<bool, QVector<quint64>> IndexDBManager::getChildDirectories(quint64 parentId)
+{
+    QVector<quint64> out;
+    if (!env) return QPair<bool, QVector<quint64>>(false, out);
+
+    auto childrenResult = getChildren(parentId);
+    if (!childrenResult.first)
+        return QPair<bool, QVector<quint64>>(false, out);
+
+    for (quint64 cid : childrenResult.second)
+    {
+        auto metaResult = getNode(cid);
+        if (metaResult.first && metaResult.second.is_dir)
+            out.append(cid);
+    }
+    return QPair<bool, QVector<quint64>>(true, out);
 }
 
 QPair<bool, quint64> IndexDBManager::getNodeByInode(quint64 part, quint64 fsIdx, quint64 inode)
 {
-    if (!env) return QPair<bool, quint64>(false, 0);
+    if (!env || !inode_map_dbi) return QPair<bool, quint64>(false, 0);
 
     MDB_txn *txn = nullptr;
     if (mdb_txn_begin(env, nullptr, MDB_RDONLY, &txn) != 0) return QPair<bool, quint64>(false, 0);
-
-    MDB_dbi inode_map_dbi = 0;
-    if (mdb_dbi_open(txn, "inode_map", 0, &inode_map_dbi) != 0) inode_map_dbi = 0;
-    if (!inode_map_dbi) 
-    { 
-        mdb_txn_abort(txn); 
-        return QPair<bool, quint64>(false, 0); 
-    }
 
     unsigned char ikbuf[24];
     memcpy(ikbuf, &part, sizeof(part));

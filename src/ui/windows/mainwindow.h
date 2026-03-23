@@ -5,10 +5,12 @@
 #include "core/index/job/indexManager.h"
 #include "core/caseDBManager/repositories/datasourceRepository.h"
 #include "../../core/index/repo/IndexDBManager.h"
+#include "ui/models/caseTreeModel.h"
 
 #include <QLabel>
 #include <QMessageBox>
 #include <QMainWindow>
+#include <QHeaderView>
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -37,6 +39,9 @@ private:
     // DATA
     CaseManager& caseManager;
     IndexManager* indexManager;
+
+    // Tree
+    CaseTreeModel* caseTreeModel;
 
     // LOGIC
     void loadDataSources();

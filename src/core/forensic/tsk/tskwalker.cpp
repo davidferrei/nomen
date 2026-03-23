@@ -473,6 +473,10 @@ bool TskWalker::walkImage(const QString &imagePath, lmdbIndexEngine &lmdb)
         MDB_val pv{ sizeof(part_root_id), &part_root_id };
         mdb_put(walk_ctx.lmdb_txn, walk_ctx.lmdb_paths_dbi, &pk, &pv, 0);
 
+        MDB_val pkrev{ sizeof(part_root_id), &part_root_id };
+        MDB_val pvrev{ static_cast<size_t>(partitionUtf8.size()), const_cast<char*>(partitionUtf8.data()) };
+        mdb_put(walk_ctx.lmdb_txn, walk_ctx.lmdb_paths_rev_dbi, &pkrev, &pvrev, 0);
+
         uint64_t keyCombined = ((uint64_t)partitionID << 32) | (uint64_t)fsIdx64;
         walk_ctx.root_node_ids[keyCombined] = part_root_id;
 
@@ -500,6 +504,9 @@ bool TskWalker::walkImage(const QString &imagePath, lmdbIndexEngine &lmdb)
         MDB_val upk{ static_cast<size_t>(walk_ctx.tmp_key.size()), const_cast<char*>(walk_ctx.tmp_key.data()) };
         MDB_val upv{ sizeof(unalloc_node), &unalloc_node };
         mdb_put(walk_ctx.lmdb_txn, walk_ctx.lmdb_paths_dbi, &upk, &upv, 0);
+        MDB_val upkrev{ sizeof(unalloc_node), &unalloc_node };
+        MDB_val upvrev{ static_cast<size_t>(walk_ctx.tmp_key.size()), const_cast<char*>(walk_ctx.tmp_key.data()) };
+        mdb_put(walk_ctx.lmdb_txn, walk_ctx.lmdb_paths_rev_dbi, &upkrev, &upvrev, 0);
 
         MDB_val uck{ sizeof(part_root_id), &part_root_id };
         MDB_val ucv{ sizeof(unalloc_node), &unalloc_node };
@@ -529,6 +536,9 @@ bool TskWalker::walkImage(const QString &imagePath, lmdbIndexEngine &lmdb)
         MDB_val dpk{ static_cast<size_t>(walk_ctx.tmp_key.size()), const_cast<char*>(walk_ctx.tmp_key.data()) };
         MDB_val dpv{ sizeof(deleted_node), &deleted_node };
         mdb_put(walk_ctx.lmdb_txn, walk_ctx.lmdb_paths_dbi, &dpk, &dpv, 0);
+        MDB_val dpkrev{ sizeof(deleted_node), &deleted_node };
+        MDB_val dpvrev{ static_cast<size_t>(walk_ctx.tmp_key.size()), const_cast<char*>(walk_ctx.tmp_key.data()) };
+        mdb_put(walk_ctx.lmdb_txn, walk_ctx.lmdb_paths_rev_dbi, &dpkrev, &dpvrev, 0);
 
         MDB_val dck{ sizeof(part_root_id), &part_root_id };
         MDB_val dcv{ sizeof(deleted_node), &deleted_node };
@@ -558,6 +568,9 @@ bool TskWalker::walkImage(const QString &imagePath, lmdbIndexEngine &lmdb)
         MDB_val opk{ static_cast<size_t>(walk_ctx.tmp_key.size()), const_cast<char*>(walk_ctx.tmp_key.data()) };
         MDB_val opv{ sizeof(orphan_node), &orphan_node };
         mdb_put(walk_ctx.lmdb_txn, walk_ctx.lmdb_paths_dbi, &opk, &opv, 0);
+        MDB_val opkrev{ sizeof(orphan_node), &orphan_node };
+        MDB_val opvrev{ static_cast<size_t>(walk_ctx.tmp_key.size()), const_cast<char*>(walk_ctx.tmp_key.data()) };
+        mdb_put(walk_ctx.lmdb_txn, walk_ctx.lmdb_paths_rev_dbi, &opkrev, &opvrev, 0);
 
         MDB_val ock{ sizeof(part_root_id), &part_root_id };
         MDB_val ocv{ sizeof(orphan_node), &orphan_node };
@@ -625,6 +638,11 @@ bool TskWalker::walkImage(const QString &imagePath, lmdbIndexEngine &lmdb)
         MDB_val rpk{ static_cast<size_t>(walk_ctx.tmp_key.size()), const_cast<char*>(walk_ctx.tmp_key.data()) };
         MDB_val rpv{ sizeof(raw_node_id), &raw_node_id };
         mdb_put(walk_ctx.lmdb_txn, walk_ctx.lmdb_paths_dbi, &rpk, &rpv, 0);
+
+
+        MDB_val rpkrev{ sizeof(raw_node_id), &raw_node_id };
+        MDB_val rpvrev{ static_cast<size_t>(walk_ctx.tmp_key.size()), const_cast<char*>(walk_ctx.tmp_key.data()) };
+        mdb_put(walk_ctx.lmdb_txn, walk_ctx.lmdb_paths_rev_dbi, &rpkrev, &rpvrev, 0);
 
         MDB_val rck{ sizeof(top_root_id), &top_root_id };
         MDB_val rcv{ sizeof(raw_node_id), &raw_node_id };
