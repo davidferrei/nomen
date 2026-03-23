@@ -11,6 +11,8 @@
 #include <QMessageBox>
 #include <QMainWindow>
 #include <QHeaderView>
+#include <QSplitter>
+
 
 QT_BEGIN_NAMESPACE
 namespace Ui {

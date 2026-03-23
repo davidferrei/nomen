@@ -28,21 +28,35 @@ MainWindow::~MainWindow()
 //############################################################################################
 //UI Stuff
 
-void MainWindow::setUIWidgetsSizes() {
+void MainWindow::setUIWidgetsSizes() 
+{
+    QSplitter *v = ui->verticalSplitter;
+    if (v) 
+    {
+        int total = v->height();
+        if (total > 0) 
+        {
+            v->setSizes({static_cast<int>(total * 0.75), static_cast<int>(total * 0.25)});
+        } 
+        else 
+        {
+            v->setSizes({600, 200});
+        }
+    }
 
-    int totalHeight = ui->centralwidget->height();
-    int bottomHeight = totalHeight * 0.25;
-    int topHeight = totalHeight - bottomHeight;
-
-    ui->verticalLayout->setStretch(0, topHeight);
-    ui->verticalLayout->setStretch(1, bottomHeight);
-
-    int totalWidth = ui->MainLayoutGroup->geometry().width();
-    int leftWidth = totalWidth * 0.25;
-    int rightWidth = totalWidth - leftWidth;
-
-    ui->MainLayoutGroup->setStretch(0, leftWidth);
-    ui->MainLayoutGroup->setStretch(1, rightWidth);
+    QSplitter *h = ui->horizontalSplitter;
+    if (h) 
+    {
+        int w = h->width();
+        if (w > 0) 
+        {
+            h->setSizes({static_cast<int>(w * 0.25), static_cast<int>(w * 0.75)});
+        } 
+        else 
+        {
+            h->setSizes({200, 600});
+        }
+    }
 }
 
 void MainWindow::showEvent(QShowEvent *event)

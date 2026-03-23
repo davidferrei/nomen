@@ -18,8 +18,14 @@
     <item row="0" column="0">
      <layout class="QVBoxLayout" name="verticalLayout">
       <item>
-       <layout class="QHBoxLayout" name="MainLayoutGroup">
-        <item>
+       <widget class="QSplitter" name="verticalSplitter">
+        <property name="orientation">
+         <enum>Qt::Orientation::Vertical</enum>
+        </property>
+        <widget class="QSplitter" name="horizontalSplitter">
+         <property name="orientation">
+          <enum>Qt::Orientation::Horizontal</enum>
+         </property>
          <widget class="QTreeView" name="treeViewFilesystem">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
@@ -34,49 +40,51 @@
            </size>
           </property>
          </widget>
-        </item>
-        <item>
          <widget class="QTabWidget" name="MainTabGroup">
           <property name="currentIndex">
            <number>0</number>
           </property>
-          <widget class="QWidget" name="fileViewerTab">
+          <property name="movable">
+           <bool>true</bool>
+          </property>
+          <widget class="QWidget" name="contentViewerTab">
            <attribute name="title">
             <string>Content Viewer</string>
            </attribute>
           </widget>
-          <widget class="QWidget" name="tab_4">
+          <widget class="QWidget" name="statsViewerTab_2">
            <attribute name="title">
             <string>Stats</string>
            </attribute>
           </widget>
          </widget>
-        </item>
-       </layout>
-      </item>
-      <item>
-       <widget class="QTabWidget" name="BottomTabGroup">
-        <property name="minimumSize">
-         <size>
-          <width>0</width>
-          <height>0</height>
-         </size>
-        </property>
-        <property name="currentIndex">
-         <number>1</number>
-        </property>
-        <property name="tabBarAutoHide">
-         <bool>false</bool>
-        </property>
-        <widget class="QWidget" name="fsViewerTab">
-         <attribute name="title">
-          <string>Filesystem</string>
-         </attribute>
         </widget>
-        <widget class="QWidget" name="metadataViewerTab">
-         <attribute name="title">
-          <string>Metadata</string>
-         </attribute>
+        <widget class="QTabWidget" name="BottomTabGroup">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="currentIndex">
+          <number>0</number>
+         </property>
+         <property name="movable">
+          <bool>true</bool>
+         </property>
+         <property name="tabBarAutoHide">
+          <bool>false</bool>
+         </property>
+         <widget class="QWidget" name="fsExplorerTab">
+          <attribute name="title">
+           <string>Filesystem</string>
+          </attribute>
+         </widget>
+         <widget class="QWidget" name="metadataViewerTab">
+          <attribute name="title">
+           <string>Metadata</string>
+          </attribute>
+         </widget>
         </widget>
        </widget>
       </item>
