@@ -62,8 +62,22 @@ void MainWindow::setUIWidgetsSizes()
     // Tab Groups
     if (ui->MainTabGroup)
     {
+        int idxContent = ui->MainTabGroup->indexOf(ui->contentViewerTab);
+        if (idxContent >= 0 && ui->MainTabGroup->tabIcon(idxContent).isNull())
+        {
+            QIcon contentIc = QIcon::fromTheme(QStringLiteral("document-open"));
+            ui->MainTabGroup->setTabIcon(idxContent, contentIc);
+        }
+
+        int idxStats = ui->MainTabGroup->indexOf(ui->statsViewerTab_2);
+        if (idxStats >= 0 && ui->MainTabGroup->tabIcon(idxStats).isNull())
+        {
+            QIcon statsIc = QIcon::fromTheme(QStringLiteral("view-statistics"));
+            ui->MainTabGroup->setTabIcon(idxStats, statsIc);
+        }
+
         DraggableTabWidget *newMain = new DraggableTabWidget(this);
-        while (ui->MainTabGroup->count() > 0) 
+        while (ui->MainTabGroup->count() > 0)
         {
             QWidget *w = ui->MainTabGroup->widget(0);
             QString t = ui->MainTabGroup->tabText(0);
@@ -71,19 +85,33 @@ void MainWindow::setUIWidgetsSizes()
             ui->MainTabGroup->removeTab(0);
             newMain->addTab(w, ic, t);
         }
-        QSplitter *h = ui->horizontalSplitter;
-        if (h) 
+        QSplitter *h2 = ui->horizontalSplitter;
+        if (h2)
         {
-            int idx = h->indexOf(ui->MainTabGroup);
-            if (idx >= 0) h->replaceWidget(idx, newMain);
-            else h->addWidget(newMain);
+            int idx = h2->indexOf(ui->MainTabGroup);
+            if (idx >= 0) h2->replaceWidget(idx, newMain);
+            else h2->addWidget(newMain);
         }
     }
 
     if (ui->BottomTabGroup)
-    {
+        {
+        int idxFs = ui->BottomTabGroup->indexOf(ui->fsExplorerTab);
+        if (idxFs >= 0 && ui->BottomTabGroup->tabIcon(idxFs).isNull())
+        {
+            QIcon fsIc = QIcon::fromTheme(QStringLiteral("folder"));
+            ui->BottomTabGroup->setTabIcon(idxFs, fsIc);
+        }
+
+        int idxMeta = ui->BottomTabGroup->indexOf(ui->metadataViewerTab);
+        if (idxMeta >= 0 && ui->BottomTabGroup->tabIcon(idxMeta).isNull())
+        {
+            QIcon metaIc = QIcon::fromTheme(QStringLiteral("dialog-information"));
+            ui->BottomTabGroup->setTabIcon(idxMeta, metaIc);
+        }
+
         DraggableTabWidget *newBottom = new DraggableTabWidget(this);
-        while (ui->BottomTabGroup->count() > 0) 
+        while (ui->BottomTabGroup->count() > 0)
         {
             QWidget *w = ui->BottomTabGroup->widget(0);
             QString t = ui->BottomTabGroup->tabText(0);
@@ -91,13 +119,32 @@ void MainWindow::setUIWidgetsSizes()
             ui->BottomTabGroup->removeTab(0);
             newBottom->addTab(w, ic, t);
         }
-        QSplitter *v = ui->verticalSplitter;
-        if (v) 
+        QSplitter *v2 = ui->verticalSplitter;
+        if (v2)
         {
-            int idx = v->indexOf(ui->BottomTabGroup);
-            if (idx >= 0) v->replaceWidget(idx, newBottom);
-            else v->addWidget(newBottom);
+            int idx = v2->indexOf(ui->BottomTabGroup);
+            if (idx >= 0) v2->replaceWidget(idx, newBottom);
+            else v2->addWidget(newBottom);
         }
+    }
+
+    if (ui->treeViewFilesystem)
+    {
+        DraggableTabWidget *treeTab = new DraggableTabWidget(this);
+        QIcon ic = QIcon::fromTheme(QStringLiteral("repository"));
+        QString title = QStringLiteral("Case Tree");
+
+        QSplitter *h = ui->horizontalSplitter;
+        if (h)
+        {
+            int idx = h->indexOf(ui->treeViewFilesystem);
+            if (idx >= 0)
+                h->replaceWidget(idx, treeTab);
+            else
+                h->addWidget(treeTab);
+        }
+
+        treeTab->addTab(ui->treeViewFilesystem, ic, title);
     }
 }
 
@@ -148,8 +195,6 @@ void MainWindow::setupUiElements()
 
     settingsNomenAction->setEnabled(false);
 
-
-
     QMenu* helpMenu = ui->menubar->addMenu("&Help");
     QAction* aboutAction = new QAction("About", this);
     aboutAction->setIcon(QIcon(":/icons/app_icon_v1.svg"));
@@ -167,6 +212,10 @@ void MainWindow::setupUiElements()
         this
         );
     ui->statusbar->addPermanentWidget(userLabel);
+
+
+    
+
 }
 
 //############################################################################################

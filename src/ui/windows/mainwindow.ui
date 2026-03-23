@@ -49,7 +49,7 @@
           </property>
           <widget class="QWidget" name="contentViewerTab">
            <attribute name="title">
-            <string>Content Viewer</string>
+            <string>File Viewer</string>
            </attribute>
           </widget>
           <widget class="QWidget" name="statsViewerTab_2">

@@ -141,6 +141,57 @@ QVariant CaseTreeModel::data(const QModelIndex &index, int role) const
     if (role == Qt::DisplayRole)
         return item->name;
 
+    if (role == Qt::DecorationRole)
+    {
+        QIcon ic;
+        switch (item->type)
+        {
+            case TreeItemType::DataSources_Root:
+                ic = QIcon::fromTheme(QStringLiteral("computer"));
+                break;
+
+            case TreeItemType::DataSource:
+                ic = QIcon::fromTheme(QStringLiteral("drive-harddisk"));
+                break;
+
+            case TreeItemType::FS_Structure:
+                if (item->parent && item->parent->type == TreeItemType::DataSource)
+                {
+                    ic = QIcon::fromTheme(QStringLiteral("drive-partition"));
+                }
+                else
+                {
+                    ic = QIcon::fromTheme(QStringLiteral("folder"));
+                }
+                break;
+
+            case TreeItemType::Evidence_Root:
+                ic = QIcon::fromTheme(QStringLiteral("folder-documents"));
+                break;
+
+            case TreeItemType::Evidence_Tags:
+                ic = QIcon::fromTheme(QStringLiteral("tag"));
+                break;
+
+            case TreeItemType::Evidence_Groups:
+                ic = QIcon::fromTheme(QStringLiteral("object-group"));
+                break;
+
+            case TreeItemType::Views_Root:
+                ic = QIcon::fromTheme(QStringLiteral("edit-find"));
+                break;
+
+            case TreeItemType::IngestResults:
+                ic = QIcon::fromTheme(QStringLiteral("system-run"));
+                break;
+        }
+
+        if (!ic.isNull())
+            return ic;
+
+        return {};
+    }
+
     return {};
 }
 
