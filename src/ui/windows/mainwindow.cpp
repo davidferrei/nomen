@@ -1,6 +1,6 @@
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
-#include "../../core/index/repo/IndexDBManager.h"
+#include "../widgets/DraggableTabWidget.h"
 
 
 MainWindow::MainWindow(QWidget *parent, CaseManager& caseManager) : QMainWindow(parent), ui(new Ui::MainWindow), caseManager(caseManager)
@@ -30,6 +30,7 @@ MainWindow::~MainWindow()
 
 void MainWindow::setUIWidgetsSizes() 
 {
+    // Splitters
     QSplitter *v = ui->verticalSplitter;
     if (v) 
     {
@@ -55,6 +56,47 @@ void MainWindow::setUIWidgetsSizes()
         else 
         {
             h->setSizes({200, 600});
+        }
+    }
+
+    // Tab Groups
+    if (ui->MainTabGroup)
+    {
+        DraggableTabWidget *newMain = new DraggableTabWidget(this);
+        while (ui->MainTabGroup->count() > 0) 
+        {
+            QWidget *w = ui->MainTabGroup->widget(0);
+            QString t = ui->MainTabGroup->tabText(0);
+            QIcon ic = ui->MainTabGroup->tabIcon(0);
+            ui->MainTabGroup->removeTab(0);
+            newMain->addTab(w, ic, t);
+        }
+        QSplitter *h = ui->horizontalSplitter;
+        if (h) 
+        {
+            int idx = h->indexOf(ui->MainTabGroup);
+            if (idx >= 0) h->replaceWidget(idx, newMain);
+            else h->addWidget(newMain);
+        }
+    }
+
+    if (ui->BottomTabGroup)
+    {
+        DraggableTabWidget *newBottom = new DraggableTabWidget(this);
+        while (ui->BottomTabGroup->count() > 0) 
+        {
+            QWidget *w = ui->BottomTabGroup->widget(0);
+            QString t = ui->BottomTabGroup->tabText(0);
+            QIcon ic = ui->BottomTabGroup->tabIcon(0);
+            ui->BottomTabGroup->removeTab(0);
+            newBottom->addTab(w, ic, t);
+        }
+        QSplitter *v = ui->verticalSplitter;
+        if (v) 
+        {
+            int idx = v->indexOf(ui->BottomTabGroup);
+            if (idx >= 0) v->replaceWidget(idx, newBottom);
+            else v->addWidget(newBottom);
         }
     }
 }
