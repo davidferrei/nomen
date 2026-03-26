@@ -79,6 +79,18 @@
           <attribute name="title">
            <string>Filesystem</string>
           </attribute>
+          <layout class="QGridLayout" name="gridLayout_fs">
+           <item row="0" column="0">
+            <widget class="QTableView" name="tableView">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+            </widget>
+           </item>
+          </layout>
          </widget>
          <widget class="QWidget" name="metadataViewerTab">
           <attribute name="title">
