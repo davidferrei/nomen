@@ -12,6 +12,8 @@
 
 #include "core/index/repo/IndexDBManager.h"
 
+#include "data/case/dsFSNodeItem.h"
+
 //TODO: Display Child Counter
 
 enum class TreeItemType
@@ -51,7 +53,6 @@ public:
     explicit CaseTreeModel(QObject *parent = nullptr);
     ~CaseTreeModel() override;
 
-
     //Note: Must be Called Before the Model is Used
     void addDataSource(int dsId, const QString &label, const QString &lmdbPath);
 
@@ -66,14 +67,26 @@ public:
     bool canFetchMore(const QModelIndex &parent) const override;
     void fetchMore(const QModelIndex &parent) override;
 
+    QPair<bool, QVector<DSFSNodeItem>> getChildrenItemsForDSPath(int dsId, const QString &path) const;
+    QPair<bool, quint64> getNodeIdForPath(int dsId, const QString &path) const;
+    QModelIndex findIndex(int dsId, quint64 nodeId, const QModelIndex &parent = {}) const;
+
+
+public slots:
+    void onItemActivated(const QModelIndex &index);
+
+signals:
+    void nodeActivated(int dsId, const QString &path);
+
 private:
     void buildStaticRootTreeItems();
     void populateDSTreeItemChildren(TreeItem *item);
     TreeItem* itemFromIndex(const QModelIndex &idx) const;
+    QString pathForItem(TreeItem *item) const;
 
     TreeItem* root;
     TreeItem* dataSources;
-    QMap<int, std::shared_ptr<IndexDBManager>> dbManagers;
+    QMap<int, std::shared_ptr<IndexDBManager>> indexDBInstancesMap;
 };
 
 #endif // CASETREEMODEL_H

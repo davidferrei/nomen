@@ -61,7 +61,7 @@ void CaseTreeModel::addDataSource(int dsId, const QString &label, const QString 
         return;
     }
 
-    dbManagers.insert(dsId, dsIndexDB);
+    indexDBInstancesMap.insert(dsId, dsIndexDB);
 
     quint64 rootNodeId = 0;
     auto rootResult = dsIndexDB->getNodeByPath(QStringLiteral("/"));
@@ -251,8 +251,8 @@ void CaseTreeModel::populateDSTreeItemChildren(TreeItem *item)
         }
     }
 
-    auto dsIndexIterator = dbManagers.find(item->dsId);
-    if (dsIndexIterator == dbManagers.end())
+    auto dsIndexIterator = indexDBInstancesMap.find(item->dsId);
+    if (dsIndexIterator == indexDBInstancesMap.end())
     {
         qWarning() << "[CaseTreeModel] No IndexDBManager Found for DS ID" << item->dsId << "While Populating Children for Item" << item->name << "(ID:" << item->id << ")";
         return;
@@ -298,7 +298,7 @@ void CaseTreeModel::populateDSTreeItemChildren(TreeItem *item)
     {
         QString name;
 
-        auto childMeta = dsIndexDB->getNode(childDirId);
+        auto childMetadata = dsIndexDB->getNode(childDirId);
         auto childPath = dsIndexDB->getPathForNode(childDirId);
 
         if (item->type == TreeItemType::DataSource && childPath.first)
@@ -307,10 +307,10 @@ void CaseTreeModel::populateDSTreeItemChildren(TreeItem *item)
         }
         else
         {
-            if (childMeta.first)
+            if (childMetadata.first)
             {
 
-                const int status = childMeta.second.status;
+                const int status = childMetadata.second.status;
                 if (status == 1 || status == 2 || status == 3)
                 {
                     if (childPath.first && !childPath.second.isEmpty())
@@ -347,7 +347,7 @@ void CaseTreeModel::populateDSTreeItemChildren(TreeItem *item)
 
             if (name.isEmpty())
             {
-                name = QStringLiteral("Node %1").arg(childDirId);
+                name = QStringLiteral("Node - %1").arg(childDirId);
                 qWarning() << "[CaseTreeModel] Could not Resolve Name for Child Directory" << childDirId << "in DS ID" << item->dsId;
             }
         }
@@ -384,4 +384,161 @@ TreeItem* CaseTreeModel::itemFromIndex(const QModelIndex &idx) const
         return root;
 
     return static_cast<TreeItem*>(idx.internalPointer());
+}
+
+QString CaseTreeModel::pathForItem(TreeItem *item) const
+{
+    if (!item)
+    {
+        qWarning() << "[CaseTreeModel] Cannot Resolve Path: Item is null";
+        return {};
+    }
+
+    if (item->dsId >= 0)
+    {
+        auto indexDB = indexDBInstancesMap.find(item->dsId);
+        if (indexDB != indexDBInstancesMap.end())
+        {
+            IndexDBManager *indexInstance = indexDB.value().get();
+            if (indexInstance)
+            {
+                auto pathResult = indexInstance->getPathForNode(item->id);
+                if (pathResult.first)
+                    return pathResult.second;
+            }
+        }
+    }
+
+    //TODO: Handle Static Items
+    qWarning() << "[CaseTreeModel]: Unable to Resolve Path for Item" << item->name << "(ID:" << item->id << ") with DS ID" << item->dsId;
+    return QString();
+}
+
+void CaseTreeModel::onItemActivated(const QModelIndex &index)
+{
+    TreeItem *activatedItem = itemFromIndex(index);
+    if (!activatedItem)
+    {
+        qWarning() << "[CaseTreeModel] Signal - onItemActivated: Invalid Index";
+        return;
+    }
+
+    QString resolvedPath = pathForItem(activatedItem);
+
+    qDebug() << "[CaseTreeModel] Signal - nodeActivated: DS:" << activatedItem->dsId << "Path:" << resolvedPath;
+    
+    emit nodeActivated(activatedItem->dsId, resolvedPath);
+}
+
+QPair<bool, quint64> CaseTreeModel::getNodeIdForPath(int dsId, const QString &path) const
+{
+    auto indexDB = indexDBInstancesMap.find(dsId);
+    if (indexDB == indexDBInstancesMap.end() || !indexDB.value())
+        return {false, 0};
+    return indexDB.value()->getNodeByPath(path);
+}
+
+QModelIndex CaseTreeModel::findIndex(int dsId, quint64 nodeId, const QModelIndex &parent) const
+{
+    TreeItem *parentItem = itemFromIndex(parent);
+    if (!parentItem) return {};
+
+    for (int i = 0; i < parentItem->children.size(); ++i)
+    {
+        TreeItem *child = parentItem->children.at(i);
+        if (child->dsId == dsId && child->id == nodeId)
+            return createIndex(i, 0, child);
+
+        auto found = findIndex(dsId, nodeId, createIndex(i, 0, child));
+        if (found.isValid()) return found;
+    }
+    return {};
+}
+
+QPair<bool, QVector<DSFSNodeItem>> CaseTreeModel::getChildrenItemsForDSPath(int dsId, const QString &path) const
+{
+    QVector<DSFSNodeItem> outputVector;
+
+    if (dsId < 0 || path.isEmpty())
+    {
+        qWarning() << "[CaseTreeModel] getChildrenItemsForDSPath: Invalid DS ID or Path. DS ID:" << dsId << "Path:" << path;
+        return QPair<bool, QVector<DSFSNodeItem>>(false, outputVector);
+    }
+
+    auto indexDB = indexDBInstancesMap.find(dsId);
+    if (indexDB == indexDBInstancesMap.end())
+    {
+        qWarning() << "[CaseTreeModel] getChildrenItemsForDSPath: No Index DB Manager for DS with ID:" << dsId;
+        return QPair<bool, QVector<DSFSNodeItem>>(false, outputVector);
+    }
+
+    IndexDBManager *indexInstance = indexDB.value().get();
+    if (!indexInstance)
+    {
+        qWarning() << "[CaseTreeModel] getChildrenItemsForDSPath: Index DB Manager is NULL for DS with ID:" << dsId;
+        return QPair<bool, QVector<DSFSNodeItem>>(false, outputVector);
+    }
+
+    auto nodeResultPair = indexInstance->getNodeByPath(path);
+    if (!nodeResultPair.first)
+    {
+        qWarning() << "[CaseTreeModel] getChildrenItemsForDSPath: Path not Found in LMDB:" << path;
+        return QPair<bool, QVector<DSFSNodeItem>>(false, outputVector);
+    }
+
+    quint64 parentNodeId = nodeResultPair.second;
+    auto nodeChildrenResultPair = indexInstance->getChildren(parentNodeId);
+    if (!nodeChildrenResultPair.first)
+    {
+        qWarning() << "[CaseTreeModel] getChildrenItemsForDSPath: Failed to get Children for Node:" << parentNodeId;
+        return QPair<bool, QVector<DSFSNodeItem>>(false, outputVector);
+    }
+
+    for (quint64 node : nodeChildrenResultPair.second)
+    {
+        auto metaResult = indexInstance->getNode(node);
+        if (!metaResult.first) 
+        {
+            qWarning() << "[CaseTreeModel] getChildrenItemsForDSPath: Failed to get Metadata for Child Node:" << node;
+            continue;
+        }
+
+        NodeMetadata metadata = metaResult.second;
+        QString childPath;
+        auto nodePathResultPair = indexInstance->getPathForNode(node);
+        if (nodePathResultPair.first)
+        {
+            childPath = nodePathResultPair.second;
+        }
+        else
+        {
+            qWarning() << "[CaseTreeModel] getChildrenItemsForDSPath: Failed to get Path for Child Node:" << node;
+        }
+
+        QString name;
+        if (!childPath.isEmpty())
+        {
+            if (childPath == QStringLiteral("/"))
+                name = QStringLiteral("/");
+            else
+            {
+                int lastSlash = childPath.lastIndexOf('/');
+                if (lastSlash >= 0 && lastSlash < childPath.size() - 1)
+                    name = childPath.mid(lastSlash + 1);
+                else
+                    name = childPath;
+            }
+        }
+
+        if (name.isEmpty())
+        {
+            name = QStringLiteral("Node - %1").arg(node);
+            qWarning() << "[CaseTreeModel] Could not Resolve Name for Child Node" << node << "in DS ID" << dsId;
+        }
+
+        DSFSNodeItem nodeItem{ node, name, metadata, childPath };
+        outputVector.append(nodeItem);
+    }
+
+    return QPair<bool, QVector<DSFSNodeItem>>(true, outputVector);
 }

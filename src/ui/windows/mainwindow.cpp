@@ -146,6 +146,9 @@ void MainWindow::setUIWidgetsSizes()
 
         treeTab->addTab(ui->treeViewFilesystem, ic, title);
     }
+
+    if (ui->UpPushButton)
+        connect(ui->UpPushButton, &QPushButton::clicked, this, &MainWindow::onFSUpPushButtonClicked);
 }
 
 void MainWindow::showEvent(QShowEvent *event)
@@ -228,6 +231,10 @@ void MainWindow::loadDataSources()
     qDebug() << "Total Disks Found:" << dataSources.size();
 
     caseTreeModel = new CaseTreeModel(this);
+    itemTableModel = new ItemTableModel(caseTreeModel, this);
+    itemTableProxy = new QSortFilterProxyModel(this);
+    itemTableProxy->setSourceModel(itemTableModel);
+    itemTableProxy->setSortRole(Qt::UserRole);
 
     for (const DataSourceData& ds : dataSources)
     {
@@ -237,6 +244,8 @@ void MainWindow::loadDataSources()
         qDebug().noquote() << "File Path   :" << ds.filePath;
         qDebug().noquote() << "Indexed     :" << (ds.indexed ? "YES" : "NO");
         qDebug().noquote() << "================================";
+
+        dataSourceNames.insert(static_cast<int>(ds.id), ds.name.isEmpty() ? QStringLiteral("Disk %1").arg(ds.id) : ds.name);
 
         if (ds.indexed)
         {
@@ -273,6 +282,151 @@ void MainWindow::loadDataSources()
     connect(caseTreeModel, &QAbstractItemModel::rowsInserted, this, [this](const QModelIndex&, int, int){
         ui->treeViewFilesystem->resizeColumnToContents(0);
     });
+
+    connect(ui->treeViewFilesystem, &QTreeView::clicked, caseTreeModel, &CaseTreeModel::onItemActivated);
+    connect(caseTreeModel, &CaseTreeModel::nodeActivated, this, &MainWindow::onCaseTreeNodeActivated);
+
+    ui->tableView->setModel(itemTableProxy);
+    ui->tableView->setSelectionBehavior(QAbstractItemView::SelectRows);
+    ui->tableView->setSelectionMode(QAbstractItemView::SingleSelection);
+    ui->tableView->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    ui->tableView->setDragEnabled(false);
+    ui->tableView->setDragDropMode(QAbstractItemView::NoDragDrop);
+
+    ui->tableView->verticalHeader()->setVisible(true);
+
+    QHeaderView *th = ui->tableView->horizontalHeader();
+    th->setStretchLastSection(false);
+    th->setSectionResizeMode(QHeaderView::ResizeToContents);
+    th->setSectionResizeMode(0, QHeaderView::Fixed);
+    ui->tableView->setColumnWidth(0, 24);
+    th->setSectionResizeMode(1, QHeaderView::Stretch);
+    ui->tableView->setSortingEnabled(true);
+
+    connect(ui->tableView, &QTableView::clicked, this, &MainWindow::onFSTableRowClicked);
+    connect(ui->tableView, &QTableView::doubleClicked, this, &MainWindow::onFSTableRowDoubleClicked);
+}
+
+
+//############################################################################################
+// Signals
+
+void MainWindow::onCaseTreeNodeActivated(int dsId, const QString &path)
+{
+    if (path.isEmpty())
+    {
+        qDebug() << "[MainWindow] Signal - nodeActivated -> DS:" << dsId << "No Path Found";
+        return;
+    }
+
+    qDebug() << "[MainWindow] Signal - nodeActivated -> DS:" << dsId << "Path:" << path;
+
+    auto nodeChildrenResponse = caseTreeModel->getChildrenItemsForDSPath(dsId, path);
+    if (!nodeChildrenResponse.first)
+    {
+        //TODO: Clear Table and Show "No Results" Message
+        qDebug() << "[MainWindow] no Results for Path:" << path;
+        // ui->currentNodeLabel->setText(QString());
+        return;
+    }
+
+    QString dsName = dataSourceNames.value(dsId, QStringLiteral("Disk %1").arg(dsId));
+    ui->currentNodeLabel->setText(QStringLiteral("%1 | %2").arg(dsName, path));
+
+    navigationSelectedDSId = dsId;
+    navigationCurrentPath = path;
+
+    itemTableModel->setRoot(navigationSelectedDSId, navigationCurrentPath);
+}
+
+void MainWindow::onFSTableRowClicked(const QModelIndex &proxyIndex)
+{
+    if (!proxyIndex.isValid()) return;
+
+    QModelIndex sourceIndex = itemTableProxy->mapToSource(proxyIndex);
+    if (!sourceIndex.isValid()) return;
+
+    DSFSNodeItem item = itemTableModel->itemAt(sourceIndex.row());
+    if (item.metadata.is_dir) return;
+
+    qDebug() << "[MainWindow] Selected File:" << item.path;
+}
+
+void MainWindow::onFSTableRowDoubleClicked(const QModelIndex &proxyIndex)
+{
+    if (!proxyIndex.isValid()) return;
+
+    QModelIndex sourceIndex = itemTableProxy->mapToSource(proxyIndex);
+    if (!sourceIndex.isValid()) return;
+
+    DSFSNodeItem item = itemTableModel->itemAt(sourceIndex.row());
+    if (!item.metadata.is_dir) return;
+
+    int dsId = navigationSelectedDSId;
+    if (dsId < 0 || item.path.isEmpty()) return;
+
+    QString parentPath = navigationCurrentPath;
+
+    navigationCurrentPath = item.path;
+    QString dsName = dataSourceNames.value(dsId, QStringLiteral("Disk %1").arg(dsId));
+    ui->currentNodeLabel->setText(QStringLiteral("%1 | %2").arg(dsName, item.path));
+    itemTableModel->setRoot(dsId, item.path);
+
+    auto parentNodeResult = caseTreeModel->getNodeIdForPath(dsId, parentPath);
+    if (parentNodeResult.first)
+    {
+        QModelIndex parentTreeIdx = caseTreeModel->findIndex(dsId, parentNodeResult.second);
+        if (parentTreeIdx.isValid())
+        {
+            ui->treeViewFilesystem->expand(parentTreeIdx);
+
+            QModelIndex targetTreeIdx = caseTreeModel->findIndex(dsId, item.id);
+            if (targetTreeIdx.isValid())
+            {
+                ui->treeViewFilesystem->setCurrentIndex(targetTreeIdx);
+                ui->treeViewFilesystem->scrollTo(targetTreeIdx);
+            }
+        }
+    }
+}
+
+
+void MainWindow::onFSUpPushButtonClicked()
+{
+    if (navigationSelectedDSId < 0 || navigationCurrentPath.isEmpty())
+    {
+        qWarning() << "[MainWindow] UpPushButton: No Current Selection";
+        return;
+    }
+
+
+    int firstSlash = navigationCurrentPath.indexOf('/');
+    if (firstSlash < 0)
+    {
+        //FIXME: Does not Work on Special Nodes
+        qWarning() << "[MainWindow] UpPushButton: Malformed Path (No Slash):" << navigationCurrentPath;
+        return;
+    }
+
+    const QString prefix = navigationCurrentPath.left(firstSlash);
+    const QString fsPath = navigationCurrentPath.mid(firstSlash);
+
+    if (fsPath == QStringLiteral("/"))
+    {
+        qWarning() << "[MainWindow] UpPushButton: Already at Filesystem Root";
+        return;
+    }
+
+    
+    int lastSlash = fsPath.lastIndexOf('/');
+    QString parentFsPath = (lastSlash <= 0) ? QStringLiteral("/") : fsPath.left(lastSlash);
+    QString parentPath = prefix + parentFsPath;
+
+    QString dsName = dataSourceNames.value(navigationSelectedDSId, QStringLiteral("Disk %1").arg(navigationSelectedDSId));
+    ui->currentNodeLabel->setText(QStringLiteral("%1 | %2").arg(dsName, parentPath));
+
+    navigationCurrentPath = parentPath;
+    itemTableModel->setRoot(navigationSelectedDSId, parentPath);
 }
 
 
