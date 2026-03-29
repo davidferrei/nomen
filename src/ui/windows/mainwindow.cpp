@@ -286,7 +286,6 @@ void MainWindow::loadDataSources()
         {
             qDebug() << "Disk Requires Ingest:" << ds.filePath;
             indexManager->CreateJob(ds, caseManager.getCurrentCase().casePath);
-            //TODO: Add to CaseTreeModel
         }
     }
 
@@ -330,6 +329,28 @@ void MainWindow::loadDataSources()
 
     connect(ui->tableView, &QTableView::clicked, this, &MainWindow::onFSTableRowClicked);
     connect(ui->tableView, &QTableView::doubleClicked, this, &MainWindow::onFSTableRowDoubleClicked);
+
+    connect(indexManager, &IndexManager::jobFinished, this, [this](const QString& filePath)
+    {
+        const QList<DataSourceData> allDataSources = caseManager.getDataSources();
+
+        const DataSourceData* ds = nullptr;
+        for (const DataSourceData& d : allDataSources)
+            if (d.filePath == filePath) { ds = &d; break; }
+
+        if (!ds)
+        {
+            qWarning() << "[MainWindow]: Indexing Job Finished but no Matching Data Source Found for File Path:" << filePath;
+            return;
+        }
+
+        QString label = ds->name.isEmpty() ? QStringLiteral("Disk %1").arg(ds->id) : ds->name;
+        dataSourceNames.insert(static_cast<int>(ds->id), label);
+
+        QString lmdbPath = caseManager.getCurrentCase().casePath + "/indexes/disk-" + QString::number(ds->id);
+        qDebug() << "[MainWindow] Indexing Finished, Adding DS to Tree:" << label;
+        caseTreeModel->addDataSource(static_cast<int>(ds->id), label, lmdbPath);
+    });
 }
 
 
