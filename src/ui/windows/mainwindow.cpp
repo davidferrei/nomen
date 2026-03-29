@@ -3,6 +3,7 @@
 #include "../widgets/DraggableTabWidget.h"
 
 
+
 MainWindow::MainWindow(QWidget *parent, CaseManager& caseManager) : QMainWindow(parent), ui(new Ui::MainWindow), caseManager(caseManager)
 {
     ui->setupUi(this);
@@ -16,9 +17,15 @@ MainWindow::MainWindow(QWidget *parent, CaseManager& caseManager) : QMainWindow(
 
     indexManager = new IndexManager(this);
 
+    setupIndexingSignalConnections();
+
     loadDataSources();
 
+    setupUiSignalConnections();
+
 }
+
+
 
 MainWindow::~MainWindow()
 {
@@ -147,8 +154,6 @@ void MainWindow::setUIWidgetsSizes()
         treeTab->addTab(ui->treeViewFilesystem, ic, title);
     }
 
-    if (ui->UpPushButton)
-        connect(ui->UpPushButton, &QPushButton::clicked, this, &MainWindow::onFSUpPushButtonClicked);
 }
 
 void MainWindow::showEvent(QShowEvent *event)
@@ -156,6 +161,9 @@ void MainWindow::showEvent(QShowEvent *event)
     QMainWindow::showEvent(event);
 
     setUIWidgetsSizes();
+
+    if (ui->UpPushButton)
+        connect(ui->UpPushButton, &QPushButton::clicked, this, &MainWindow::onFSUpPushButtonClicked);
 }
 
 void MainWindow::setupUiElements()
@@ -303,12 +311,6 @@ void MainWindow::loadDataSources()
     }
 
     ui->treeViewFilesystem->resizeColumnToContents(0);
-    connect(caseTreeModel, &QAbstractItemModel::rowsInserted, this, [this](const QModelIndex&, int, int){
-        ui->treeViewFilesystem->resizeColumnToContents(0);
-    });
-
-    connect(ui->treeViewFilesystem, &QTreeView::clicked, caseTreeModel, &CaseTreeModel::onItemActivated);
-    connect(caseTreeModel, &CaseTreeModel::nodeActivated, this, &MainWindow::onCaseTreeNodeActivated);
 
     ui->tableView->setModel(itemTableProxy);
     ui->tableView->setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -327,13 +329,32 @@ void MainWindow::loadDataSources()
     th->setSectionResizeMode(1, QHeaderView::Stretch);
     ui->tableView->setSortingEnabled(true);
 
-    connect(ui->tableView, &QTableView::clicked, this, &MainWindow::onFSTableRowClicked);
-    connect(ui->tableView, &QTableView::doubleClicked, this, &MainWindow::onFSTableRowDoubleClicked);
+}
+
+
+//############################################################################################
+// Signals
+
+void MainWindow::setupIndexingSignalConnections()
+{
+    connect(indexManager, &IndexManager::jobStarted, this, [this](const QString& filePath)
+    {
+        NotificationWidget::show(this,
+                                 QStringLiteral("Indexing Started"),
+                                 QFileInfo(filePath).filePath(),
+                                 3500,
+                                 NotificationWidget::NotificationType::Info);
+    });
 
     connect(indexManager, &IndexManager::jobFinished, this, [this](const QString& filePath)
     {
-        const QList<DataSourceData> allDataSources = caseManager.getDataSources();
+        NotificationWidget::show(this,
+                                 QStringLiteral("Indexing Complete"),
+                                 QFileInfo(filePath).filePath(),
+                                 4000,
+                                 NotificationWidget::NotificationType::Success);
 
+        const QList<DataSourceData> allDataSources = caseManager.getDataSources();
         const DataSourceData* ds = nullptr;
         for (const DataSourceData& d : allDataSources)
             if (d.filePath == filePath) { ds = &d; break; }
@@ -351,11 +372,32 @@ void MainWindow::loadDataSources()
         qDebug() << "[MainWindow] Indexing Finished, Adding DS to Tree:" << label;
         caseTreeModel->addDataSource(static_cast<int>(ds->id), label, lmdbPath);
     });
+
+    connect(indexManager, &IndexManager::jobFailed, this, [this](const QString& filePath, const QString& error)
+    {
+        NotificationWidget::show(this,
+                                 QStringLiteral("Indexing Failed"),
+                                 QFileInfo(filePath).filePath() + QStringLiteral(": ") + error,
+                                 10000,
+                                 NotificationWidget::NotificationType::Failure);
+    });
 }
 
+void MainWindow::setupUiSignalConnections()
+{
+    // Case Tree
+    connect(caseTreeModel, &QAbstractItemModel::rowsInserted, this, [this](const QModelIndex&, int, int){
+        ui->treeViewFilesystem->resizeColumnToContents(0);
+    });
 
-//############################################################################################
-// Signals
+    connect(ui->treeViewFilesystem, &QTreeView::clicked, caseTreeModel, &CaseTreeModel::onItemActivated);
+    connect(caseTreeModel, &CaseTreeModel::nodeActivated, this, &MainWindow::onCaseTreeNodeActivated);
+
+    // FS Explorer Table
+    connect(ui->tableView, &QTableView::clicked, this, &MainWindow::onFSTableRowClicked);
+    connect(ui->tableView, &QTableView::doubleClicked, this, &MainWindow::onFSTableRowDoubleClicked);
+}
+
 
 void MainWindow::onCaseTreeNodeActivated(int dsId, const QString &path)
 {

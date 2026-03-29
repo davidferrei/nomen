@@ -7,6 +7,8 @@
 #include "../../core/index/repo/IndexDBManager.h"
 
 #include "../widgets/DraggableTabBar.h"
+#include "../widgets/NotificationWidget.h"
+
 #include "ui/models/caseTreeModel.h"
 #include "ui/models/itemTableModel.h"
 
@@ -21,6 +23,7 @@
 #include <QDateTime>
 #include <QMap>
 #include <QSortFilterProxyModel>
+#include <QFileInfo>
 
 
 
@@ -50,6 +53,9 @@ private:
 
     void setUIWidgetsSizes();
     void setupUiElements();
+    void setupSignalConnections();
+    void setupIndexingSignalConnections();
+    void setupUiSignalConnections();
 
     // DATA
     CaseManager& caseManager;
