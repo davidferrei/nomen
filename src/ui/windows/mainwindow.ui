@@ -51,6 +51,32 @@
            <attribute name="title">
             <string>File Viewer</string>
            </attribute>
+           <layout class="QVBoxLayout" name="verticalLayout_3">
+            <item>
+             <widget class="QLabel" name="filePath">
+              <property name="text">
+               <string>File Path:</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QTabWidget" name="ViewersTabWidget">
+              <property name="currentIndex">
+               <number>0</number>
+              </property>
+              <widget class="QWidget" name="txtViewerTab">
+               <attribute name="title">
+                <string>Plain Text</string>
+               </attribute>
+              </widget>
+              <widget class="QWidget" name="hexViewerTab">
+               <attribute name="title">
+                <string>Hex Viewer</string>
+               </attribute>
+              </widget>
+             </widget>
+            </item>
+           </layout>
           </widget>
           <widget class="QWidget" name="statsViewerTab_2">
            <attribute name="title">

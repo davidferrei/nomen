@@ -441,7 +441,11 @@ QPair<bool, quint64> CaseTreeModel::getNodeIdForPath(int dsId, const QString &pa
 QModelIndex CaseTreeModel::findIndex(int dsId, quint64 nodeId, const QModelIndex &parent) const
 {
     TreeItem *parentItem = itemFromIndex(parent);
-    if (!parentItem) return {};
+    if (!parentItem)
+    {
+        qWarning() << "[CaseTreeModel]: Invalid Parent Index";
+        return {};
+    }
 
     for (int i = 0; i < parentItem->children.size(); ++i)
     {

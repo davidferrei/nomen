@@ -217,8 +217,33 @@ void MainWindow::setupUiElements()
     ui->statusbar->addPermanentWidget(userLabel);
 
 
-    
+    // Viewers Tab Widget Styling
+    QTabWidget* viewers = ui->ViewersTabWidget;
+    if (viewers) 
+    {
+        viewers->setStyleSheet(R"(
+            QTabWidget#ViewersTabWidget QTabBar::tab 
+            {
+                padding: 6px 10px;
+                margin-right: 6px;
+                border-top-left-radius: 6px;
+                border-top-right-radius: 6px;
+            }
+            QTabWidget#ViewersTabWidget QTabBar::tab:selected 
+            {
+                background: palette(button);
+                color: palette(buttonText);
+            }
+            QTabWidget#ViewersTabWidget QTabBar::tab:!selected 
+            {
+                background: transparent;
+                color: palette(windowText);
+            })"
+        );
+    }
 
+
+    
 }
 
 //############################################################################################
