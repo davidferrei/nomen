@@ -2,6 +2,8 @@
 #define TSKFILEREADER_H
 
 #include <QObject>
+#include <QByteArray>
+#include <QString>
 
 class tskFileReader : public QObject
 {
@@ -9,6 +11,8 @@ class tskFileReader : public QObject
 public:
     explicit tskFileReader(QObject* parent = nullptr);
     ~tskFileReader();
+
+    QByteArray readFileContentFromImage(const QString& diskImagePath, const QString& fsPath, QString& errorStringOutput);
 
 };
 

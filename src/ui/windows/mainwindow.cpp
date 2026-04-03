@@ -419,7 +419,18 @@ void MainWindow::setupUiSignalConnections()
         DSFSNodeItem item = itemTableModel->itemAt(sourceIndex.row());
         if (item.metadata.is_dir) return;
 
-        plainTextViewer->fileSelected(item.path);
+        QString diskImagePath;
+        const QList<DataSourceData> dataSourcesList = caseManager.getDataSources();
+        for (const DataSourceData& ds : dataSourcesList)
+        {
+            if (static_cast<qint64>(ds.id) == navigationSelectedDSId)
+            {
+                diskImagePath = ds.filePath;
+                break;
+            }
+        }
+
+        plainTextViewer->fileSelected(diskImagePath, item.path);
     });
 }
 

@@ -3,8 +3,10 @@
 
 #include <QWidget>
 #include <QPlainTextEdit>
-#include <QVBoxLayout>
-#include <QSizePolicy>
+
+
+#include "core/forensic/tsk/tskFileReader.h"
+
 
 class PlainTextViewer : public QWidget
 {
@@ -13,7 +15,7 @@ public:
     explicit PlainTextViewer(QPlainTextEdit* existingEditor = nullptr, QWidget* parent = nullptr);
 
 public slots:
-    void fileSelected(const QString& path);
+    void fileSelected(const QString& diskImagePath, const QString& fsPath);
 
 private:
     QPlainTextEdit* txtEditorWidgetInstance = nullptr;
