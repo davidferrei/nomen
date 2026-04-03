@@ -8,6 +8,8 @@
 
 #include "../widgets/DraggableTabBar.h"
 #include "../widgets/NotificationWidget.h"
+#include "../widgets/DraggableTabWidget.h"
+#include "../widgets/fileViewers/PlainTextViewer.h"
 
 #include "ui/models/caseTreeModel.h"
 #include "ui/models/itemTableModel.h"
@@ -33,8 +35,6 @@ class MainWindow;
 }
 QT_END_NAMESPACE
 
-class QSortFilterProxyModel;
-
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -50,13 +50,6 @@ private:
     // UI
     Ui::MainWindow *ui;
 
-
-    void setUIWidgetsSizes();
-    void setupUiElements();
-    void setupSignalConnections();
-    void setupIndexingSignalConnections();
-    void setupUiSignalConnections();
-
     // DATA
     CaseManager& caseManager;
     IndexManager* indexManager;
@@ -65,7 +58,6 @@ private:
     int navigationSelectedDSId = -1;
     QString navigationCurrentPath;
 
-
     // Tree
     CaseTreeModel* caseTreeModel;
 
@@ -73,8 +65,18 @@ private:
     ItemTableModel* itemTableModel;
     QSortFilterProxyModel* itemTableProxy;
 
+    // Viewers
+    PlainTextViewer* plainTextViewer = nullptr;
+
     // LOGIC
     void loadDataSources();
+
+    void setUIWidgetsSizes();
+    void setupUiElements();
+    void setupSignalConnections();
+    void setupIndexingSignalConnections();
+    void setupUiSignalConnections();
+
 
 private slots:
     void onCaseTreeNodeActivated(int dsId, const QString &path);

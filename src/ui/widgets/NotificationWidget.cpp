@@ -185,9 +185,6 @@ NotificationWidget::NotificationWidget(QWidget *host, const QString &title, cons
     activeToastsList.append(this);
     adjustSize();
     QFrame::show();
-
-    // Defer one event-loop tick so the host widget has its final geometry
-    // before we calculate the toast's position.
     QTimer::singleShot(0, this, [this, fadeInAnim, durationMs]
     {
         repositionStack(parentWidget());

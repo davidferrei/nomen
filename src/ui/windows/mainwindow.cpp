@@ -1,6 +1,6 @@
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
-#include "../widgets/DraggableTabWidget.h"
+
 
 
 
@@ -11,6 +11,8 @@ MainWindow::MainWindow(QWidget *parent, CaseManager& caseManager) : QMainWindow(
     qDebug() << "Main Window Opened";
 
     setupUiElements();
+
+    plainTextViewer = new PlainTextViewer(ui->plainTextView, this);
 
     //################################
     // Indexing
@@ -396,6 +398,29 @@ void MainWindow::setupUiSignalConnections()
     // FS Explorer Table
     connect(ui->tableView, &QTableView::clicked, this, &MainWindow::onFSTableRowClicked);
     connect(ui->tableView, &QTableView::doubleClicked, this, &MainWindow::onFSTableRowDoubleClicked);
+
+
+    // Plain Text Viewer
+    connect(ui->tableView, &QTableView::clicked, this, [this](const QModelIndex &proxyIndex)
+    {
+        if (!proxyIndex.isValid())
+        {
+            qWarning() << "[MainWindow] Invalid Index Clicked in Table";
+            return;
+        }
+
+        QModelIndex sourceIndex = itemTableProxy->mapToSource(proxyIndex);
+        if (!sourceIndex.isValid())
+        {
+            qWarning() << "[MainWindow] Invalid Source Index Mapped from Proxy Index";
+            return;
+        }
+
+        DSFSNodeItem item = itemTableModel->itemAt(sourceIndex.row());
+        if (item.metadata.is_dir) return;
+
+        plainTextViewer->fileSelected(item.path);
+    });
 }
 
 
