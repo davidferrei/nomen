@@ -1,6 +1,10 @@
 #ifndef TSKFILEREADER_H
 #define TSKFILEREADER_H
 
+#include <tsk/libtsk.h>
+
+#include <unordered_map>
+
 #include <QObject>
 #include <QByteArray>
 #include <QString>
