@@ -8,6 +8,7 @@
 #include <QObject>
 #include <QByteArray>
 #include <QString>
+#include <QDebug>
 
 class tskFileReader : public QObject
 {
@@ -16,7 +17,7 @@ public:
     explicit tskFileReader(QObject* parent = nullptr);
     ~tskFileReader();
 
-    QByteArray readFileContentFromImage(const QString& diskImagePath, const QString& fsPath, QString& errorStringOutput);
+    QByteArray readFileContentFromImage(const QString& diskImagePath, const QString& fsPath, qint64 offset, qint64 length, qint64& fileSize, QString& errorStringOutput);
 
 };
 

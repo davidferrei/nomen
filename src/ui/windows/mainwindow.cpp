@@ -13,6 +13,7 @@ MainWindow::MainWindow(QWidget *parent, CaseManager& caseManager) : QMainWindow(
     setupUiElements();
 
     plainTextViewer = new PlainTextViewer(ui->plainTextView, this);
+    
 
     //################################
     // Indexing
@@ -431,7 +432,17 @@ void MainWindow::setupUiSignalConnections()
         }
 
         plainTextViewer->fileSelected(diskImagePath, item.path);
+
+        QString dsName = dataSourceNames.value(navigationSelectedDSId, QStringLiteral("Disk %1").arg(navigationSelectedDSId));
+        ui->filePath->setText(QStringLiteral("%1 | %2").arg(dsName, item.path));
     });
+
+    connect(plainTextViewer, &PlainTextViewer::prevPageEnabled, ui->prevPageBtn, &QPushButton::setEnabled);
+    connect(plainTextViewer, &PlainTextViewer::nextPageEnabled, ui->nextPageBtn, &QPushButton::setEnabled);
+    connect(plainTextViewer, &PlainTextViewer::pageLabelChanged, ui->pageLabel, &QLabel::setText);
+
+    connect(ui->prevPageBtn, &QPushButton::clicked, plainTextViewer, &PlainTextViewer::prevPage);
+    connect(ui->nextPageBtn, &QPushButton::clicked, plainTextViewer, &PlainTextViewer::nextPage);
 }
 
 
