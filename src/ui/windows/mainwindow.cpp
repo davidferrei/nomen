@@ -13,6 +13,7 @@ MainWindow::MainWindow(QWidget *parent, CaseManager& caseManager) : QMainWindow(
     setupUiElements();
 
     plainTextViewer = new PlainTextViewer(ui->plainTextView, this);
+    metadataViewer  = new MetadataViewer(ui->metadataViewerTab, this);
     
 
     //################################
@@ -401,7 +402,7 @@ void MainWindow::setupUiSignalConnections()
     connect(ui->tableView, &QTableView::doubleClicked, this, &MainWindow::onFSTableRowDoubleClicked);
 
 
-    // Plain Text Viewer
+    // Plain Text Viewer & File Metadata
     connect(ui->tableView, &QTableView::clicked, this, [this](const QModelIndex &proxyIndex)
     {
         if (!proxyIndex.isValid())
@@ -432,6 +433,7 @@ void MainWindow::setupUiSignalConnections()
         }
 
         plainTextViewer->fileSelected(diskImagePath, item.path);
+        metadataViewer->fileSelected(diskImagePath, item.path);
 
         QString dsName = dataSourceNames.value(navigationSelectedDSId, QStringLiteral("Disk %1").arg(navigationSelectedDSId));
         ui->filePath->setText(QStringLiteral("%1 | %2").arg(dsName, item.path));
@@ -440,9 +442,34 @@ void MainWindow::setupUiSignalConnections()
     connect(plainTextViewer, &PlainTextViewer::prevPageEnabled, ui->prevPageBtn, &QPushButton::setEnabled);
     connect(plainTextViewer, &PlainTextViewer::nextPageEnabled, ui->nextPageBtn, &QPushButton::setEnabled);
     connect(plainTextViewer, &PlainTextViewer::pageLabelChanged, ui->pageLabel, &QLabel::setText);
-
     connect(ui->prevPageBtn, &QPushButton::clicked, plainTextViewer, &PlainTextViewer::prevPage);
     connect(ui->nextPageBtn, &QPushButton::clicked, plainTextViewer, &PlainTextViewer::nextPage);
+
+
+    // Metadata viewer
+    connect(metadataViewer, &MetadataViewer::metadataReady, this, [this](const MetadataViewer::FileMetaFileMetadataDisplayStruct& fileMetadata)
+    {
+        ui->addrLabel->setText(fileMetadata.addr);
+        ui->typeLabel->setText(fileMetadata.type);
+        ui->flagsLabel->setText(fileMetadata.flags);
+        ui->modeLabel->setText(fileMetadata.mode);
+        ui->sizeLabel->setText(fileMetadata.size);
+        ui->uidLabel->setText(fileMetadata.uid);
+        ui->gidLabel->setText(fileMetadata.gid);
+        ui->nlinkLabel->setText(fileMetadata.nlink);
+        ui->seqLabel->setText(fileMetadata.seq);
+        ui->mtimeLabel->setText(fileMetadata.mtime);
+        ui->atimeLabel->setText(fileMetadata.atime);
+        ui->ctimeLabel->setText(fileMetadata.ctime);
+        ui->crtimeLabel->setText(fileMetadata.crtime);
+        ui->contentLenLabel->setText(fileMetadata.contentLen);
+        ui->nameLabel->setText(fileMetadata.name);
+        ui->shrtNameLabel->setText(fileMetadata.shrtName);
+        ui->parAddrLabel->setText(fileMetadata.parAddr);
+    });
+
+    
+
 }
 
 

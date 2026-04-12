@@ -329,6 +329,237 @@
           <attribute name="title">
            <string>Metadata</string>
           </attribute>
+          <layout class="QVBoxLayout" name="verticalLayout_meta">
+           <item>
+            <widget class="QScrollArea" name="metaScrollArea">
+             <property name="frameShape">
+              <enum>QFrame::NoFrame</enum>
+             </property>
+             <property name="widgetResizable">
+              <bool>true</bool>
+             </property>
+             <widget class="QWidget" name="metaScrollContents">
+              <property name="geometry">
+               <rect>
+                <x>0</x>
+                <y>0</y>
+                <width>100</width>
+                <height>100</height>
+               </rect>
+              </property>
+              <layout class="QFormLayout" name="metaFormLayout">
+               <property name="labelAlignment">
+                <set>Qt::AlignRight|Qt::AlignVCenter</set>
+               </property>
+               <item row="0" column="0">
+                <widget class="QLabel" name="addrFieldLabel">
+                 <property name="text"><string>Inode:</string></property>
+                </widget>
+               </item>
+               <item row="0" column="1">
+                <widget class="QLabel" name="addrLabel">
+                 <property name="text"><string>-</string></property>
+                 <property name="textInteractionFlags"><set>Qt::TextSelectableByMouse</set></property>
+                 <property name="wordWrap"><bool>true</bool></property>
+                </widget>
+               </item>
+               <item row="1" column="0">
+                <widget class="QLabel" name="typeFieldLabel">
+                 <property name="text"><string>Type:</string></property>
+                </widget>
+               </item>
+               <item row="1" column="1">
+                <widget class="QLabel" name="typeLabel">
+                 <property name="text"><string>-</string></property>
+                 <property name="textInteractionFlags"><set>Qt::TextSelectableByMouse</set></property>
+                 <property name="wordWrap"><bool>true</bool></property>
+                </widget>
+               </item>
+               <item row="2" column="0">
+                <widget class="QLabel" name="flagsFieldLabel">
+                 <property name="text"><string>Flags:</string></property>
+                </widget>
+               </item>
+               <item row="2" column="1">
+                <widget class="QLabel" name="flagsLabel">
+                 <property name="text"><string>-</string></property>
+                 <property name="textInteractionFlags"><set>Qt::TextSelectableByMouse</set></property>
+                 <property name="wordWrap"><bool>true</bool></property>
+                </widget>
+               </item>
+               <item row="3" column="0">
+                <widget class="QLabel" name="modeFieldLabel">
+                 <property name="text"><string>Permissions:</string></property>
+                </widget>
+               </item>
+               <item row="3" column="1">
+                <widget class="QLabel" name="modeLabel">
+                 <property name="text"><string>-</string></property>
+                 <property name="textInteractionFlags"><set>Qt::TextSelectableByMouse</set></property>
+                 <property name="wordWrap"><bool>true</bool></property>
+                </widget>
+               </item>
+               <item row="4" column="0">
+                <widget class="QLabel" name="sizeFieldLabel">
+                 <property name="text"><string>Size:</string></property>
+                </widget>
+               </item>
+               <item row="4" column="1">
+                <widget class="QLabel" name="sizeLabel">
+                 <property name="text"><string>-</string></property>
+                 <property name="textInteractionFlags"><set>Qt::TextSelectableByMouse</set></property>
+                 <property name="wordWrap"><bool>true</bool></property>
+                </widget>
+               </item>
+               <item row="5" column="0">
+                <widget class="QLabel" name="uidFieldLabel">
+                 <property name="text"><string>UID:</string></property>
+                </widget>
+               </item>
+               <item row="5" column="1">
+                <widget class="QLabel" name="uidLabel">
+                 <property name="text"><string>-</string></property>
+                 <property name="textInteractionFlags"><set>Qt::TextSelectableByMouse</set></property>
+                 <property name="wordWrap"><bool>true</bool></property>
+                </widget>
+               </item>
+               <item row="6" column="0">
+                <widget class="QLabel" name="gidFieldLabel">
+                 <property name="text"><string>GID:</string></property>
+                </widget>
+               </item>
+               <item row="6" column="1">
+                <widget class="QLabel" name="gidLabel">
+                 <property name="text"><string>-</string></property>
+                 <property name="textInteractionFlags"><set>Qt::TextSelectableByMouse</set></property>
+                 <property name="wordWrap"><bool>true</bool></property>
+                </widget>
+               </item>
+               <item row="7" column="0">
+                <widget class="QLabel" name="nlinkFieldLabel">
+                 <property name="text"><string>Hard Links:</string></property>
+                </widget>
+               </item>
+               <item row="7" column="1">
+                <widget class="QLabel" name="nlinkLabel">
+                 <property name="text"><string>-</string></property>
+                 <property name="textInteractionFlags"><set>Qt::TextSelectableByMouse</set></property>
+                 <property name="wordWrap"><bool>true</bool></property>
+                </widget>
+               </item>
+               <item row="8" column="0">
+                <widget class="QLabel" name="seqFieldLabel">
+                 <property name="text"><string>Sequence:</string></property>
+                </widget>
+               </item>
+               <item row="8" column="1">
+                <widget class="QLabel" name="seqLabel">
+                 <property name="text"><string>-</string></property>
+                 <property name="textInteractionFlags"><set>Qt::TextSelectableByMouse</set></property>
+                 <property name="wordWrap"><bool>true</bool></property>
+                </widget>
+               </item>
+               <item row="9" column="0">
+                <widget class="QLabel" name="mtimeFieldLabel">
+                 <property name="text"><string>Modified (mtime):</string></property>
+                </widget>
+               </item>
+               <item row="9" column="1">
+                <widget class="QLabel" name="mtimeLabel">
+                 <property name="text"><string>-</string></property>
+                 <property name="textInteractionFlags"><set>Qt::TextSelectableByMouse</set></property>
+                 <property name="wordWrap"><bool>true</bool></property>
+                </widget>
+               </item>
+               <item row="10" column="0">
+                <widget class="QLabel" name="atimeFieldLabel">
+                 <property name="text"><string>Accessed (atime):</string></property>
+                </widget>
+               </item>
+               <item row="10" column="1">
+                <widget class="QLabel" name="atimeLabel">
+                 <property name="text"><string>-</string></property>
+                 <property name="textInteractionFlags"><set>Qt::TextSelectableByMouse</set></property>
+                 <property name="wordWrap"><bool>true</bool></property>
+                </widget>
+               </item>
+               <item row="11" column="0">
+                <widget class="QLabel" name="ctimeFieldLabel">
+                 <property name="text"><string>Changed (ctime):</string></property>
+                </widget>
+               </item>
+               <item row="11" column="1">
+                <widget class="QLabel" name="ctimeLabel">
+                 <property name="text"><string>-</string></property>
+                 <property name="textInteractionFlags"><set>Qt::TextSelectableByMouse</set></property>
+                 <property name="wordWrap"><bool>true</bool></property>
+                </widget>
+               </item>
+               <item row="12" column="0">
+                <widget class="QLabel" name="crtimeFieldLabel">
+                 <property name="text"><string>Created (crtime):</string></property>
+                </widget>
+               </item>
+               <item row="12" column="1">
+                <widget class="QLabel" name="crtimeLabel">
+                 <property name="text"><string>-</string></property>
+                 <property name="textInteractionFlags"><set>Qt::TextSelectableByMouse</set></property>
+                 <property name="wordWrap"><bool>true</bool></property>
+                </widget>
+               </item>
+               <item row="13" column="0">
+                <widget class="QLabel" name="contentLenFieldLabel">
+                 <property name="text"><string>Content Length:</string></property>
+                </widget>
+               </item>
+               <item row="13" column="1">
+                <widget class="QLabel" name="contentLenLabel">
+                 <property name="text"><string>-</string></property>
+                 <property name="textInteractionFlags"><set>Qt::TextSelectableByMouse</set></property>
+                 <property name="wordWrap"><bool>true</bool></property>
+                </widget>
+               </item>
+               <item row="14" column="0">
+                <widget class="QLabel" name="nameFieldLabel">
+                 <property name="text"><string>Name:</string></property>
+                </widget>
+               </item>
+               <item row="14" column="1">
+                <widget class="QLabel" name="nameLabel">
+                 <property name="text"><string>-</string></property>
+                 <property name="textInteractionFlags"><set>Qt::TextSelectableByMouse</set></property>
+                 <property name="wordWrap"><bool>true</bool></property>
+                </widget>
+               </item>
+               <item row="15" column="0">
+                <widget class="QLabel" name="shrtNameFieldLabel">
+                 <property name="text"><string>Short Name:</string></property>
+                </widget>
+               </item>
+               <item row="15" column="1">
+                <widget class="QLabel" name="shrtNameLabel">
+                 <property name="text"><string>-</string></property>
+                 <property name="textInteractionFlags"><set>Qt::TextSelectableByMouse</set></property>
+                 <property name="wordWrap"><bool>true</bool></property>
+                </widget>
+               </item>
+               <item row="16" column="0">
+                <widget class="QLabel" name="parAddrFieldLabel">
+                 <property name="text"><string>Parent Inode:</string></property>
+                </widget>
+               </item>
+               <item row="16" column="1">
+                <widget class="QLabel" name="parAddrLabel">
+                 <property name="text"><string>-</string></property>
+                 <property name="textInteractionFlags"><set>Qt::TextSelectableByMouse</set></property>
+                 <property name="wordWrap"><bool>true</bool></property>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </widget>
+           </item>
+          </layout>
          </widget>
         </widget>
        </widget>

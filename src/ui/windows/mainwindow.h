@@ -10,6 +10,7 @@
 #include "../widgets/NotificationWidget.h"
 #include "../widgets/DraggableTabWidget.h"
 #include "../widgets/fileViewers/PlainTextViewer.h"
+#include "../widgets/metadataViewer/MetadataViewer.h"
 
 #include "ui/models/caseTreeModel.h"
 #include "ui/models/itemTableModel.h"
@@ -67,6 +68,7 @@ private:
 
     // Viewers
     PlainTextViewer* plainTextViewer = nullptr;
+    MetadataViewer* metadataViewer = nullptr;
 
     // LOGIC
     void loadDataSources();

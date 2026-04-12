@@ -5,6 +5,8 @@ tskFileReader::tskFileReader(QObject* parent) : QObject(parent) {}
 
 tskFileReader::~tskFileReader() {}
 
+//################################################################################################
+// Functions
 
 static bool openTskFile(const QString& diskImagePath, const QString& fsPath, TSK_IMG_INFO*& TSK_img, TSK_FS_INFO*& TSK_fs, TSK_FS_FILE*& TSK_file, QString& errorStringOutput)
 {
@@ -171,4 +173,70 @@ QByteArray tskFileReader::readFileContentFromImage(const QString& diskImagePath,
     tsk_img_close(TSK_img);
 
     return result;
+}
+
+//################################################################################################
+// Metadata
+
+static TskFileMetadata extractTskMetadata(TSK_FS_FILE* file, const QString& fsPath)
+{
+    TskFileMetadata fileMetadata;
+    fileMetadata.fsPath = fsPath;
+
+    const TSK_FS_META* meta = file->meta;
+
+    if (!meta)
+    {
+        qWarning() << "[tskFileReader] No Metadata Found for" << fsPath;
+        return fileMetadata;
+    }
+
+    fileMetadata.addr = static_cast<quint64>(meta->addr);
+    fileMetadata.type = static_cast<int>(meta->type);
+    fileMetadata.flags = static_cast<int>(meta->flags);
+    fileMetadata.mode = static_cast<int>(meta->mode);
+    fileMetadata.size = static_cast<qint64>(meta->size);
+    fileMetadata.uid = static_cast<quint32>(meta->uid);
+    fileMetadata.gid = static_cast<quint32>(meta->gid);
+    fileMetadata.nlink = meta->nlink;
+    fileMetadata.seq = meta->seq;
+    fileMetadata.mtime = static_cast<qint64>(meta->mtime);  
+    fileMetadata.mtime_nano = meta->mtime_nano;
+    fileMetadata.atime = static_cast<qint64>(meta->atime);  
+    fileMetadata.atime_nano = meta->atime_nano;
+    fileMetadata.ctime = static_cast<qint64>(meta->ctime);  
+    fileMetadata.ctime_nano = meta->ctime_nano;
+    fileMetadata.crtime = static_cast<qint64>(meta->crtime);    fileMetadata.crtime_nano = meta->crtime_nano;
+    fileMetadata.contentLen = static_cast<qint64>(meta->content_len);
+
+    if (file->name)
+    {
+        const TSK_FS_NAME* name = file->name;
+        
+        fileMetadata.hasName = true;
+        fileMetadata.name = name->name ? QString::fromUtf8(name->name) : QStringLiteral("-");
+        fileMetadata.shrtName= name->shrt_name ? QString::fromUtf8(name->shrt_name) : QStringLiteral("-");
+        fileMetadata.parAddr = static_cast<quint64>(name->par_addr);
+    }
+
+    return fileMetadata;
+}
+
+void tskFileReader::readFileMetadataFromImage(const QString& diskImagePath, const QString& fsPath, QString& errorStringOutput)
+{
+    TSK_IMG_INFO* TSK_img   = nullptr;
+    TSK_FS_INFO*  TSK_fs    = nullptr;
+    TSK_FS_FILE*  TSK_file  = nullptr;
+
+    if (!openTskFile(diskImagePath, fsPath, TSK_img, TSK_fs, TSK_file, errorStringOutput))
+    {
+        qWarning() << "[tskFileReader] Failed to Open TSK File for Metadata";
+        return;
+    }
+
+    emit fileOpened(extractTskMetadata(TSK_file, fsPath));
+
+    tsk_fs_file_close(TSK_file);
+    tsk_fs_close(TSK_fs);
+    tsk_img_close(TSK_img);
 }
