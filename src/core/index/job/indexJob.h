@@ -4,23 +4,21 @@
 #include <QObject>
 #include <QUuid>
 
-#include "data/evidence/dataSourceData.h"
+#include "core/jobManager/job.h"
 
 #include "indexWorker.h"
 
 
-class IndexJob : public QObject
+class IndexJob : public Job
 {
     Q_OBJECT
 
 public:
+
     IndexJob(const DataSourceData& ds, const QString& caseFolder, QObject* parent = nullptr);
     ~IndexJob();
 
-    void start();
-
-    QString getDSFilePath() const;
-
+    void start() override;
 
 signals:
     void started();
@@ -28,7 +26,6 @@ signals:
     void failed(QString error);
 
 private:
-    DataSourceData dataSource;
     QString caseFolderPath;
     bool isRunning = false;
     bool workerSucceeded = false;

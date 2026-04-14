@@ -2,7 +2,7 @@
 #define MAINWINDOW_H
 
 #include "core/caseManager/casemanager.h"
-#include "core/index/job/indexManager.h"
+#include "core/jobManager/jobManager.h"
 #include "core/caseDBManager/repositories/datasourceRepository.h"
 #include "../../core/index/repo/IndexDBManager.h"
 
@@ -53,7 +53,7 @@ private:
 
     // DATA
     CaseManager& caseManager;
-    IndexManager* indexManager;
+    JobManager* jobManager;
     QMap<int, QString> dataSourceNames;
 
     int navigationSelectedDSId = -1;

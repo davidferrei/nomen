@@ -2,8 +2,6 @@
 #include "./ui_mainwindow.h"
 
 
-
-
 MainWindow::MainWindow(QWidget *parent, CaseManager& caseManager) : QMainWindow(parent), ui(new Ui::MainWindow), caseManager(caseManager)
 {
     ui->setupUi(this);
@@ -17,9 +15,9 @@ MainWindow::MainWindow(QWidget *parent, CaseManager& caseManager) : QMainWindow(
     
 
     //################################
-    // Indexing
+    // Jobs Manager (Index/Ingest)
 
-    indexManager = new IndexManager(this);
+    jobManager = new JobManager(this);
 
     setupIndexingSignalConnections();
 
@@ -297,7 +295,7 @@ void MainWindow::loadDataSources()
         else
         {
             qDebug() << "Disk Requires Ingest:" << ds.filePath;
-            indexManager->CreateJob(ds, caseManager.getCurrentCase().casePath);
+            jobManager->CreateJob(ds, caseManager.getCurrentCase().casePath);
         }
     }
 
@@ -341,7 +339,7 @@ void MainWindow::loadDataSources()
 
 void MainWindow::setupIndexingSignalConnections()
 {
-    connect(indexManager, &IndexManager::jobStarted, this, [this](const QString& filePath)
+    connect(jobManager, &JobManager::jobStarted, this, [this](const QString& filePath)
     {
         NotificationWidget::show(this,
                                  QStringLiteral("Indexing Started"),
@@ -350,7 +348,7 @@ void MainWindow::setupIndexingSignalConnections()
                                  NotificationWidget::NotificationType::Info);
     });
 
-    connect(indexManager, &IndexManager::jobFinished, this, [this](const QString& filePath)
+    connect(jobManager, &JobManager::jobFinished, this, [this](const QString& filePath)
     {
         NotificationWidget::show(this,
                                  QStringLiteral("Indexing Complete"),
@@ -377,7 +375,7 @@ void MainWindow::setupIndexingSignalConnections()
         caseTreeModel->addDataSource(static_cast<int>(ds->id), label, lmdbPath);
     });
 
-    connect(indexManager, &IndexManager::jobFailed, this, [this](const QString& filePath, const QString& error)
+    connect(jobManager, &JobManager::jobFailed, this, [this](const QString& filePath, const QString& error)
     {
         NotificationWidget::show(this,
                                  QStringLiteral("Indexing Failed"),
