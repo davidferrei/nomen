@@ -208,7 +208,7 @@ bool CaseManager::openCase(const QString& casePath)
     }
 
     QString dateForFile = QDateTime::currentDateTime().toString("dd_MM_yyyy");
-    QString logFilePath = currentCase.casePath + "/logs/nomen_" + dateForFile + ".log";
+    QString logFilePath = currentCase.casePath + "/logs/app/nomen_" + dateForFile + ".log";
 
     setLogFilePath(logFilePath);
 
@@ -293,6 +293,8 @@ QList<CaseInfo> CaseManager::loadPreviousCases() const
 //###########################################################################################
 // Access DB
 
+// Inv
+
 bool CaseManager::saveInvestigator(const InvestigatorData& inv)
 {
 
@@ -303,6 +305,8 @@ bool CaseManager::saveInvestigator(const InvestigatorData& inv)
 
     return currentCaseDB->investigatorRepo().insert(inv);
 }
+
+// Org
 
 bool CaseManager::saveOrganization(const OrganizationData& org)
 {
@@ -315,6 +319,8 @@ bool CaseManager::saveOrganization(const OrganizationData& org)
     return currentCaseDB->organizationRepo().insert(org);
 }
 
+// DS
+
 bool CaseManager::saveDataSource(const DataSourceData& ds)
 {
 
@@ -326,6 +332,16 @@ bool CaseManager::saveDataSource(const DataSourceData& ds)
     return currentCaseDB->dataSourceRepo().insert(ds);
 }
 
+QList<DataSourceData> CaseManager::getDataSources() const
+{
+    if (!currentCaseDB) {
+        qCritical() << "No Case Database Open!";
+        return {};
+    }
+    return currentCaseDB->dataSourceRepo().GetAll();
+}
+
+// Case
 
 bool CaseManager::saveCaseInfo(const CaseInfo& c)
 {

@@ -242,8 +242,6 @@ bool caseDetailWizard::validateCurrentPage()
 
 void caseDetailWizard::done(int result)
 {
-    //TODO: Save Case to DB
-
     if (result == QDialog::Accepted) {
         if (!currentCaseManager) {
             QMessageBox::critical(this, "Error", "CaseManager Not Found");

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(Nomen VERSION 0.1 LANGUAGES CXX)
+project(Nomen VERSION 0.1 LANGUAGES C CXX)
 
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
@@ -9,7 +9,7 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets)
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Threads)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets)
 
 # SleuthKit
@@ -21,6 +21,12 @@ include_directories(${SLEUTHKIT_INCLUDE_DIR})
 # IBPP
 add_library(ibpp STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/lib/ibpp/core/all_in_one.cpp
+)
+
+# LMDB
+add_library(lmdb STATIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/lib/liblmdb/mdb.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/lib/liblmdb/midl.c
 )
 
 # Project Sources
@@ -37,6 +43,12 @@ target_include_directories(ibpp
 
 target_compile_definitions(ibpp PRIVATE IBPP_LINUX)
 target_compile_features(ibpp PRIVATE cxx_std_17)
+
+
+target_include_directories(lmdb
+    PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/lib/liblmdb
+)
 
 # Qt Executable
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
@@ -63,8 +75,10 @@ target_include_directories(Nomen
 target_link_libraries(Nomen
     PRIVATE
         Qt${QT_VERSION_MAJOR}::Widgets
+        Threads::Threads
         ${SLEUTHKIT_LIB}
         ibpp
+        lmdb
         ${CMAKE_SOURCE_DIR}/lib/ibpp/libfbclient.so
 )
 

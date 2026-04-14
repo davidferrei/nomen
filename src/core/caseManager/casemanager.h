@@ -48,6 +48,9 @@ public:
     bool saveDataSource(const DataSourceData& ds);
     bool saveCaseInfo(const CaseInfo& c);
 
+    QList<DataSourceData> getDataSources() const;
+
+
 private:
     bool initEnvironment();
 

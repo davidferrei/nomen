@@ -12,6 +12,9 @@
 #include <QDebug>
 #include <QDate>
 #include <QMessageBox>
+#include <QDir>
+
+#include <cstdlib>
 
 
 int main(int argc, char *argv[])
@@ -27,6 +30,15 @@ int main(int argc, char *argv[])
 
     //Logger Setup
     initLogger();
+
+    // Firebird Environment 
+    //TODO: Windows Fix
+    setenv("FIREBIRD", "/home/admin1/dev/qt6/Nomen/fb_embedded", 1);
+    setenv("LD_LIBRARY_PATH", "/home/admin1/dev/qt6/Nomen/fb_embedded/lib", 1);
+    setenv("FIREBIRD_LOCK", "/tmp/firebird_lock", 1);
+
+    QDir lockDir("/tmp/firebird_lock");
+    if (!lockDir.exists()) lockDir.mkpath(".");
 
     //TSK Version
     const char* tskVersion = tsk_version_get_str();

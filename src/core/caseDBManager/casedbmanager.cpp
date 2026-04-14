@@ -1,7 +1,5 @@
 #include "casedbmanager.h"
 
-#include <QDebug>
-#include <QDir>
 
 CaseDBManager::CaseDBManager(const QString& casePath) : dbPath(casePath) {}
 
@@ -42,7 +40,7 @@ bool CaseDBManager::createSchema()
         // Organization Table
         st->Execute(R"(
             CREATE TABLE Organization (
-                ORGANIZATIONID VARCHAR(64) PRIMARY KEY,
+                ORGANIZATIONID BIGINT PRIMARY KEY,
                 NAME VARCHAR(255),
                 PHONENUMBER VARCHAR(50),
                 EMAIL VARCHAR(255),
@@ -53,7 +51,7 @@ bool CaseDBManager::createSchema()
         // Investigator Table
         st->Execute(R"(
             CREATE TABLE Investigator (
-                INVESTIGATORID VARCHAR(64) PRIMARY KEY,
+                INVESTIGATORID BIGINT PRIMARY KEY,
                 NAME VARCHAR(255),
                 PHONENUMBER VARCHAR(50),
                 EMAIL VARCHAR(255),
@@ -64,7 +62,7 @@ bool CaseDBManager::createSchema()
         // DataSource Table
         st->Execute(R"(
             CREATE TABLE DataSource (
-                DATASOURCEID VARCHAR(64) PRIMARY KEY,
+                DATASOURCEID BIGINT PRIMARY KEY,
                 NAME VARCHAR(255),
                 DISKSIZE BIGINT,
                 SECTORSIZE INTEGER,
@@ -79,6 +77,9 @@ bool CaseDBManager::createSchema()
         )");
 
         // Increment IDs
+        // st->Execute("CREATE GENERATOR GEN_CASE_ID;");
+        // st->Execute("SET GENERATOR GEN_CASE_ID TO 0;");
+
         st->Execute("CREATE GENERATOR GEN_INVESTIGATOR_ID");
         st->Execute("SET GENERATOR GEN_INVESTIGATOR_ID TO 0");
 
@@ -89,6 +90,16 @@ bool CaseDBManager::createSchema()
         st->Execute("SET GENERATOR GEN_DATASOURCE_ID TO 0");
 
         // Triggers
+        // st->Execute(R"(
+        //     CREATE TRIGGER BI_CASE FOR CASETABLE
+        //     BEFORE INSERT
+        //     AS
+        //     BEGIN
+        //         IF (NEW.CASEID IS NULL) THEN
+        //             NEW.CASEID = GEN_ID(GEN_CASE_ID, 1);
+        //     END
+        // )");
+
         st->Execute(R"(
             CREATE TRIGGER BI_INVESTIGATORS FOR INVESTIGATOR
             BEFORE INSERT
@@ -156,21 +167,6 @@ bool CaseDBManager::createDatabase()
         }
     }
 
-
-    //TODO: Windows Fix
-    setenv("FIREBIRD", "/home/admin1/dev/qt6/Nomen/fb_embedded", 1);
-    setenv("LD_LIBRARY_PATH", "/home/admin1/dev/qt6/Nomen/fb_embedded/lib", 1);
-    setenv("FIREBIRD_LOCK", "/tmp/firebird_lock", 1);
-
-    QDir lockDir("/tmp/firebird_lock"); //TODO: Windows Fix
-
-    if (!lockDir.exists()) {
-        if (!lockDir.mkpath(".")) {
-            qCritical() << "Failed to Create Firebird Lock Directory:" << lockDir.absolutePath();
-            return false;
-        }
-    }
-
     try {
         const std::string dbPath = dbFilePath.toStdString();
 
@@ -217,10 +213,6 @@ bool CaseDBManager::openDatabase()
     }
 
     try {
-        setenv("FIREBIRD", "/home/admin1/dev/qt6/Nomen/fb_embedded", 1);
-        setenv("LD_LIBRARY_PATH", "/home/admin1/dev/qt6/Nomen/fb_embedded/lib", 1);
-        setenv("FIREBIRD_LOCK", "/tmp/firebird_lock", 1);
-
         const std::string dbPath = dbFilePath.toStdString();
 
         fb_db = IBPP::DatabaseFactory(
@@ -287,7 +279,7 @@ bool CaseDBManager::openDatabase()
 
 void CaseDBManager::closeDatabase()
 {
-    if (fb_db->Connected()) {
+    if (fb_db != nullptr && fb_db->Connected()) {
         qDebug() << "FIREBIRD: Closing Database Connection";
         try {
             fb_db->Disconnect();

@@ -4,6 +4,8 @@
 #include <ibpp/core/ibpp.h>
 
 #include<QString>
+#include <QDebug>
+#include <QDir>
 
 #include "core/caseDBManager/repositories/investigatorRepository.h"
 #include "core/caseDBManager/repositories/organizationRepository.h"

@@ -63,6 +63,8 @@ void setLogFilePath(const QString &path)
 
 void nomenLogger(QtMsgType type, const QMessageLogContext &context, const QString &msg)
 {
+    //TODO: In Release Build return when type is Debug, Better yet have a "Enable Debug Mode"
+
     QByteArray localMsg = msg.toLocal8Bit();
     const char *file = context.file ? context.file : "";
     const char *function = context.function ? context.function : "";

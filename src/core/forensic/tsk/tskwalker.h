@@ -1,12 +1,51 @@
 #ifndef TSKWALKER_H
 #define TSKWALKER_H
 
+#include <tsk/libtsk.h>
+
+#include "../../index/engine/lmdbIndexEngine.h"
+
+#include "data/index/nodeMetaData.h"
+
+
 #include <QString>
+#include <QByteArray>
+#include <QDebug>
+#include <QList>
+
+#include <cstring>
+#include <vector>
+#include <unordered_map>
+
+
+class lmdbIndexEngine;
+
+struct WalkContext 
+{
+    MDB_txn* lmdb_txn;
+    MDB_dbi lmdb_nodes_dbi;
+    MDB_dbi lmdb_children_dbi;
+    MDB_dbi lmdb_paths_dbi;
+    MDB_dbi lmdb_paths_rev_dbi;
+    MDB_dbi lmdb_inode_map_dbi;
+    uint64_t next_node_id;
+    uint64_t file_count;
+    uint64_t dir_count;
+    int partitionId;
+    int fsIndex;
+    MDB_env* lmdb_env;
+    uint64_t lmdb_commit_batch;
+    QByteArray tmp_key;
+    std::unordered_map<uint64_t,uint64_t> unalloc_node_ids;
+    std::unordered_map<uint64_t,uint64_t> deleted_node_ids;
+    std::unordered_map<uint64_t,uint64_t> orphan_node_ids;
+    std::unordered_map<uint64_t,uint64_t> root_node_ids;
+};
 
 class TskWalker
 {
 public:
-    static bool walkImage(const QString &imagePath);
+    static bool walkImage(const QString &imagePath, lmdbIndexEngine &lmdb);
 };
 
 #endif // TSKWALKER_H
