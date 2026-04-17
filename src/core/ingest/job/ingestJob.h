@@ -5,6 +5,8 @@
 #include "data/evidence/dataSourceData.h"
 
 #include <QThread>
+#include <QUuid>
+#include <QThread>
 
 class IngestJob : public Job
 {

@@ -4,37 +4,45 @@
 JobManager::JobManager(QObject* parent) : QObject(parent) {}
 
 //############################################################################################
-// Functions
+// Create Jobs
 
-void JobManager::CreateJob(const DataSourceData& ds, const QString& caseFolder)
+void JobManager::CreateIndexJob(const DataSourceData& ds, const QString& caseFolder)
 {
-    // FIXME: Add Job Creation by Type
     IndexJob* job = new IndexJob(ds, caseFolder, this);
     registerJob(job);
     job->start();
 }
+
+void JobManager::CreateIngestJob(const DataSourceData& ds, const QString& caseFolder)
+{
+    IngestJob* job = new IngestJob(ds, caseFolder, this);
+    registerJob(job);
+    job->start();
+}
+
+//############################################################################################
+// Functions
 
 int JobManager::getJobsCount() const
 {
     return jobs.size();
 }
 
-void JobManager::registerJob(IndexJob* job)
+void JobManager::registerJob(Job* job)
 {
-    // FIXME: Abstract IndexJob
     jobs.append(job);
 
-    connect(job, &IndexJob::started, this, [this, job]() {
+    connect(job, &Job::started, this, [this, job]() {
         emit jobStarted(job->getDSFilePath());
     });
 
-    connect(job, &IndexJob::finished, this, [this, job]() {
+    connect(job, &Job::finished, this, [this, job]() {
         emit jobFinished(job->getDSFilePath());
         jobs.removeOne(job);
         job->deleteLater();
     });
 
-    connect(job, &IndexJob::failed, this, [this, job](const QString& error) {
+    connect(job, &Job::failed, this, [this, job](const QString& error) {
         emit jobFailed(job->getDSFilePath(), error);
         jobs.removeOne(job);
         job->deleteLater();

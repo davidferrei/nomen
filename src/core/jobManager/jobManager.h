@@ -15,7 +15,8 @@ class JobManager : public QObject
 public:
     explicit JobManager(QObject* parent = nullptr);
 
-    void CreateJob(const DataSourceData& ds, const QString& caseFolder); // creates IndexJob for now
+    void CreateIndexJob(const DataSourceData& ds, const QString& caseFolder);
+    void CreateIngestJob(const DataSourceData& ds, const QString& caseFolder);
 
     int getJobsCount() const;
 
@@ -26,7 +27,7 @@ signals:
 
 private:
     QList<Job*> jobs;
-    void registerJob(IndexJob* job);
+    void registerJob(Job* job);
 };
 
 #endif // JOBMANAGER_H

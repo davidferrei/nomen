@@ -1,6 +1,5 @@
 #include "ingestJob.h"
-#include <QDebug>
-#include <QUuid>
+
 
 IngestJob::IngestJob(const DataSourceData& ds, const QString& caseFolder, QObject* parent) : Job(Job::JobType::Ingest, ds, parent), caseFolderPath(caseFolder) {}
 
@@ -35,13 +34,17 @@ void IngestJob::start()
 
     //TODO: Implement IngestWorker
 
+    worker = new QObject();
+    worker->moveToThread(thread);
+
     // Signals
-        connect(thread, &QThread::started, this, [this]() {
-            qDebug() << "[IngestJob] Placeholder run for" << dataSource.filePath;
-            workerSucceeded = true;
-            emit finished();
-            thread->quit();
-        });
+    connect(thread, &QThread::started, worker, [this]() {
+        qDebug() << "[IngestJob] Placeholder run for" << dataSource.filePath;
+        QThread::sleep(10);
+        workerSucceeded = true;
+        emit finished();
+        if (thread) thread->quit();
+    });
 
         connect(thread, &QThread::finished, this, [this]() {
             qDebug() << "[IngestJob] Thread Stopped for" << dataSource.filePath;
