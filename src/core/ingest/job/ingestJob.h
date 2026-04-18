@@ -17,11 +17,6 @@ public:
 
     void start() override;
 
-signals:
-    void started();
-    void finished();
-    void failed(QString error);
-
 private:
     QString caseFolderPath;
     bool isRunning = false;

@@ -21,9 +21,9 @@ public:
     int getJobsCount() const;
 
 signals:
-    void jobStarted(const QString& filePath);
-    void jobFinished(const QString& filePath);
-    void jobFailed(const QString& filePath, const QString& error);
+    void jobStarted(const QString& filePath, Job::JobType type);
+    void jobFinished(const QString& filePath, Job::JobType type);
+    void jobFailed(const QString& filePath, const QString& error, Job::JobType type);
 
 private:
     QList<Job*> jobs;

@@ -208,7 +208,8 @@ void NotificationWidget::show(QWidget *parent, const QString &title, const QStri
         if (QWidget *centralWidget = mainWindow->centralWidget())
             host = centralWidget;
 
-    new NotificationWidget(host, title, description, durationMs, type);
+    NotificationWidget *w = new NotificationWidget(host, title, description, durationMs, type);
+    qDebug() << "[NotificationWidget] instance created:" << w << "parentWidget:" << w->parentWidget() << "activeToasts:" << activeToastsList.size();
 }
 
 void NotificationWidget::repositionStack(QWidget *host)

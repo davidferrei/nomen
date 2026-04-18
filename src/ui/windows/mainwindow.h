@@ -76,7 +76,7 @@ private:
     void setUIWidgetsSizes();
     void setupUiElements();
     void setupSignalConnections();
-    void setupIndexingSignalConnections();
+    void setupJobSignalConnections();
     void setupUiSignalConnections();
 
 

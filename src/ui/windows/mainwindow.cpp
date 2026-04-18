@@ -19,19 +19,7 @@ MainWindow::MainWindow(QWidget *parent, CaseManager& caseManager) : QMainWindow(
 
     jobManager = new JobManager(this);
 
-    // Test
-        DataSourceData t1;
-        t1.name = "Hardcoded Test Disk 1";
-        t1.filePath = "/mnt/disk01/DiskImage/kali.raw";
-        jobManager->CreateIngestJob(t1, caseManager.getCurrentCase().casePath);
-
-        DataSourceData t2;
-        t2.name = "Hardcoded Test Disk 2";
-        t2.filePath = "/mnt/disk01/DiskImage/kali.raw";
-        jobManager->CreateIngestJob(t2, caseManager.getCurrentCase().casePath);
-    
-
-    setupIndexingSignalConnections();
+    setupJobSignalConnections();  
 
     loadDataSources();
 
@@ -343,30 +331,47 @@ void MainWindow::loadDataSources()
     th->setSectionResizeMode(1, QHeaderView::Stretch);
     ui->tableView->setSortingEnabled(true);
 
+    // Test
+        DataSourceData t1;
+        t1.name = "Hardcoded Test Disk 1";
+        t1.filePath = "/mnt/disk01/DiskImage/kali.raw";
+        jobManager->CreateIngestJob(t1, caseManager.getCurrentCase().casePath);
+
+        DataSourceData t2;
+        t2.name = "Hardcoded Test Disk 2";
+        t2.filePath = "/mnt/disk01/DiskImage/kali.raw";
+        jobManager->CreateIngestJob(t2, caseManager.getCurrentCase().casePath);
+
 }
 
 
 //############################################################################################
 // Signals
 
-void MainWindow::setupIndexingSignalConnections()
+void MainWindow::setupJobSignalConnections()
 {
-    connect(jobManager, &JobManager::jobStarted, this, [this](const QString& filePath)
+    connect(jobManager, &JobManager::jobStarted, this, [this](const QString& filePath, Job::JobType type)
     {
+        qDebug() << "[MainWindow] jobStarted signal received for" << filePath << "type:" << static_cast<int>(type);
+        bool isIngest = (type == Job::JobType::Ingest);
         NotificationWidget::show(this,
-                                 QStringLiteral("Indexing Started"),
-                                 QFileInfo(filePath).filePath(),
+                                 isIngest ? QStringLiteral("Ingest Started") : QStringLiteral("Indexing Started"),
+                                 QFileInfo(filePath).fileName(),
                                  3500,
                                  NotificationWidget::NotificationType::Info);
     });
 
-    connect(jobManager, &JobManager::jobFinished, this, [this](const QString& filePath)
+    connect(jobManager, &JobManager::jobFinished, this, [this](const QString& filePath, Job::JobType type)
     {
+        qDebug() << "[MainWindow] jobFinished signal received for" << filePath << "type:" << static_cast<int>(type);
+        bool isIngest = (type == Job::JobType::Ingest);
         NotificationWidget::show(this,
-                                 QStringLiteral("Indexing Complete"),
-                                 QFileInfo(filePath).filePath(),
+                                 isIngest ? QStringLiteral("Ingest Complete") : QStringLiteral("Indexing Complete"),
+                                 QFileInfo(filePath).fileName(),
                                  4000,
                                  NotificationWidget::NotificationType::Success);
+
+        if (isIngest) return; 
 
         const QList<DataSourceData> allDataSources = caseManager.getDataSources();
         const DataSourceData* ds = nullptr;
@@ -375,7 +380,7 @@ void MainWindow::setupIndexingSignalConnections()
 
         if (!ds)
         {
-            qWarning() << "[MainWindow]: Indexing Job Finished but no Matching Data Source Found for File Path:" << filePath;
+            qWarning() << "[MainWindow]: Index Job Finished but no Matching Data Source Found for File Path:" << filePath;
             return;
         }
 
@@ -387,11 +392,13 @@ void MainWindow::setupIndexingSignalConnections()
         caseTreeModel->addDataSource(static_cast<int>(ds->id), label, lmdbPath);
     });
 
-    connect(jobManager, &JobManager::jobFailed, this, [this](const QString& filePath, const QString& error)
+    connect(jobManager, &JobManager::jobFailed, this, [this](const QString& filePath, const QString& error, Job::JobType type)
     {
+        qDebug() << "[MainWindow] jobFailed signal received for" << filePath << ":" << error << "type:" << static_cast<int>(type);
+        bool isIngest = (type == Job::JobType::Ingest);
         NotificationWidget::show(this,
-                                 QStringLiteral("Indexing Failed"),
-                                 QFileInfo(filePath).filePath() + QStringLiteral(": ") + error,
+                                 isIngest ? QStringLiteral("Ingest Failed") : QStringLiteral("Indexing Failed"),
+                                 QFileInfo(filePath).fileName() + QStringLiteral(": ") + error,
                                  10000,
                                  NotificationWidget::NotificationType::Failure);
     });

@@ -67,6 +67,7 @@ void IndexJob::start()
         });
 
     qDebug() << "[IndexJob] Starting Job for" << dataSource.filePath << "in Thread" << thread->objectName();
+    qDebug() << "[IndexJob] start() called on" << this << "for" << dataSource.filePath;
 
     emit started();
 
