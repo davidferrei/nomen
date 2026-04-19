@@ -1,0 +1,7 @@
+{
+  "name": "TxtCounter",
+  "id": "org.nomen.txtCounterModule",
+  "description": "Counts all .txt Files",
+  "version": "0.1",
+  "author": "Nomen"
+}

@@ -1,0 +1,7 @@
+{
+  "name": "DetectMIMEType",
+  "id": "org.nomen.detectMIMEType",
+  "description": "Detects MIME Type using libmagic",
+  "version": "0.1",
+  "author": "Nomen"
+}

@@ -29,7 +29,9 @@ void initLogger()
         g_logStream.setDevice(&g_logFile);
         g_logStream << "===== Nomen =====\n";
         g_logStream.flush();
-    } else {
+    } 
+    else 
+    {
         qCritical() << "Failed To Open Temp Log File At:" << logFilePath;
     }
 
@@ -38,7 +40,8 @@ void initLogger()
 
 void shutdownLogger()
 {
-    if (g_logFile.isOpen()) {
+    if (g_logFile.isOpen()) 
+    {
         g_logStream << "===== Bye =====\n";
         g_logStream.flush();
         g_logFile.close();
@@ -56,7 +59,9 @@ void setLogFilePath(const QString &path)
         g_logStream.setDevice(&g_logFile);
         g_logStream << "===== Nomen =====\n";
         g_logStream.flush();
-    } else {
+    } 
+    else 
+    {
         qCritical() << "Failed To Open Log File At:" << path;
     }
 }
@@ -75,13 +80,26 @@ void nomenLogger(QtMsgType type, const QMessageLogContext &context, const QStrin
     QString threadName = currentThread->objectName();
 
     QString logType;
-    switch (type) {
-    case QtInfoMsg:     logType = "INFO"; break;
-    case QtDebugMsg:    logType = "DEBUG"; break;
-    case QtWarningMsg:  logType = "WARNING"; break;
-    case QtCriticalMsg: logType = "CRITICAL"; break;
-    case QtFatalMsg:    logType = "FATAL"; break;
-    default:            logType = "UNKNOWN"; break;
+    switch (type) 
+    {
+        case QtInfoMsg:
+            logType = "INFO";
+            break;
+        case QtDebugMsg:
+            logType = "DEBUG";
+            break;
+        case QtWarningMsg:
+            logType = "WARNING";
+            break;
+        case QtCriticalMsg:
+            logType = "CRITICAL";
+            break;
+        case QtFatalMsg:
+            logType = "FATAL";
+            break;
+        default:
+            logType = "UNKNOWN";
+            break;
     }
 
     QString formattedMessage =
@@ -97,31 +115,59 @@ void nomenLogger(QtMsgType type, const QMessageLogContext &context, const QStrin
 #ifdef QT_DEBUG
     const char* color;
 
-    switch (type) {
-        case QtDebugMsg: color = ANSI_CYAN; break;
-        case QtInfoMsg: color = ANSI_BLUE; break;
-        case QtWarningMsg: color = ANSI_YELLOW; break;
+    switch (type) 
+    {
+        case QtDebugMsg: 
+            color = ANSI_CYAN; 
+            break;
+        case QtInfoMsg: 
+            color = ANSI_BLUE; 
+            break;
+        case QtWarningMsg: 
+            color = ANSI_YELLOW; 
+            break;
         case QtCriticalMsg:
-        case QtFatalMsg: color = ANSI_RED; break;
-        default: color = ANSI_RESET; break;
+        case QtFatalMsg: 
+            color = ANSI_RED; 
+            break;
+        default: 
+            color = ANSI_RESET; 
+            break;
     }
 
     // Console Output
     if (type == QtDebugMsg || type == QtInfoMsg) {
         fprintf(stdout, "%s%s%s\n", color, qPrintable(formattedMessage), ANSI_RESET);
         fflush(stdout);
-    } else {
+    } else 
+    {
         fprintf(stderr, "%s%s%s\n", color, qPrintable(formattedMessage), ANSI_RESET);
     }
 #endif
 
     // File Output
-    if (g_logFile.isOpen()) {
+    if (g_logFile.isOpen()) 
+    {
         g_logStream << formattedMessage << "\n";
         g_logStream.flush();
     }
 
-    if (originalHandler) {
+    if (originalHandler) 
+    {
         originalHandler(type, context, msg);
+    }
+}
+
+void qDebugNL()
+{
+#ifdef QT_DEBUG
+    fprintf(stdout, "\n");
+    fflush(stdout);
+#endif
+
+    if (g_logFile.isOpen()) 
+    {
+        g_logStream << "\n";
+        g_logStream.flush();
     }
 }

@@ -113,3 +113,6 @@ install(TARGETS Nomen
 if(QT_VERSION_MAJOR EQUAL 6)
     qt_finalize_executable(Nomen)
 endif()
+
+##Extensions
+add_subdirectory(extensions/ingestModules)
