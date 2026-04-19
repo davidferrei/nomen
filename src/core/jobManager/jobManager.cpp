@@ -10,7 +10,6 @@ void JobManager::CreateIndexJob(const DataSourceData& ds, const QString& caseFol
 {
     qDebug() << "[JobManager] CreateIndexJob called for" << ds.filePath << "case:" << caseFolder;
     IndexJob* job = new IndexJob(ds, caseFolder, this);
-    qDebug() << "[JobManager] Created IndexJob instance at" << job;
     registerJob(job);
     job->start();
 }
@@ -19,7 +18,6 @@ void JobManager::CreateIngestJob(const DataSourceData& ds, const QString& caseFo
 {
     qDebug() << "[JobManager] CreateIngestJob called for" << ds.filePath << "case:" << caseFolder;
     IngestJob* job = new IngestJob(ds, caseFolder, this);
-    qDebug() << "[JobManager] Created IngestJob instance at" << job;
     registerJob(job);
     job->start();
 }

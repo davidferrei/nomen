@@ -352,7 +352,7 @@ void MainWindow::setupJobSignalConnections()
 {
     connect(jobManager, &JobManager::jobStarted, this, [this](const QString& filePath, Job::JobType type)
     {
-        qDebug() << "[MainWindow] jobStarted signal received for" << filePath << "type:" << static_cast<int>(type);
+        // qDebug() << "[MainWindow] jobStarted signal received for" << filePath << "type:" << static_cast<int>(type);
         bool isIngest = (type == Job::JobType::Ingest);
         NotificationWidget::show(this,
                                  isIngest ? QStringLiteral("Ingest Started") : QStringLiteral("Indexing Started"),
@@ -363,7 +363,7 @@ void MainWindow::setupJobSignalConnections()
 
     connect(jobManager, &JobManager::jobFinished, this, [this](const QString& filePath, Job::JobType type)
     {
-        qDebug() << "[MainWindow] jobFinished signal received for" << filePath << "type:" << static_cast<int>(type);
+        // qDebug() << "[MainWindow] jobFinished signal received for" << filePath << "type:" << static_cast<int>(type);
         bool isIngest = (type == Job::JobType::Ingest);
         NotificationWidget::show(this,
                                  isIngest ? QStringLiteral("Ingest Complete") : QStringLiteral("Indexing Complete"),
@@ -394,7 +394,7 @@ void MainWindow::setupJobSignalConnections()
 
     connect(jobManager, &JobManager::jobFailed, this, [this](const QString& filePath, const QString& error, Job::JobType type)
     {
-        qDebug() << "[MainWindow] jobFailed signal received for" << filePath << ":" << error << "type:" << static_cast<int>(type);
+        // qDebug() << "[MainWindow] jobFailed signal received for" << filePath << ":" << error << "type:" << static_cast<int>(type);
         bool isIngest = (type == Job::JobType::Ingest);
         NotificationWidget::show(this,
                                  isIngest ? QStringLiteral("Ingest Failed") : QStringLiteral("Indexing Failed"),
