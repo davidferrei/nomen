@@ -47,7 +47,7 @@ public:
 
     virtual void process() = 0;
 
-    virtual bool isDefaultModule() const { return false; }
+    
 
 protected:
     QJsonObject m_metadata;

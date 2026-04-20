@@ -22,17 +22,6 @@ IngestModuleFactory::~IngestModuleFactory()
 //############################################################################################
 // Functions
 
-AbstractIngestModule *IngestModuleFactory::module() const
-{
-
-    AbstractIngestModule *module = defaultModule();
-    if (!module) 
-    {
-        qWarning() << "[IngestModuleFactory] No Default Ingest Module Set";
-        return nullptr;
-    }
-    return module;
-}
 
 void IngestModuleFactory::loadModulePlugins()
 {
@@ -115,29 +104,12 @@ void IngestModuleFactory::addModule(QObject *moduleObject, const QJsonObject &pl
     AbstractIngestModule *pluginInstance = interface->module(pluginMetadata);
     if (!pluginInstance)
         return;
-
-    if (pluginInstance->isDefaultModule())
-        m_defaultModule = pluginInstance;
-
     modulesHashTable.insert(interface->moduleName(), pluginInstance);
 }
 
-QStringList IngestModuleFactory::moduleNamesList(bool showDefault) const
+QStringList IngestModuleFactory::moduleNamesList() const
 {
-    if (!showDefault)
-        return modulesHashTable.keys();
-
-    QStringList list;
-    for (auto it = modulesHashTable.constBegin(); it != modulesHashTable.constEnd(); ++it) 
-    {
-        QString name = it.key();
-        if (m_defaultModule && it.value()->isDefaultModule()) 
-        {
-            name += "(default)"_L1;
-        }
-        list.append(name);
-    }
-    return list;
+    return modulesHashTable.keys();
 }
 
 IngestModuleFactory::ModuleList IngestModuleFactory::modulesList() const
@@ -155,8 +127,4 @@ AbstractIngestModule *IngestModuleFactory::fetchModule(const QString &moduleName
     return nullptr;
 }
 
-AbstractIngestModule *IngestModuleFactory::defaultModule() const
-{
-    return m_defaultModule;
-}
 

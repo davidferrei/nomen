@@ -19,13 +19,10 @@ public:
     explicit IngestModuleFactory();
     ~IngestModuleFactory();
 
-    AbstractIngestModule *module() const;
-
     // Query API
-    QStringList moduleNamesList(bool showDefault = false) const;
+    QStringList moduleNamesList() const;
     ModuleList modulesList() const;
     AbstractIngestModule *fetchModule(const QString &moduleName) const;
-    AbstractIngestModule *defaultModule() const;
 
     // Load / Unload
     void loadModulePlugins();
@@ -35,7 +32,7 @@ private:
     void addModule(QObject *moduleObject, const QJsonObject &metadata = QJsonObject());
 
     QHash<QString, AbstractIngestModule *> modulesHashTable;
-    AbstractIngestModule *m_defaultModule{nullptr};
+    
 };
 
 #endif // INGESTMODULEFACTORY_H

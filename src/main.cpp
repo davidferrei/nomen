@@ -59,9 +59,7 @@ int main(int argc, char *argv[])
 
     if (!modules.isEmpty()) 
     {
-        AbstractIngestModule *mod = ingestFactory->defaultModule();
-        if (!mod)
-            mod = ingestFactory->fetchModule(modules.first());
+        AbstractIngestModule *mod = ingestFactory->fetchModule(modules.first());
 
         if (mod) 
         {
