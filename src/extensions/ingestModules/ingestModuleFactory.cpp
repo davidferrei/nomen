@@ -47,6 +47,7 @@ void IngestModuleFactory::loadModulePlugins()
 
     QStringList candidates;
     candidates << appDir.filePath("../plugins");
+    candidates << appDir.filePath("plugins"); 
 
     for (const QString &cand : candidates) 
     {

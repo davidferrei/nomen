@@ -16,6 +16,10 @@
 
 #include <cstdlib>
 
+#include "extensions/ingestModules/ingestModuleFactory.h"
+#include <QThread>
+#include <QObject>
+
 
 int main(int argc, char *argv[])
 {
@@ -43,6 +47,41 @@ int main(int argc, char *argv[])
     //TSK Version
     const char* tskVersion = tsk_version_get_str();
     qInfo() << "The Sleuth Kit version:" << tskVersion;
+
+
+    //################################################################
+    //FIXME: Remove Temp Code
+    IngestModuleFactory *ingestFactory = new IngestModuleFactory();
+    const QStringList modules = ingestFactory->moduleNamesList();
+    qInfo() << "Discovered Ingest Modules:" << modules;
+
+    QThread *ingestWorker = nullptr;
+
+    if (!modules.isEmpty()) 
+    {
+        AbstractIngestModule *mod = ingestFactory->defaultModule();
+        if (!mod)
+            mod = ingestFactory->fetchModule(modules.first());
+
+        if (mod) 
+        {
+            qDebug() << "Starting Ingest Module Thread";
+
+            ingestWorker = QThread::create([mod]() 
+            {
+                qDebug() << "Thread Started for Module:" << mod->name();
+
+                mod->init();
+                mod->process();
+
+                qDebug() << "Thread Finished for Module:" << mod->name();
+            });
+            ingestWorker->start();
+        }
+    }
+
+    //################################################################
+
 
     //Case Manager Start
     CaseManager caseManager;
@@ -78,6 +117,15 @@ int main(int argc, char *argv[])
     w.show();
 
     int app_return = a.exec();
+
+    //FIXME: Remove Temp Code
+    if (ingestWorker) 
+    {
+        ingestWorker->quit();
+        ingestWorker->wait();
+        delete ingestWorker;
+    }
+    delete ingestFactory;
 
     //Shutdown Setup
     shutdownLogger();
