@@ -1,4 +1,5 @@
 #include "ingestJob.h"
+#include "ingestWorker.h"
 
 
 IngestJob::IngestJob(const DataSourceData& ds, const QString& caseFolder, QObject* parent) : Job(Job::JobType::Ingest, ds, parent), caseFolderPath(caseFolder) {}
@@ -35,33 +36,44 @@ void IngestJob::start()
 
     qDebug() << "[IngestJob] start() called on" << this << "for" << dataSource.filePath << "thread name:" << thread->objectName();
 
-    //TODO: Implement IngestWorker
+    worker = new IngestWorker(dataSource, caseFolderPath);
 
-    worker = new QObject();
     worker->moveToThread(thread);
 
     // Signals
-    connect(thread, &QThread::started, worker, [this]() {
-        qDebug() << "[IngestJob] Placeholder Worker run for" << dataSource.filePath;
-        QThread::sleep(10);
+    connect(thread, &QThread::started, worker, &IngestWorker::run);
+
+    connect(worker, &IngestWorker::finished, this, [this]() {
+        qDebug() << "[IngestJob] Worker Finished for" << dataSource.filePath;
         workerSucceeded = true;
-        QThread::currentThread()->quit();
     });
 
-    connect(thread, &QThread::finished, worker, &QObject::deleteLater);
+    connect(worker, &IngestWorker::failed, this, [this](const QString& error) {
+        qDebug() << "[IngestJob] Worker Failed for" << dataSource.filePath << ":" << error;
+        workerError = error;
+    });
+
+    connect(worker, &IngestWorker::finished, thread, &QThread::quit);
+    connect(worker, &IngestWorker::failed, thread, &QThread::quit);
 
     connect(thread, &QThread::finished, this, [this]() {
-        qDebug() << "[IngestJob] Thread Finished for" << dataSource.filePath;
-        isRunning = false;
-        worker = nullptr;
-        QThread* t = thread;
-        thread = nullptr;
-        t->deleteLater();
+        qDebug() << "[IngestJob] Thread Stopped for" << dataSource.filePath;
 
-        if (workerSucceeded)
+        isRunning = false;
+
+        worker->deleteLater();
+        thread->deleteLater();
+        worker = nullptr;
+        thread = nullptr;
+
+        if (workerSucceeded) 
+        {
             emit finished();
-        else
+        } 
+        else 
+        {
             emit failed(workerError);
+        }
     });
 
     qDebug() << "[IngestJob] Starting Job for" << dataSource.filePath << "in Thread" << thread->objectName();

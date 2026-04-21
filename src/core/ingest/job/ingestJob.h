@@ -8,6 +8,8 @@
 #include <QUuid>
 #include <QThread>
 
+#include "ingestWorker.h"
+
 class IngestJob : public Job
 {
     Q_OBJECT
@@ -24,7 +26,7 @@ private:
     QString workerError;
 
     QThread* thread = nullptr;
-    QObject* worker = nullptr;
+    IngestWorker* worker = nullptr;
 };
 
 #endif // INGESTJOB_H
