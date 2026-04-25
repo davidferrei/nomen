@@ -5,21 +5,30 @@
 #include <QThread>
 #include <QDebug>
 #include <QJsonObject>
-
+#include <cctype>
 
 #include "extensions/ingestModules/ingestModuleInterface.h"
 
-class TxtCounterModule : public AbstractIngestModule
+#include "core/forensic/tsk/tskIngestModule.h"
+
+class TxtCounterModule : public TSKIngestModule
 {
     Q_OBJECT
 public:
-    explicit TxtCounterModule(const QJsonObject &metadata = QJsonObject(), QObject *parent = nullptr) : AbstractIngestModule(metadata, parent) {}
+    explicit TxtCounterModule(const QJsonObject &metadata = QJsonObject(), QObject *parent = nullptr) : TSKIngestModule(metadata, parent) {}
     ~TxtCounterModule() override = default;
 
-    void init() override {}
+    void init() override;
     QString getModuleName() const override { return name(); }
 
-    void process();
+    void processFile(const FileContext &fileContext) override;
+
+    void finishWalk() override;
+
+private:
+    uint64_t filesCount = 0;
+    uint64_t dirsCount = 0;
+    uint64_t txtFilesCount = 0;
 
 };
 

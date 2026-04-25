@@ -5,7 +5,12 @@
 #include <QThread>
 
 #include "data/evidence/dataSourceData.h"
+
 #include "extensions/ingestModules/ingestModuleFactory.h"
+#include "core/forensic/tsk/tskIngestModule.h"
+#include "../../logging/performancemeasure.h"
+
+
 
 
 class IngestWorker : public QObject

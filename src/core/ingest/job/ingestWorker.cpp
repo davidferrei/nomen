@@ -7,6 +7,8 @@ void IngestWorker::run()
 {
     qDebug() << "[IngestWorker] Starting Ingest for:" << dataSource.filePath << " with Module:" << moduleName;
 
+    PerformanceTimer perfTimer(QString("Ingest Time - (%1)").arg(moduleName));
+
     try 
     {
         // TODO: Handle Module Factory "Globally" 
@@ -21,7 +23,20 @@ void IngestWorker::run()
         }
 
         module->init();
-        module->process();
+
+        if (auto *tskModule = dynamic_cast<TSKIngestModule*>(module)) 
+        {
+            if (!tskModule->runWalk(dataSource.filePath)) 
+            {
+                qWarning() << "[IngestWorker] TSK Walk Failed for Module" << moduleName;
+                emit failed(QString("TSK Walk failed for %1").arg(moduleName));
+                return;
+            }
+        } 
+        else 
+        {
+            module->process();
+        }
 
         qDebug() << "[IngestWorker] Ingest Module Finished For:" << dataSource.filePath;
         emit finished();
