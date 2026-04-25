@@ -51,4 +51,6 @@ void TxtCounterModule::finishWalk()
 	qInfo() << "[TxtCounter] Results: Files:" << filesCount << "Directories:" << dirsCount << "TXT Files:" << txtFilesCount;
 }
 
+// 1935.14 ms (10 bytes Content Read)
+// 1514.97 ms (No Content Read)
 

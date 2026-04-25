@@ -11,8 +11,7 @@ void IngestWorker::run()
 
     try 
     {
-        // TODO: Handle Module Factory "Globally" 
-        IngestModuleFactory moduleFactory;
+        IngestModuleFactory &moduleFactory = IngestModuleFactory::instance();
 
         AbstractIngestModule *module = moduleFactory.fetchModule(moduleName);
         if (!module) 

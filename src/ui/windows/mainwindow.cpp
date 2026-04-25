@@ -1,10 +1,11 @@
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
 
-
 MainWindow::MainWindow(QWidget *parent, CaseManager& caseManager) : QMainWindow(parent), ui(new Ui::MainWindow), caseManager(caseManager)
 {
     ui->setupUi(this);
+
+    IngestModuleFactory::instance();
 
     qDebug() << "Main Window Opened";
 

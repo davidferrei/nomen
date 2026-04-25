@@ -14,6 +14,12 @@ IngestModuleFactory::IngestModuleFactory()
     loadModulePlugins();
 }
 
+IngestModuleFactory &IngestModuleFactory::instance()
+{
+    static IngestModuleFactory singleton;
+    return singleton;
+}
+
 IngestModuleFactory::~IngestModuleFactory()
 {
     unloadModulePlugins();

@@ -19,6 +19,8 @@ public:
     explicit IngestModuleFactory();
     ~IngestModuleFactory();
 
+    static IngestModuleFactory &instance();
+
     // Query API
     QStringList moduleNamesList() const;
     ModuleList modulesList() const;
@@ -32,6 +34,9 @@ private:
     void addModule(QObject *moduleObject, const QJsonObject &metadata = QJsonObject());
 
     QHash<QString, AbstractIngestModule *> modulesHashTable;
+
+    IngestModuleFactory(const IngestModuleFactory &) = delete;
+    IngestModuleFactory &operator=(const IngestModuleFactory &) = delete;
     
 };
 

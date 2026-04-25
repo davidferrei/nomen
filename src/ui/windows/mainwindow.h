@@ -5,6 +5,8 @@
 #include "core/jobManager/jobManager.h"
 #include "core/caseDBManager/repositories/datasourceRepository.h"
 #include "../../core/index/repo/IndexDBManager.h"
+#include "extensions/ingestModules/ingestModuleFactory.h"
+
 
 #include "../widgets/DraggableTabBar.h"
 #include "../widgets/NotificationWidget.h"
