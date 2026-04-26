@@ -13,6 +13,8 @@
 #include "../widgets/DraggableTabWidget.h"
 #include "../widgets/fileViewers/PlainTextViewer.h"
 #include "../widgets/metadataViewer/MetadataViewer.h"
+#include "ingestPicker/ingestPicker.h"
+
 
 #include "ui/models/caseTreeModel.h"
 #include "ui/models/itemTableModel.h"
