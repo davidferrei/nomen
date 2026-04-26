@@ -9,6 +9,7 @@ ingestPicker::ingestPicker(IngestModuleFactory &moduleFactory, QWidget *parent) 
     setupModulesTable();
     populateModulesTable(moduleFactory.moduleNamesList());
 
+    //Update Metadata Tab (Main)
     connect(ui->ingestModulesTable, &QTableWidget::itemSelectionChanged, this, [this]() {
         const int row = ui->ingestModulesTable->currentRow();
         if (row < 0) return;
@@ -16,7 +17,18 @@ ingestPicker::ingestPicker(IngestModuleFactory &moduleFactory, QWidget *parent) 
         if (!nameItem) return;
         const QString moduleName = nameItem->text();
         const QJsonObject moduleMetadata = IngestModuleFactory::instance().getModuleMetadata(moduleName);
-        qDebug() << "[ingestPicker] Module Metadata:" << QJsonDocument(moduleMetadata).toJson(QJsonDocument::Compact);
+
+        ui->NameValue->setText(moduleMetadata.value("name").toString());
+        ui->ModuleNameLabel->setText(moduleMetadata.value("name").toString());
+        ui->VersionValue->setText(moduleMetadata.value("version").toString());
+        ui->AuthorValue->setText(moduleMetadata.value("author").toString());
+        ui->ModuleIDValue->setText(moduleMetadata.value("id").toString());
+        ui->moduleDescriptionEdit->setPlainText(moduleMetadata.value("description").toString());
+    });
+
+    connect(ui->startIngestBttn, &QPushButton::clicked, this, [this]() {
+        ingestConfirmationDialog confirmationDialog(this);
+        confirmationDialog.exec();
     });
 }
 
@@ -44,7 +56,7 @@ void ingestPicker::setupModulesTable()
 
     ui->ingestModulesTable->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Fixed);
     ui->ingestModulesTable->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Stretch);
-    ui->ingestModulesTable->setColumnWidth(0, 50);
+    ui->ingestModulesTable->setColumnWidth(0, 5);
 
     ui->ingestModulesTable->horizontalHeader()->setSectionsMovable(false);
 }
@@ -56,6 +68,9 @@ void ingestPicker::populateModulesTable(const QStringList &modulesList)
     for (int r = 0; r < modulesList.size(); ++r)
     {
         QTableWidgetItem *checkColumn = new QTableWidgetItem(QString());
+        checkColumn->setFlags(Qt::ItemIsUserCheckable | Qt::ItemIsEnabled);
+        checkColumn->setCheckState(Qt::Unchecked);
+        checkColumn->setTextAlignment(Qt::AlignCenter);
         ui->ingestModulesTable->setItem(r, 0, checkColumn);
 
         QTableWidgetItem *name = new QTableWidgetItem(modulesList.at(r));

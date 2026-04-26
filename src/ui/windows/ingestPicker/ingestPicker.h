@@ -3,6 +3,9 @@
 
 #include "core/extensions/ingestModuleFactory.h"
 
+#include "../../dialogs/ingestConfirmationDialog/ingestConfirmationDialog.h"
+
+
 #include <QMainWindow>
 #include <QTableWidgetItem>
 #include <QHeaderView>
@@ -27,7 +30,6 @@ private:
     Ui::ingestPicker *ui;
     void setupModulesTable();
     void populateModulesTable(const QStringList &modulesList);
-    IngestModuleFactory *m_factory = nullptr;
 };
 
 #endif // INGESTPICKER_H
