@@ -7,7 +7,7 @@
 #include <QJsonObject>
 #include <cctype>
 
-#include "extensions/ingestModules/ingestModuleInterface.h"
+#include "core/extensions/ingestModuleInterface.h"
 
 #include "core/forensic/tsk/tskIngestModule.h"
 

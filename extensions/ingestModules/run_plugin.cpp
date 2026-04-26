@@ -3,7 +3,7 @@
 #include <QDir>
 
 #include "core/logging/logger.h"
-#include "extensions/ingestModules/ingestModuleFactory.h"
+#include "core/extensions/ingestModuleFactory.h"
 
 int main(int argc, char **argv)
 {

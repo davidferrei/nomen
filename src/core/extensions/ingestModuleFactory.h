@@ -1,7 +1,7 @@
 #ifndef INGESTMODULEFACTORY_H
 #define INGESTMODULEFACTORY_H
 
-#include "extensions/ingestModules/ingestModuleInterface.h"
+#include "core/extensions/ingestModuleInterface.h"
 
 #include <QHash>
 #include <QList>

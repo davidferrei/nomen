@@ -4,7 +4,7 @@ project(detectMIMEType LANGUAGES CXX)
 add_library(detectMIMEType SHARED
     detectMIMEType.cpp
     detectMIMEType.h
-    ${CMAKE_SOURCE_DIR}/src/extensions/ingestModules/ingestModuleInterface.h
+    ${CMAKE_SOURCE_DIR}/src/core/extensions/ingestModuleInterface.h
     detectMIMEType.json
 )
 

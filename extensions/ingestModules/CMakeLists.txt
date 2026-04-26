@@ -19,7 +19,7 @@ target_link_libraries(run_ingest_plugin
 )
 
 target_sources(run_ingest_plugin PRIVATE
-	${CMAKE_SOURCE_DIR}/src/extensions/ingestModules/ingestModuleFactory.cpp
+	${CMAKE_SOURCE_DIR}/src/core/extensions/ingestModuleFactory.cpp
 )
 
 target_sources(run_ingest_plugin PRIVATE

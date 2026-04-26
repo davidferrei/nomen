@@ -6,7 +6,7 @@
 #include <QDebug>
 #include <QJsonObject>
 
-#include "extensions/ingestModules/ingestModuleInterface.h"
+#include "core/extensions/ingestModuleInterface.h"
 
 class DetectMIMETypeModule : public AbstractIngestModule
 {

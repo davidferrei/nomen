@@ -1,4 +1,4 @@
-#include "extensions/ingestModules/ingestModuleFactory.h"
+#include "core/extensions/ingestModuleFactory.h"
 
 #include <QCoreApplication>
 #include <QDir>

@@ -7,7 +7,7 @@
 #include <QVector>
 #include <tsk/libtsk.h>
 
-#include "extensions/ingestModules/ingestModuleInterface.h"
+#include "core/extensions/ingestModuleInterface.h"
 
 struct FileContext
 {

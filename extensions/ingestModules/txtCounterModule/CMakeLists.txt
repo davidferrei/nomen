@@ -4,7 +4,7 @@ project(txtCounterModule LANGUAGES CXX)
 add_library(txtCounterModule SHARED
     txtCounterModule.cpp
     txtCounterModule.h
-    ${CMAKE_SOURCE_DIR}/src/extensions/ingestModules/ingestModuleInterface.h
+    ${CMAKE_SOURCE_DIR}/src/core/extensions/ingestModuleInterface.h
     txtCounter.json
 )
 
