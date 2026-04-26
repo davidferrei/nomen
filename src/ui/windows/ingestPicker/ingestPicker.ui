@@ -92,7 +92,7 @@
                </widget>
               </item>
               <item>
-               <widget class="QLabel" name="label_2">
+               <widget class="QLabel" name="ModuleNameLabel">
                 <property name="layoutDirection">
                  <enum>Qt::LayoutDirection::LeftToRight</enum>
                 </property>

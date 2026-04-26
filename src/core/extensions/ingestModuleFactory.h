@@ -25,6 +25,7 @@ public:
     QStringList moduleNamesList() const;
     ModuleList modulesList() const;
     AbstractIngestModule *fetchModule(const QString &moduleName) const;
+    QJsonObject getModuleMetadata(const QString &moduleName) const;
 
     // Load / Unload
     void loadModulePlugins();

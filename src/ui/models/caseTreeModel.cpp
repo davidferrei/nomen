@@ -425,7 +425,7 @@ void CaseTreeModel::onItemActivated(const QModelIndex &index)
 
     QString resolvedPath = pathForItem(activatedItem);
 
-    qDebug() << "[CaseTreeModel] Signal - nodeActivated: DS:" << activatedItem->dsId << "Path:" << resolvedPath;
+    // qDebug() << "[CaseTreeModel] Signal - nodeActivated: DS:" << activatedItem->dsId << "Path:" << resolvedPath;
     
     emit nodeActivated(activatedItem->dsId, resolvedPath);
 }

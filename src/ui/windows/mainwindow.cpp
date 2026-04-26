@@ -189,7 +189,7 @@ void MainWindow::setupUiElements()
     addMenu->addAction(newIngestJobAction);
 
     connect(newIngestJobAction, &QAction::triggered, this, [this]() {
-        auto *picker = new ingestPicker(this);
+        auto *picker = new ingestPicker(IngestModuleFactory::instance(), this);
         picker->show();
     });
 
@@ -503,7 +503,7 @@ void MainWindow::onCaseTreeNodeActivated(int dsId, const QString &path)
         return;
     }
 
-    qDebug() << "[MainWindow] Signal - nodeActivated -> DS:" << dsId << "Path:" << path;
+    // qDebug() << "[MainWindow] Signal - nodeActivated -> DS:" << dsId << "Path:" << path;
 
     auto nodeChildrenResponse = caseTreeModel->getChildrenItemsForDSPath(dsId, path);
     if (!nodeChildrenResponse.first)

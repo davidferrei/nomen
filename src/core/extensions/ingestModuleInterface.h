@@ -45,6 +45,8 @@ public:
 
     virtual QString getModuleName() const { return name(); }
 
+    QJsonObject getMetadata() const { return m_metadata; }
+
     virtual void process() = 0;
 
     

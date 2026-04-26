@@ -31,6 +31,8 @@ IngestModuleFactory::~IngestModuleFactory()
 
 void IngestModuleFactory::loadModulePlugins()
 {
+    //FIXME: Handle Modules With Same Name (ID System?)
+
     if (!modulesHashTable.isEmpty())
         return;
 
@@ -59,7 +61,7 @@ void IngestModuleFactory::loadModulePlugins()
 #if defined(Q_OS_WIN)
         nameFilters << "*.dll";
 #elif defined(Q_OS_MAC)
-        nameFilters << "*.dylib" << "*.so";
+        nameFilters << "*.dylib" << "*.so"; //Untested
 #else
         nameFilters << "*.so";
 #endif
@@ -105,11 +107,17 @@ void IngestModuleFactory::addModule(QObject *moduleObject, const QJsonObject &pl
 {
     auto *interface = qobject_cast<IngestModuleInterface *>(moduleObject);
     if (!interface)
+    {
+        qWarning() << "[IngestModuleFactory] Object Does not implement IngestModuleInterface:" << moduleObject;
         return;
-
+    }
+        
     AbstractIngestModule *pluginInstance = interface->module(pluginMetadata);
     if (!pluginInstance)
+    {
+        qWarning() << "[IngestModuleFactory] Failed to Create Module Instance for Plugin:" << interface->moduleName();
         return;
+    }
     modulesHashTable.insert(interface->moduleName(), pluginInstance);
 }
 
@@ -131,6 +139,24 @@ AbstractIngestModule *IngestModuleFactory::fetchModule(const QString &moduleName
 
     qWarning() << "[IngestModuleFactory] Module" << moduleName << "Not Loaded.";
     return nullptr;
+}
+
+
+QJsonObject IngestModuleFactory::getModuleMetadata(const QString &moduleName) const
+{
+    if (auto *module = fetchModule(moduleName)) 
+    {
+        const QJsonObject moduleMetadata = module->getMetadata();
+        if (moduleMetadata.isEmpty()) 
+        {
+            qWarning() << "[IngestModuleFactory] Metadata Empty for Module:" << moduleName;
+            return QJsonObject();
+        }
+        return moduleMetadata;
+    }
+
+    qWarning() << "[IngestModuleFactory] Module:" << moduleName << "Not Found";
+    return QJsonObject();
 }
 
 
