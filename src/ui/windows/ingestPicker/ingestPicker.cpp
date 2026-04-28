@@ -1,10 +1,16 @@
 #include "ingestPicker.h"
 #include "ui_ingestPicker.h"
 
-
-ingestPicker::ingestPicker(IngestModuleFactory &moduleFactory, QWidget *parent) : QMainWindow(parent), ui(new Ui::ingestPicker)
+ingestPicker::ingestPicker(IngestModuleFactory &moduleFactory, const QList<DataSourceData> &dsList, JobManager* jobMgr, const QString &casePath, QWidget *parent) : QMainWindow(parent), ui(new Ui::ingestPicker), jobManager(jobMgr) , dataSourcesList(dsList), caseFolder(casePath)
 {
     ui->setupUi(this);
+
+    ui->DSComboBox->clear();
+    ui->DSComboBox->addItem(QStringLiteral("Select a Disk..."), -1);
+    for (int i = 0; i < dataSourcesList.size(); ++i)
+        ui->DSComboBox->addItem(dataSourcesList.at(i).name, i);
+
+    ui->startIngestBttn->setEnabled(false);
 
     setupModulesTable();
     populateModulesTable(moduleFactory.moduleNamesList());
@@ -26,6 +32,7 @@ ingestPicker::ingestPicker(IngestModuleFactory &moduleFactory, QWidget *parent) 
         ui->moduleDescriptionEdit->setPlainText(moduleMetadata.value("description").toString());
     });
 
+    //Update Selected Modules List
     connect(ui->ingestModulesTable, &QTableWidget::itemChanged, this, [this](QTableWidgetItem *item) {
         if (item->column() != 0) return;
 
@@ -39,20 +46,40 @@ ingestPicker::ingestPicker(IngestModuleFactory &moduleFactory, QWidget *parent) 
 
         const QString moduleName = nameItem->text();
 
-        if (item->checkState() == Qt::Checked) 
+        if (item->checkState() == Qt::Checked)
         {
             if (!selectedModules.contains(moduleName))
                 selectedModules.append(moduleName);
-        } 
-        else 
+        }
+        else
         {
             selectedModules.removeAll(moduleName);
         }
+
+        const bool dsChosen = (ui->DSComboBox->currentData().toInt() != -1);
+        ui->startIngestBttn->setEnabled(!selectedModules.isEmpty() && dsChosen);
+    });
+
+    connect(ui->DSComboBox, qOverload<int>(&QComboBox::currentIndexChanged), this, [this](int){
+        const bool dsChosen = (ui->DSComboBox->currentData().toInt() != -1);
+        ui->startIngestBttn->setEnabled(!selectedModules.isEmpty() && dsChosen);
     });
 
     connect(ui->startIngestBttn, &QPushButton::clicked, this, [this]() {
         ingestConfirmationDialog confirmationDialog(selectedModules, this);
-        confirmationDialog.exec();
+        if (confirmationDialog.exec() == QDialog::Accepted)
+        {
+            const int dsIndex = ui->DSComboBox->currentData().toInt();
+            if (dsIndex < 0 || dsIndex >= dataSourcesList.size()) 
+            {
+                qWarning() << "[IngestPicker] Invalid DS Index:" << dsIndex;
+                return;
+            }
+
+            const DataSourceData &ds = dataSourcesList.at(dsIndex);
+            qDebug() << "[IngestPicker] Starting Ingest for DataSource:" << ds.name << "with Modules:" << selectedModules;
+            // jobManager->CreateIngestJob(ds.filePath, caseFolder);
+        }
     });
 }
 
