@@ -7,7 +7,8 @@
 #include "data/evidence/dataSourceData.h"
 
 #include "core/extensions/ingestModuleFactory.h"
-#include "core/forensic/tsk/tskIngestModule.h"
+#include "core/extensions/tskIngestModuleInterface.h"
+
 #include "../../logging/performancemeasure.h"
 
 

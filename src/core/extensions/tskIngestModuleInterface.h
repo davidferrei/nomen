@@ -1,5 +1,5 @@
-#ifndef TSKINGESTMODULE_H
-#define TSKINGESTMODULE_H
+#ifndef TSKINGESTMODULEINTERFACE_H
+#define TSKINGESTMODULEINTERFACE_H
 
 #include <QObject>
 #include <QString>
@@ -28,11 +28,11 @@ struct FileContext
     }
 };
 
-class TSKIngestModule : public AbstractIngestModule
+class tskIngestModuleInterface : public AbstractIngestModule
 {
 public:
-    explicit TSKIngestModule(const QJsonObject &metadata = QJsonObject(), QObject *parent = nullptr) : AbstractIngestModule(metadata, parent) {}
-    ~TSKIngestModule() override = default;
+    explicit tskIngestModuleInterface(const QJsonObject &metadata = QJsonObject(), QObject *parent = nullptr) : AbstractIngestModule(metadata, parent) {}
+    ~tskIngestModuleInterface() override = default;
 
     void process() override {}
 
@@ -45,9 +45,8 @@ public:
 protected:
     static TSK_WALK_RET_ENUM file_callback(TSK_FS_FILE* fs_file, const char* path, void* ptr);
 
-    // current partition/fs being walked (set by runWalk before each fs walk)
     int currentPartitionId = 0;
     int currentFsIndex = 0;
 };
 
-#endif // TSKINGESTMODULE_H
+#endif // TSKINGESTMODULEINTERFACE_H

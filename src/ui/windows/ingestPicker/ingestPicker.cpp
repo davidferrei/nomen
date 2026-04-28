@@ -26,8 +26,32 @@ ingestPicker::ingestPicker(IngestModuleFactory &moduleFactory, QWidget *parent) 
         ui->moduleDescriptionEdit->setPlainText(moduleMetadata.value("description").toString());
     });
 
+    connect(ui->ingestModulesTable, &QTableWidget::itemChanged, this, [this](QTableWidgetItem *item) {
+        if (item->column() != 0) return;
+
+        const int row = item->row();
+        QTableWidgetItem *nameItem = ui->ingestModulesTable->item(row, 1);
+        if (!nameItem)
+        {
+            qWarning() << "[IngestPicker] Check State Changed but Name Item is NULL, Row" << row;
+            return;
+        }
+
+        const QString moduleName = nameItem->text();
+
+        if (item->checkState() == Qt::Checked) 
+        {
+            if (!selectedModules.contains(moduleName))
+                selectedModules.append(moduleName);
+        } 
+        else 
+        {
+            selectedModules.removeAll(moduleName);
+        }
+    });
+
     connect(ui->startIngestBttn, &QPushButton::clicked, this, [this]() {
-        ingestConfirmationDialog confirmationDialog(this);
+        ingestConfirmationDialog confirmationDialog(selectedModules, this);
         confirmationDialog.exec();
     });
 }
@@ -65,6 +89,9 @@ void ingestPicker::populateModulesTable(const QStringList &modulesList)
 {
     ui->ingestModulesTable->setRowCount(modulesList.size());
 
+    ui->ingestModulesTable->blockSignals(true);
+    selectedModules.clear();
+
     for (int r = 0; r < modulesList.size(); ++r)
     {
         QTableWidgetItem *checkColumn = new QTableWidgetItem(QString());
@@ -76,4 +103,6 @@ void ingestPicker::populateModulesTable(const QStringList &modulesList)
         QTableWidgetItem *name = new QTableWidgetItem(modulesList.at(r));
         ui->ingestModulesTable->setItem(r, 1, name);
     }
+
+    ui->ingestModulesTable->blockSignals(false);
 }

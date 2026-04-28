@@ -23,7 +23,7 @@ void IngestWorker::run()
 
         module->init();
 
-        if (auto *tskModule = dynamic_cast<TSKIngestModule*>(module)) 
+        if (auto *tskModule = dynamic_cast<tskIngestModuleInterface*>(module)) 
         {
             if (!tskModule->runWalk(dataSource.filePath)) 
             {

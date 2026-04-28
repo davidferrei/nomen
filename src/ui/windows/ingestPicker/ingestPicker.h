@@ -13,6 +13,7 @@
 #include <QJsonDocument>
 #include <QItemSelection>
 #include <QItemSelectionModel>
+#include <QStringList>
 
 namespace Ui {
 class ingestPicker;
@@ -30,6 +31,7 @@ private:
     Ui::ingestPicker *ui;
     void setupModulesTable();
     void populateModulesTable(const QStringList &modulesList);
+    QStringList selectedModules;
 };
 
 #endif // INGESTPICKER_H

@@ -9,13 +9,14 @@
 
 #include "core/extensions/ingestModuleInterface.h"
 
-#include "core/forensic/tsk/tskIngestModule.h"
+#include "core/extensions/tskIngestModuleInterface.h"
 
-class TxtCounterModule : public TSKIngestModule
+
+class TxtCounterModule : public tskIngestModuleInterface
 {
     Q_OBJECT
 public:
-    explicit TxtCounterModule(const QJsonObject &metadata = QJsonObject(), QObject *parent = nullptr) : TSKIngestModule(metadata, parent) {}
+    explicit TxtCounterModule(const QJsonObject &metadata = QJsonObject(), QObject *parent = nullptr) : tskIngestModuleInterface(metadata, parent) {}
     ~TxtCounterModule() override = default;
 
     void init() override;

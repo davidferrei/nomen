@@ -337,15 +337,15 @@ void MainWindow::loadDataSources()
     ui->tableView->setSortingEnabled(true);
 
     // Test
-        // DataSourceData t1;
-        // t1.name = "Hardcoded Test Disk 1";
-        // t1.filePath = "/mnt/disk01/DiskImage/kali.raw";
-        // jobManager->CreateIngestJob(t1, caseManager.getCurrentCase().casePath);
+        DataSourceData t1;
+        t1.name = "Hardcoded Test Disk 1";
+        t1.filePath = "/mnt/disk01/DiskImage/kali.raw";
+        jobManager->CreateIngestJob(t1, caseManager.getCurrentCase().casePath);
 
-        // DataSourceData t2;
-        // t2.name = "Hardcoded Test Disk 2";
-        // t2.filePath = "/mnt/disk01/DiskImage/kali.raw";
-        // jobManager->CreateIngestJob(t2, caseManager.getCurrentCase().casePath);
+        DataSourceData t2;
+        t2.name = "Hardcoded Test Disk 2";
+        t2.filePath = "/mnt/disk01/DiskImage/kali.raw";
+        jobManager->CreateIngestJob(t2, caseManager.getCurrentCase().casePath);
 
 }
 

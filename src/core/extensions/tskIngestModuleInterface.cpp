@@ -1,4 +1,5 @@
-#include "core/forensic/tsk/tskIngestModule.h"
+#include "core/extensions/tskIngestModuleInterface.h"
+
 
 static QString normalizeParentPath(const char* path)
 {
@@ -18,15 +19,15 @@ static QString normalizeParentPath(const char* path)
     return parentFilePath;
 }
 
-TSK_WALK_RET_ENUM TSKIngestModule::file_callback(TSK_FS_FILE* fs_file, const char* path, void* ptr)
+TSK_WALK_RET_ENUM tskIngestModuleInterface::file_callback(TSK_FS_FILE* fs_file, const char* path, void* ptr)
 {
     if (!ptr)
     {
-        qWarning() << "[TSKIngestModule] file_callback Called with NULL Pointer";
+        qWarning() << "[tskIngestModuleInterface] file_callback Called with NULL Pointer";
         return TSK_WALK_CONT;
     }
 
-    TSKIngestModule* module = static_cast<TSKIngestModule*>(ptr);
+    tskIngestModuleInterface* module = static_cast<tskIngestModuleInterface*>(ptr);
     if (!fs_file || !fs_file->name || !fs_file->name->name)
     {
         qWarning() << "[TskWalker] Skipping Entry: Name Information Missing"
@@ -58,20 +59,20 @@ TSK_WALK_RET_ENUM TSKIngestModule::file_callback(TSK_FS_FILE* fs_file, const cha
     } 
     catch (...) 
     {
-        qWarning() << "[TSKIngestModule] processFile Function Threw an Exception for" << fileContext.filePath;
+        qWarning() << "[tskIngestModuleInterface] processFile Function Threw an Exception for" << fileContext.filePath;
     }
 
     return TSK_WALK_CONT;
 }
 
-bool TSKIngestModule::runWalk(const QString &imagePath)
+bool tskIngestModuleInterface::runWalk(const QString &imagePath)
 {
-    qInfo() << "[TSKIngestModule] Opening Image:" << imagePath;
+    qInfo() << "[tskIngestModuleInterface] Opening Image:" << imagePath;
 
     TSK_IMG_INFO *img = tsk_img_open_sing(imagePath.toUtf8().constData(), TSK_IMG_TYPE_DETECT, 0);
     if (!img) 
     {
-        qWarning() << "[TSKIngestModule] Failed to Open Image:" << imagePath << tsk_error_get();
+        qWarning() << "[tskIngestModuleInterface] Failed to Open Image:" << imagePath << tsk_error_get();
         return false;
     }
 
@@ -90,7 +91,7 @@ bool TSKIngestModule::runWalk(const QString &imagePath)
             if (!part) continue;
 
             TSK_FS_INFO *fs = tsk_fs_open_vol(part, TSK_FS_TYPE_DETECT);
-            qInfo() << "[TSKIngestModule] Probing Partition" << i << "FS=" << (fs ? "OK" : "No");
+            qInfo() << "[tskIngestModuleInterface] Probing Partition" << i << "FS=" << (fs ? "OK" : "No");
 
             if (fs) 
             {
@@ -107,13 +108,13 @@ bool TSKIngestModule::runWalk(const QString &imagePath)
     else 
     {
         TSK_FS_INFO *fs = tsk_fs_open_img(img, 0, TSK_FS_TYPE_DETECT);
-        qInfo() << "[TSKIngestModule] Probing Image-Level Filesystem, Result=" << (fs ? "OK" : "No");
+        qInfo() << "[tskIngestModuleInterface] Probing Image-Level Filesystem, Result=" << (fs ? "OK" : "No");
         if (fs) fsVector.emplace_back(fs, 0, fsIndexMap[0]++);
     }
 
     if (fsVector.empty()) 
     {
-        qWarning() << "[TSKIngestModule] Failed to find any filesystems in:" << imagePath;
+        qWarning() << "[tskIngestModuleInterface] Failed to find any filesystems in:" << imagePath;
         tsk_img_close(img);
         return false;
     }
@@ -124,21 +125,21 @@ bool TSKIngestModule::runWalk(const QString &imagePath)
         this->currentPartitionId = partitionID;
         this->currentFsIndex = fsIndex;
 
-        qInfo() << "[TSKIngestModule] Starting Walk on Partition" << partitionID << "fsIndex" << fsIndex;
+        qInfo() << "[tskIngestModuleInterface] Starting Walk on Partition" << partitionID << "fsIndex" << fsIndex;
 
         uint8_t walkResult = tsk_fs_dir_walk(fsInfo, fsInfo->root_inum,
             static_cast<TSK_FS_DIR_WALK_FLAG_ENUM>(TSK_FS_DIR_WALK_FLAG_RECURSE | TSK_FS_DIR_WALK_FLAG_ALLOC | TSK_FS_DIR_WALK_FLAG_UNALLOC),
             file_callback, this);
 
         if (walkResult != 0)
-            qWarning() << "[TSKIngestModule] Walk Error on Partition" << partitionID << ":" << tsk_error_get();
+            qWarning() << "[tskIngestModuleInterface] Walk Error on Partition" << partitionID << ":" << tsk_error_get();
 
         tsk_fs_close(fsInfo);
 
-        qInfo() << "[TSKIngestModule] Directory Walk Returned for Partition" << partitionID;
+        qInfo() << "[tskIngestModuleInterface] Directory Walk Returned for Partition" << partitionID;
     }
 
-    try { this->finishWalk(); } catch (...) { qWarning() << "[TSKIngestModule] finishWalk Threw an Exception"; }
+    try { this->finishWalk(); } catch (...) { qWarning() << "[tskIngestModuleInterface] finishWalk Threw an Exception"; }
 
     tsk_img_close(img);
     return true;
