@@ -78,7 +78,12 @@ ingestPicker::ingestPicker(IngestModuleFactory &moduleFactory, const QList<DataS
 
             const DataSourceData &ds = dataSourcesList.at(dsIndex);
             qDebug() << "[IngestPicker] Starting Ingest for DataSource:" << ds.name << "with Modules:" << selectedModules;
-            // jobManager->CreateIngestJob(ds.filePath, caseFolder);
+            for (const QString &moduleName : selectedModules)
+            {
+                jobManager->CreateIngestJob(ds, caseFolder, moduleName);
+            }
+
+            close();
         }
     });
 }

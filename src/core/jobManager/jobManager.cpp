@@ -14,10 +14,10 @@ void JobManager::CreateIndexJob(const DataSourceData& ds, const QString& caseFol
     job->start();
 }
 
-void JobManager::CreateIngestJob(const DataSourceData& ds, const QString& caseFolder)
+void JobManager::CreateIngestJob(const DataSourceData& ds, const QString& caseFolder, const QString& moduleName)
 {
     qDebug() << "[JobManager] CreateIngestJob called for" << ds.filePath << "case:" << caseFolder;
-    IngestJob* job = new IngestJob(ds, caseFolder, this);
+    IngestJob* job = new IngestJob(ds, caseFolder, moduleName, this);
     registerJob(job);
     job->start();
 }

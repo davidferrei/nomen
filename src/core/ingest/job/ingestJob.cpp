@@ -2,7 +2,7 @@
 #include "ingestWorker.h"
 
 
-IngestJob::IngestJob(const DataSourceData& ds, const QString& caseFolder, QObject* parent) : Job(Job::JobType::Ingest, ds, parent), caseFolderPath(caseFolder) {}
+IngestJob::IngestJob(const DataSourceData& ds, const QString& caseFolder, const QString& moduleNameArg, QObject* parent) : Job(Job::JobType::Ingest, ds, parent), caseFolderPath(caseFolder), moduleName(moduleNameArg) {}
 
 IngestJob::~IngestJob()
 {
@@ -36,7 +36,7 @@ void IngestJob::start()
 
     qDebug() << "[IngestJob] start() called on" << this << "for" << dataSource.filePath << "thread name:" << thread->objectName();
 
-    worker = new IngestWorker(dataSource, caseFolderPath);
+    worker = new IngestWorker(dataSource, caseFolderPath, moduleName);
 
     worker->moveToThread(thread);
 

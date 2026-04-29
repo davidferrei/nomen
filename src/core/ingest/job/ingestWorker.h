@@ -19,7 +19,7 @@ class IngestWorker : public QObject
     Q_OBJECT
 
 public:
-    IngestWorker(const DataSourceData& ds, const QString& casePath, QObject* parent = nullptr);
+    IngestWorker(const DataSourceData& ds, const QString& casePath, const QString& moduleName, QObject* parent = nullptr);
 
 public slots:
     void run();
@@ -31,7 +31,7 @@ signals:
 private:
     DataSourceData dataSource;
     QString caseFolderPath;
-    const QString moduleName = "TxtCounter";
+    QString moduleName;
 };
 
 #endif // INGESTWORKER_H

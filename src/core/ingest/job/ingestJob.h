@@ -14,7 +14,7 @@ class IngestJob : public Job
 {
     Q_OBJECT
 public:
-    IngestJob(const DataSourceData& ds, const QString& caseFolder, QObject* parent = nullptr);
+    IngestJob(const DataSourceData& ds, const QString& caseFolder, const QString& moduleName, QObject* parent = nullptr);
     ~IngestJob();
 
     void start() override;
@@ -27,6 +27,7 @@ private:
 
     QThread* thread = nullptr;
     IngestWorker* worker = nullptr;
+    QString moduleName;
 };
 
 #endif // INGESTJOB_H

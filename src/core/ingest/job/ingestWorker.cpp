@@ -1,7 +1,7 @@
 #include "ingestWorker.h"
 
 
-IngestWorker::IngestWorker(const DataSourceData& ds, const QString& casePath, QObject* parent) : QObject(parent), dataSource(ds), caseFolderPath(casePath) {}
+IngestWorker::IngestWorker(const DataSourceData& ds, const QString& casePath, const QString& moduleNameArg, QObject* parent) : QObject(parent), dataSource(ds), caseFolderPath(casePath), moduleName(moduleNameArg) {}
 
 void IngestWorker::run()
 {

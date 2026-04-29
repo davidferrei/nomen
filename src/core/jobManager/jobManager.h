@@ -16,7 +16,7 @@ public:
     explicit JobManager(QObject* parent = nullptr);
 
     void CreateIndexJob(const DataSourceData& ds, const QString& caseFolder);
-    void CreateIngestJob(const DataSourceData& ds, const QString& caseFolder);
+    void CreateIngestJob(const DataSourceData& ds, const QString& caseFolder, const QString& moduleName);
 
     int getJobsCount() const;
 
