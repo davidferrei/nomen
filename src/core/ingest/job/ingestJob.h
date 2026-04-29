@@ -28,6 +28,7 @@ private:
     QThread* thread = nullptr;
     IngestWorker* worker = nullptr;
     QString moduleName;
+    QString getModuleName() const override { return moduleName; }
 };
 
 #endif // INGESTJOB_H

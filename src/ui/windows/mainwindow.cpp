@@ -344,57 +344,61 @@ void MainWindow::loadDataSources()
 
 void MainWindow::setupJobSignalConnections()
 {
-    connect(jobManager, &JobManager::jobStarted, this, [this](const QString& filePath, Job::JobType type)
+    connect(jobManager, &JobManager::jobStarted, this, [this](const QString& filePath, Job::JobType type, const QString& moduleName, const QString& dsName)
     {
-        // qDebug() << "[MainWindow] jobStarted signal received for" << filePath << "type:" << static_cast<int>(type);
+        // qDebug() << "[MainWindow] jobStarted signal received for" << filePath << "type:" << static_cast<int>(type) << "module:" << moduleName << "ds:" << dsName;
         bool isIngest = (type == Job::JobType::Ingest);
+        const QString desc = moduleName.isEmpty() ? dsName : QStringLiteral("Module: %1\nData Source: %2").arg(moduleName, dsName);
         NotificationWidget::show(this,
                                  isIngest ? QStringLiteral("Ingest Started") : QStringLiteral("Indexing Started"),
-                                 QFileInfo(filePath).fileName(),
+                                 desc,
                                  3500,
                                  NotificationWidget::NotificationType::Info);
     });
 
-    connect(jobManager, &JobManager::jobFinished, this, [this](const QString& filePath, Job::JobType type)
+    connect(jobManager, &JobManager::jobFinished, this, [this](const QString& filePath, Job::JobType type, const QString& moduleName, const QString& dsName)
     {
-        // qDebug() << "[MainWindow] jobFinished signal received for" << filePath << "type:" << static_cast<int>(type);
+        // qDebug() << "[MainWindow] jobFinished signal received for" << filePath << "type:" << static_cast<int>(type) << "module:" << moduleName << "ds:" << dsName;
         bool isIngest = (type == Job::JobType::Ingest);
+        const QString desc = moduleName.isEmpty() ? dsName : QStringLiteral("Module: %1\nData Source: %2").arg(moduleName, dsName);
         NotificationWidget::show(this,
                                  isIngest ? QStringLiteral("Ingest Complete") : QStringLiteral("Indexing Complete"),
-                                 QFileInfo(filePath).fileName(),
-                                 4000,
+                                 desc,
+                                 8000,
                                  NotificationWidget::NotificationType::Success);
 
-        if (isIngest) return; 
-
-        const QList<DataSourceData> allDataSources = caseManager.getDataSources();
-        const DataSourceData* ds = nullptr;
-        for (const DataSourceData& d : allDataSources)
-            if (d.filePath == filePath) { ds = &d; break; }
-
-        if (!ds)
+        if (!isIngest)
         {
-            qWarning() << "[MainWindow]: Index Job Finished but no Matching Data Source Found for File Path:" << filePath;
-            return;
+            const QList<DataSourceData> allDataSources = caseManager.getDataSources();
+            const DataSourceData* ds = nullptr;
+            for (const DataSourceData& d : allDataSources)
+                if (d.filePath == filePath) { ds = &d; break; }
+
+            if (!ds)
+            {
+                qWarning() << "[MainWindow]: Index Job Finished but no Matching Data Source Found for File Path:" << filePath;
+                return;
+            }
+
+            QString label = ds->name.isEmpty() ? QStringLiteral("Disk %1").arg(ds->id) : ds->name;
+            dataSourceNames.insert(static_cast<int>(ds->id), label);
+
+            QString lmdbPath = caseManager.getCurrentCase().casePath + "/indexes/disk-" + QString::number(ds->id);
+            qDebug() << "[MainWindow] Indexing Finished, Adding DS to Tree:" << label;
+            caseTreeModel->addDataSource(static_cast<int>(ds->id), label, lmdbPath);
         }
-
-        QString label = ds->name.isEmpty() ? QStringLiteral("Disk %1").arg(ds->id) : ds->name;
-        dataSourceNames.insert(static_cast<int>(ds->id), label);
-
-        QString lmdbPath = caseManager.getCurrentCase().casePath + "/indexes/disk-" + QString::number(ds->id);
-        qDebug() << "[MainWindow] Indexing Finished, Adding DS to Tree:" << label;
-        caseTreeModel->addDataSource(static_cast<int>(ds->id), label, lmdbPath);
     });
 
-    connect(jobManager, &JobManager::jobFailed, this, [this](const QString& filePath, const QString& error, Job::JobType type)
+    connect(jobManager, &JobManager::jobFailed, this, [this](const QString& filePath, const QString& error, Job::JobType type, const QString& moduleName, const QString& dsName)
     {
-        // qDebug() << "[MainWindow] jobFailed signal received for" << filePath << ":" << error << "type:" << static_cast<int>(type);
+        // qDebug() << "[MainWindow] jobFailed signal received for" << filePath << ":" << error << "type:" << static_cast<int>(type) << "module:" << moduleName << "ds:" << dsName;
         bool isIngest = (type == Job::JobType::Ingest);
+        const QString descBase = moduleName.isEmpty() ? dsName : QStringLiteral("Module: %1\nData Source: %2").arg(moduleName, dsName);
         NotificationWidget::show(this,
-                                 isIngest ? QStringLiteral("Ingest Failed") : QStringLiteral("Indexing Failed"),
-                                 QFileInfo(filePath).fileName() + QStringLiteral(": ") + error,
-                                 10000,
-                                 NotificationWidget::NotificationType::Failure);
+                     isIngest ? QStringLiteral("Ingest Failed") : QStringLiteral("Indexing Failed"),
+                     descBase + QStringLiteral(": ") + error,
+                     10000,
+                     NotificationWidget::NotificationType::Failure);
     });
 }
 

@@ -23,6 +23,8 @@ public:
     JobType getType() const { return jobType; }
     JobState getState() const { return state; }
     QString getDSFilePath() const { return dataSource.filePath; }
+    QString getDSName() const { return dataSource.name; }
+    virtual QString getModuleName() const { return QString(); }
 
 signals:
     void started();
