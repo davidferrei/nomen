@@ -5,13 +5,16 @@
 #include <QThread>
 
 #include "data/evidence/dataSourceData.h"
+#include "data/ingest/ingestJobHistoryData.h"
+
 
 #include "core/extensions/ingestModuleFactory.h"
 #include "core/extensions/tskIngestModuleInterface.h"
+#include "core/caseDBManager/caseDBThreadInstance.h"
+
 
 #include "../../logging/performancemeasure.h"
-
-
+#include "../../logging/logger.h"
 
 
 class IngestWorker : public QObject

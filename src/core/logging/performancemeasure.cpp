@@ -1,7 +1,6 @@
 #include "performancemeasure.h"
 
-PerformanceTimer::PerformanceTimer(const QString& text)
-    : description(text)
+PerformanceTimer::PerformanceTimer(const QString& text) : description(text)
 {
     timer.start();
 }

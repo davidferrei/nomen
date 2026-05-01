@@ -76,6 +76,20 @@ bool CaseDBManager::createSchema()
             )
         )");
 
+        // IngestJobsHistory Table
+        st->Execute(R"(
+            CREATE TABLE IngestJobsHistory (
+                ID BIGINT PRIMARY KEY,
+                MODULE_NAME VARCHAR(255),
+                MODULE_VERSION VARCHAR(64),
+                START_TIME TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                END_TIME TIMESTAMP,
+                STATUS SMALLINT DEFAULT 0,
+                LOG BLOB SUB_TYPE TEXT,
+                SETTINGS_JSON BLOB SUB_TYPE TEXT
+            )
+        )");
+
         // Increment IDs
         // st->Execute("CREATE GENERATOR GEN_CASE_ID;");
         // st->Execute("SET GENERATOR GEN_CASE_ID TO 0;");
@@ -88,6 +102,9 @@ bool CaseDBManager::createSchema()
 
         st->Execute("CREATE GENERATOR GEN_DATASOURCE_ID");
         st->Execute("SET GENERATOR GEN_DATASOURCE_ID TO 0");
+
+        st->Execute("CREATE GENERATOR GEN_INGESTJOB_ID");
+        st->Execute("SET GENERATOR GEN_INGESTJOB_ID TO 0");
 
         // Triggers
         // st->Execute(R"(
@@ -127,6 +144,16 @@ bool CaseDBManager::createSchema()
             BEGIN
                 IF (NEW.DATASOURCEID IS NULL) THEN
                     NEW.DATASOURCEID = GEN_ID(GEN_DATASOURCE_ID, 1);
+            END
+        )");
+
+        st->Execute(R"(
+            CREATE TRIGGER BI_INGESTJOBS FOR INGESTJOBSHISTORY
+            BEFORE INSERT
+            AS
+            BEGIN
+                IF (NEW.ID IS NULL) THEN
+                    NEW.ID = GEN_ID(GEN_INGESTJOB_ID, 1);
             END
         )");
 

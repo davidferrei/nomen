@@ -395,10 +395,10 @@ void MainWindow::setupJobSignalConnections()
         bool isIngest = (type == Job::JobType::Ingest);
         const QString descBase = moduleName.isEmpty() ? dsName : QStringLiteral("Module: %1\nData Source: %2").arg(moduleName, dsName);
         NotificationWidget::show(this,
-                     isIngest ? QStringLiteral("Ingest Failed") : QStringLiteral("Indexing Failed"),
-                     descBase + QStringLiteral(": ") + error,
-                     10000,
-                     NotificationWidget::NotificationType::Failure);
+                 isIngest ? QStringLiteral("Ingest Failed") : QStringLiteral("Indexing Failed"),
+                 descBase + QStringLiteral(":\n") + error,
+                 10000,
+                 NotificationWidget::NotificationType::Failure);
     });
 }
 

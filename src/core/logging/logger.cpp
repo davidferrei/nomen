@@ -25,7 +25,8 @@ void initLogger()
 
     g_logFile.setFileName(logFilePath);
 
-    if (g_logFile.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text)) {
+    if (g_logFile.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text))
+    {
         g_logStream.setDevice(&g_logFile);
         g_logStream << "===== Nomen =====\n";
         g_logStream.flush();

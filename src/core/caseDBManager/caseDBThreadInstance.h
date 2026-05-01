@@ -16,6 +16,7 @@
 #include "core/caseDBManager/repositories/organizationRepository.h"
 #include "core/caseDBManager/repositories/datasourceRepository.h"
 #include "core/caseDBManager/repositories/caseinformationRepository.h"
+#include "core/caseDBManager/repositories/ingestJobHistoryRepository.h"
 
 //TODO: Create caseDBEngine Class use in both CaseDBManager and CaseDBThreadInstance
 
@@ -35,6 +36,7 @@ public:
     OrganizationRepository organizationRepo() { return OrganizationRepository(fb_db); };
     DataSourceRepository dataSourceRepo() { return DataSourceRepository(fb_db); };
     CaseInformationRepository caseInfoRepo() { return CaseInformationRepository(fb_db); };
+    IngestJobHistoryRepository ingestJobsRepo() { return IngestJobHistoryRepository(fb_db); };
 
 private:
     IBPP::Database fb_db;
