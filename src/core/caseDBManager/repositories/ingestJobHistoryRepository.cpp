@@ -119,9 +119,11 @@ QList<IngestJobHistoryData> IngestJobHistoryRepository::getAll()
         job.id = static_cast<qint64>(idtmp);
 
         std::string s;
-        if (st->Get(2, s)) job.moduleName = QString::fromStdString(s);
+        st->Get(2, s);
+        job.moduleName = QString::fromStdString(s);
         s.clear();
-        if (st->Get(3, s)) job.moduleVersion = QString::fromStdString(s);
+        st->Get(3, s);
+        job.moduleVersion = QString::fromStdString(s);
 
         if (!st->IsNull(4)) 
         {
@@ -146,10 +148,12 @@ QList<IngestJobHistoryData> IngestJobHistoryRepository::getAll()
         job.status = stat;
 
         s.clear();
-        if (st->Get(17, s)) job.log = QString::fromStdString(s);
-        
+        st->Get(17, s);
+        job.log = QString::fromStdString(s);
+
         s.clear();
-        if (st->Get(18, s)) job.settingsJson = QString::fromStdString(s);
+        st->Get(18, s);
+        job.settingsJson = QString::fromStdString(s);
 
         result.append(job);
     }

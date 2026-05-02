@@ -30,39 +30,36 @@ void IngestWorker::run()
     qDebugNL();
     qDebug() << "[IngestWorker] Starting Ingest for:" << dataSource.filePath << " with Module:" << moduleName;
 
-    qDebug() << "[IngestWorker] Preparing CaseDBThreadInstance and Repository Access";
+    // qDebug() << "[IngestWorker] Preparing CaseDBThreadInstance and Repository Access";
 
     PerformanceTimer perfTimer(QString("Ingest Time - (%1)").arg(moduleName));
 
     CaseDBThreadInstance dbThread(caseFolderPath);
-    qDebug() << "[IngestWorker] Created CaseDBThreadInstance for:" << caseFolderPath;
+    // qDebug() << "[IngestWorker] Created CaseDBThreadInstance for:" << caseFolderPath;
     IngestJobHistoryData ingestJobData;
 
 
     try 
     {
-        qDebug() << "[IngestWorker] Attempting to Open Case DB";
+        // qDebug() << "[IngestWorker] Attempting to Open Case DB";
         if (!dbThread.openDatabase()) 
         {
             qWarning() << "[IngestWorker]: Failed to Open Case DB for" << dataSource.filePath;
             emit failed("Failed to Open Case DB");
             return;
         }
-        qDebug() << "[IngestWorker] Case DB opened Successfully";
+        // qDebug() << "[IngestWorker] Case DB opened Successfully";
     }
     catch(const std::exception& e)
     {
-        qDebug() << "[IngestWorker] Exception while Opening DB:" << e.what();
+        qWarning() << "[IngestWorker] Exception while Opening DB:" << e.what();
         emit failed("Failed to Open Case DB");
         return;
     }
     
     IngestJobHistoryRepository ingestJobHistoryRepo = dbThread.ingestJobsRepo();
-    qDebug() << "[IngestWorker] Obtained IngestJobHistoryRepository";
 
     debugPrintAllJobs(ingestJobHistoryRepo);
-
-    qDebug() << "[IngestWorker] Fetched and Printed Existing Jobs";
 
     try 
     {
@@ -78,14 +75,13 @@ void IngestWorker::run()
         }
 
         // Register Job
-        qDebug() << "[IngestWorker] Registering Ingest Job in DB";
         ingestJobData.moduleName = moduleName;
-        ingestJobData.moduleVersion = QString(); //FIXME: Get Module Metadata
+        ingestJobData.moduleVersion = moduleFactory.getModuleMetadata(moduleName).value("version").toString();
         ingestJobData.startTime = QDateTime::currentDateTime();
         ingestJobData.status = 1;
-        ingestJobData.settingsJson = QString(); //FIXME: Send Empty JSON for now
+        ingestJobData.settingsJson = QString("{}");
 
-        qDebug() << "[IngestWorker] Ingest Job Prepared (module, status):" << ingestJobData.moduleName << ingestJobData.status;
+        // qDebug() << "[IngestWorker] Ingest Job Prepared (module, status):" << ingestJobData.moduleName << ingestJobData.status;
         if (!ingestJobHistoryRepo.insert(ingestJobData)) 
         {
             qWarning() << "[IngestWorker]: Failed to Save Job";
@@ -94,13 +90,10 @@ void IngestWorker::run()
         }
 
         debugPrintJob(ingestJobData);
-        qDebug() << "[IngestWorker] Insert Returned Job ID:" << ingestJobData.id;
 
         // Run Module
-        qDebug() << "[IngestWorker] Initializing Module";
         module->init();
 
-        qDebug() << "[IngestWorker] Module init Completed";
         qDebugNL();
 
         if (auto *tskModule = dynamic_cast<tskIngestModuleInterface*>(module)) 
@@ -118,14 +111,11 @@ void IngestWorker::run()
         }
 
         qDebugNL();
-        qDebug() << "[IngestWorker] Ingest Module Finished For:" << dataSource.filePath;
 
         // Update Job History
-        qDebug() << "[IngestWorker] Preparing to Update Job History to Finished";
         ingestJobData.status = 2;
         ingestJobData.log.clear();
 
-        qDebug() << "[IngestWorker] Calling setStatus for Job ID:" << ingestJobData.id << "Status:" << ingestJobData.status;
         if (!ingestJobHistoryRepo.setStatus(ingestJobData.id, ingestJobData.status)) 
         {
             qWarning() << "[IngestWorker]: Failed to Set Job Status";
@@ -136,7 +126,6 @@ void IngestWorker::run()
         debugPrintJob(ingestJobData);
         debugPrintAllJobs(ingestJobHistoryRepo);
 
-        qDebug() << "[IngestWorker] Updated Job History and Printed Jobs";
 
         emit finished();
     }
@@ -146,7 +135,7 @@ void IngestWorker::run()
         ingestJobData.status = 3;
         ingestJobData.log = QString::fromUtf8(e.what());
 
-        qDebug() << "[IngestWorker] Calling setStatus for Failed Job ID:" << ingestJobData.id;
+        qWarning() << "[IngestWorker] Calling setStatus for Failed Job ID:" << ingestJobData.id;
         if (!ingestJobHistoryRepo.setStatus(ingestJobData.id, ingestJobData.status)) 
         {
             qWarning() << "[IngestWorker]: Failed to Set Job Status";
@@ -154,7 +143,7 @@ void IngestWorker::run()
             return;
         }
 
-        qDebug() << "[IngestWorker] Appending error log for Failed Job ID:" << ingestJobData.id << "log:" << ingestJobData.log;
+        qWarning() << "[IngestWorker] Appending error log for Failed Job ID:" << ingestJobData.id << "log:" << ingestJobData.log;
         if (!ingestJobHistoryRepo.appendLog(ingestJobData.id, ingestJobData.log)) 
         {
             qWarning() << "[IngestWorker]: Failed to Append Job Log";
@@ -169,7 +158,7 @@ void IngestWorker::run()
         ingestJobData.status = 3;
         ingestJobData.log = QString("Unknown Error");
 
-        qDebug() << "[IngestWorker] Calling setStatus for Unknown Error Job ID:" << ingestJobData.id;
+        qWarning() << "[IngestWorker] Calling setStatus for Unknown Error Job ID:" << ingestJobData.id;
         if (!ingestJobHistoryRepo.setStatus(ingestJobData.id, ingestJobData.status)) 
         {
             qWarning() << "[IngestWorker]: Failed to Set Job Status";
@@ -177,7 +166,7 @@ void IngestWorker::run()
             return;
         }
 
-        qDebug() << "[IngestWorker] Appending unknown error log for Unknown Error Job ID:" << ingestJobData.id << "log:" << ingestJobData.log;
+        qWarning() << "[IngestWorker] Appending unknown error log for Unknown Error Job ID:" << ingestJobData.id << "log:" << ingestJobData.log;
         if (!ingestJobHistoryRepo.appendLog(ingestJobData.id, ingestJobData.log)) 
         {
             qWarning() << "[IngestWorker]: Failed to Append Job Log";

@@ -9,13 +9,13 @@ CaseDBThreadInstance::~CaseDBThreadInstance()
 
 bool CaseDBThreadInstance::openDatabase()
 {
-    qDebug() << "FIREBIRD: Opening Case Database";
+    qDebug() << "[FIREBIRD]: Opening Case Database";
 
     const QString dbFilePath = dbPath + "/case_db/case.fdb";
 
     if (!QFile::exists(dbFilePath)) 
     {
-        qCritical() << "Database File Does not Exist:" << dbFilePath;
+        qCritical() << "[FIREBIRD]: Database File Does not Exist:" << dbFilePath;
         return false;
     }
 
@@ -37,7 +37,7 @@ bool CaseDBThreadInstance::openDatabase()
             );
 
         fb_db->Connect();
-        qInfo() << "FIREBIRD: Database Connection Successful";
+        qInfo() << "[FIREBIRD]: Database Connection Successful";
 
         IBPP::Transaction tr = IBPP::TransactionFactory(fb_db);
         tr->Start();
@@ -64,10 +64,10 @@ bool CaseDBThreadInstance::openDatabase()
             st->Get(3, firebirdTime);
 
             qDebug() << "##########################################";
-            qDebug() << "FIREBIRD Stats";
-            qDebug() << "FIREBIRD: Connected User:" << user.c_str();
-            qDebug() << "FIREBIRD: Role:" << role.c_str();
-            qDebug() << "FIREBIRD: Server Time:" << firebirdTime.c_str();
+            qDebug() << "[FIREBIRD]: Stats";
+            qDebug() << "[FIREBIRD]: Connected User:" << user.c_str();
+            qDebug() << "[FIREBIRD]: Role:" << role.c_str();
+            qDebug() << "[FIREBIRD]: Server Time:" << firebirdTime.c_str();
             qDebug() << "##########################################";
         }
 
@@ -76,15 +76,15 @@ bool CaseDBThreadInstance::openDatabase()
 
     }
     catch (const IBPP::Exception& e) {
-        qCritical() << "FIREBIRD: Error While Opening Database:" << e.ErrorMessage();
+        qCritical() << "[FIREBIRD]: Error While Opening Database:" << e.ErrorMessage();
         return false;
     }
     catch (const std::exception& e) {
-        qCritical() << "Exception While Opening Database:" << e.what();
+        qCritical() << "[FIREBIRD]: Exception While Opening Database:" << e.what();
         return false;
     }
     catch (...) {
-        qCritical() << "FIREBIRD: Unknown Error While Opening Database";
+        qCritical() << "[FIREBIRD]: Unknown Error While Opening Database";
         return false;
     }
 
@@ -96,12 +96,12 @@ void CaseDBThreadInstance::closeDatabase()
 {
     if (fb_db != nullptr && fb_db->Connected())
     {
-        qDebug() << "FIREBIRD: Closing Database Connection";
+        qDebug() << "[FIREBIRD]: Closing Database Connection";
         try {
             fb_db->Disconnect();
         }
         catch (...) {
-            qWarning() << "FIREBIRD: Exception While Closing Case DB";
+            qWarning() << "[FIREBIRD]: Exception While Closing Case DB";
         }
     }
 
