@@ -5,6 +5,12 @@ void TxtCounterModule::init()
 	filesCount = 0;
 	dirsCount = 0;
 	txtFilesCount = 0;
+
+	// Create Folder
+	if (ingestResultDB)
+	{
+        resultFolderId = ingestResultDB->createFolderItem(getModuleName());
+	}
 }
 
 void TxtCounterModule::processFile(const FileContext &fileContext)
@@ -49,6 +55,13 @@ void TxtCounterModule::processFile(const FileContext &fileContext)
 void TxtCounterModule::finishWalk()
 {
 	qInfo() << "[TxtCounter] Results: Files:" << filesCount << "Directories:" << dirsCount << "TXT Files:" << txtFilesCount;
+	
+	if (ingestResultDB)
+	{
+		ingestResultDB->createTextItem(resultFolderId, QStringLiteral("Files"), QString::number(filesCount));
+		ingestResultDB->createTextItem(resultFolderId, QStringLiteral("Directories"), QString::number(dirsCount));
+		ingestResultDB->createTextItem(resultFolderId, QStringLiteral("TXT Files"), QString::number(txtFilesCount));
+	}
 }
 
 // 1935.14 ms (10 bytes Content Read)

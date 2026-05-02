@@ -82,6 +82,8 @@ target_link_libraries(Nomen
         ${CMAKE_SOURCE_DIR}/lib/ibpp/libfbclient.so
 )
 
+target_link_options(Nomen PRIVATE -rdynamic)
+
 target_compile_definitions(Nomen PRIVATE IBPP_LINUX)
 target_compile_features(ibpp PRIVATE cxx_std_17)
 

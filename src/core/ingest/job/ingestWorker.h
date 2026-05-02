@@ -11,6 +11,7 @@
 #include "core/extensions/ingestModuleFactory.h"
 #include "core/extensions/tskIngestModuleInterface.h"
 #include "core/caseDBManager/caseDBThreadInstance.h"
+#include "core/ingest/repo/ingestResultDBInstance.h"
 
 
 #include "../../logging/performancemeasure.h"

@@ -92,6 +92,12 @@ bool CaseDBThreadInstance::openDatabase()
 }
 
 
+IBPP::Database CaseDBThreadInstance::database() const
+{
+    return fb_db;
+}
+
+
 void CaseDBThreadInstance::closeDatabase()
 {
     if (fb_db != nullptr && fb_db->Connected())

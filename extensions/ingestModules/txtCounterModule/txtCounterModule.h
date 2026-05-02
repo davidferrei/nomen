@@ -8,8 +8,9 @@
 #include <cctype>
 
 #include "core/extensions/ingestModuleInterface.h"
-
 #include "core/extensions/tskIngestModuleInterface.h"
+
+#include "core/ingest/repo/ingestResultDBInstance.h"
 
 
 class TxtCounterModule : public tskIngestModuleInterface
@@ -30,6 +31,7 @@ private:
     uint64_t filesCount = 0;
     uint64_t dirsCount = 0;
     uint64_t txtFilesCount = 0;
+    qint64 resultFolderId = -1;
 
 };
 

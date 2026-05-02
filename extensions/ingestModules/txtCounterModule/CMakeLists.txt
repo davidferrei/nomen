@@ -11,6 +11,7 @@ add_library(txtCounterModule SHARED
 target_include_directories(txtCounterModule
     PRIVATE
         ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/lib
 )
 
 find_package(Qt6 REQUIRED COMPONENTS Core)

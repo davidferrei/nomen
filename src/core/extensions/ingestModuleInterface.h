@@ -7,6 +7,8 @@
 #include <QFile>
 #include <QJsonObject>
 
+class IngestResultDBInstance;
+
 class AbstractIngestModule : public QObject
 {
     Q_OBJECT
@@ -47,12 +49,15 @@ public:
 
     QJsonObject getMetadata() const { return m_metadata; }
 
+    virtual void onJobStart(IngestResultDBInstance *dbInstance) { ingestResultDB = dbInstance; }
+
     virtual void process() = 0;
 
     
 
 protected:
     QJsonObject m_metadata;
+    IngestResultDBInstance *ingestResultDB = nullptr;
 
 // signals:
 //     void showMessage(const QString &message, int timeout = 8000);

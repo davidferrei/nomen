@@ -58,6 +58,7 @@ void IngestWorker::run()
     }
     
     IngestJobHistoryRepository ingestJobHistoryRepo = dbThread.ingestJobsRepo();
+    IngestResultDBInstance *ingestResultDB = nullptr;
 
     debugPrintAllJobs(ingestJobHistoryRepo);
 
@@ -90,6 +91,9 @@ void IngestWorker::run()
         }
 
         debugPrintJob(ingestJobData);
+
+        ingestResultDB = new IngestResultDBInstance(dbThread.database(), ingestJobData.id, this);
+        module->onJobStart(ingestResultDB);
 
         // Run Module
         module->init();
