@@ -61,6 +61,28 @@ void TxtCounterModule::finishWalk()
 		ingestResultDB->createTextItem(resultFolderId, QStringLiteral("Files"), QString::number(filesCount));
 		ingestResultDB->createTextItem(resultFolderId, QStringLiteral("Directories"), QString::number(dirsCount));
 		ingestResultDB->createTextItem(resultFolderId, QStringLiteral("TXT Files"), QString::number(txtFilesCount));
+
+		// Load Test
+		// qInfo() << "[TxtCounter] Creating 500 Folders...";
+		// for (int i = 1; i <= 500; ++i)
+		// {
+		// 	QString name = QStringLiteral("PerfFolder_%1").arg(i);
+		// 	qint64 newId = ingestResultDB->createFolderItem(resultFolderId, name);
+		// 	if (newId < 0)
+		// 	{
+		// 		qWarning() << "[TxtCounter] Failed to Create Folder:" << name << "at Iteration" << i;
+		// 		break;
+		// 	}
+
+		// 	for (int t = 1; t <= 500; ++t)
+		// 	{
+		// 		if (ingestResultDB->createTextItem(newId, QString(), QString::number(t)) < 0)
+		// 		{
+		// 			qWarning() << "[TxtCounter] Failed to Create Text Item" << t << "in Folder" << name;
+		// 			break;
+		// 		}
+		// 	}
+		// }
 	}
 }
 

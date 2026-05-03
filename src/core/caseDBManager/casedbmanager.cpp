@@ -350,3 +350,8 @@ bool CaseDBManager::databaseExists() const
 {
     return QFile::exists(dbPath + "/case_db/case.fdb");
 }
+
+IBPP::Database CaseDBManager::database() const
+{
+    return fb_db;
+}

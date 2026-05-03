@@ -84,6 +84,30 @@ QList<IngestResultItemData> IngestResultItemRepository::getChildrenItems(qint64 
     return result;
 }
 
+QList<IngestResultItemData> IngestResultItemRepository::getTopLevelItemsForJob(qint64 jobId)
+{
+    QList<IngestResultItemData> result;
+
+    IBPP::Transaction tr = IBPP::TransactionFactory(fb_db);
+    tr->Start();
+
+    IBPP::Statement st = IBPP::StatementFactory(fb_db, tr);
+    st->Prepare(
+        "SELECT ID, JOB_ID, PARENT_ITEM_ID, ITEM_TYPE, ITEM_NAME,"
+        " DATASOURCE_ID, PARTITION_ID, FILESYSTEM_ID, LMDB_PATH"
+        " FROM IngestResultItems"
+        " WHERE JOB_ID = ? AND PARENT_ITEM_ID IS NULL"
+    );
+    st->Set(1, static_cast<int64_t>(jobId));
+    st->Execute();
+
+    while (st->Fetch())
+        result.append(rowToData(st));
+
+    tr->Commit();
+    return result;
+}
+
 IngestResultItemData IngestResultItemRepository::rowToData(IBPP::Statement &st)
 {
     IngestResultItemData item;

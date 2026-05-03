@@ -354,6 +354,35 @@ bool CaseManager::saveCaseInfo(const CaseInfo& c)
     return currentCaseDB->caseInfoRepo().insert(c);
 }
 
+// Ingest Results
+
+QList<IngestJobHistoryData> CaseManager::getIngestJobs() const
+{
+    if (!currentCaseDB) {
+        qCritical() << "No Case Database Open!";
+        return {};
+    }
+    return currentCaseDB->ingestJobsRepo().getAll();
+}
+
+QList<IngestResultItemData> CaseManager::getIngestResultItemsForJob(qint64 jobId) const
+{
+    if (!currentCaseDB) {
+        qCritical() << "No Case Database Open!";
+        return {};
+    }
+    return currentCaseDB->ingestResultItemsRepo().getTopLevelItemsForJob(jobId);
+}
+
+QList<IngestResultItemData> CaseManager::getIngestResultChildren(qint64 parentId) const
+{
+    if (!currentCaseDB) {
+        qCritical() << "No Case Database Open!";
+        return {};
+    }
+    return currentCaseDB->ingestResultItemsRepo().getChildrenItems(parentId);
+}
+
 
 //###########################################################################################
 // Case Setter/Getter

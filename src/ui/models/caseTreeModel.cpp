@@ -1,7 +1,6 @@
 #include "caseTreeModel.h"
 
-
-CaseTreeModel::CaseTreeModel(QObject *parent) : QAbstractItemModel(parent) , root(new TreeItem{ TreeItemType::Root, QString(), 0, -1, false }), dataSources(nullptr)
+CaseTreeModel::CaseTreeModel(QObject *parent, CaseManager *caseManager) : QAbstractItemModel(parent) , root(new TreeItem{ TreeItemType::Root, QString(), 0, -1, false }), dataSources(nullptr), caseManagerPtr(caseManager)
 {
     buildStaticRootTreeItems();
 }
@@ -45,9 +44,9 @@ void CaseTreeModel::buildStaticRootTreeItems()
     root->children.append(views);
 
     // Ingest Results
-    auto *ingestResults = new TreeItem{ TreeItemType::IngestResults, QStringLiteral("Ingest Results"), 0, -1, false };
+    auto *ingestResults = new TreeItem{ TreeItemType::IngestResults, QStringLiteral("Ingest Results"), 0, -1, true };
     ingestResults->parent = root;
-    ingestResults->isLazyLoaded = false;
+    ingestResults->isLazyLoaded = true;
     root->children.append(ingestResults);
 }
 
@@ -69,7 +68,8 @@ void CaseTreeModel::addDataSource(int dsId, const QString &label, const QString 
         rootNodeId = rootResult.second;
 
     int row = dataSources->children.size();
-    beginInsertRows(index(0, 0), row, row);
+    QModelIndex parentIdx = indexForItem(dataSources);
+    beginInsertRows(parentIdx, row, row);
 
     auto *dsItem = new TreeItem{ TreeItemType::DataSource, label, rootNodeId, dsId, true };
     dsItem->parent = dataSources;
@@ -184,6 +184,23 @@ QVariant CaseTreeModel::data(const QModelIndex &index, int role) const
             case TreeItemType::IngestResults:
                 ic = QIcon::fromTheme(QStringLiteral("system-run"));
                 break;
+            
+            case TreeItemType::IngestJob:
+                ic = QIcon::fromTheme(QStringLiteral("view-list"));
+                break;
+
+            case TreeItemType::IngestResultItem:
+
+                if (item->isFolder || !item->children.isEmpty())
+                {
+                    ic = QIcon::fromTheme(QStringLiteral("folder"));
+                }
+                else
+                {
+                    // ic = QIcon::fromTheme(QStringLiteral("text-x-generic"));
+                    ic = QIcon::fromTheme(QStringLiteral("folder-notes"));
+                }
+                break;
         }
 
         if (!ic.isNull())
@@ -203,8 +220,7 @@ bool CaseTreeModel::hasChildren(const QModelIndex &parent) const
     TreeItem *item = itemFromIndex(parent);
     if (!item)
         return false;
-
-    if (item->isLazyLoaded && (item->type == TreeItemType::DataSource || item->type == TreeItemType::FS_Structure))
+    if (item->isLazyLoaded)
         return true;
 
     return !item->children.isEmpty();
@@ -215,8 +231,7 @@ bool CaseTreeModel::canFetchMore(const QModelIndex &parent) const
     TreeItem *item = itemFromIndex(parent);
     if (!item)
         return false;
-
-    return item->isLazyLoaded && (item->type == TreeItemType::DataSource || item->type == TreeItemType::FS_Structure);
+    return item->isLazyLoaded;
 }
 
 void CaseTreeModel::fetchMore(const QModelIndex &parent)
@@ -224,8 +239,24 @@ void CaseTreeModel::fetchMore(const QModelIndex &parent)
     TreeItem *item = itemFromIndex(parent);
     if (!item || !item->isLazyLoaded)
         return;
+    
+    // Ingest Results
+    if (item->type == TreeItemType::IngestResults) 
+    { 
+        fetchIngestJobs(item); 
+        return; 
+    }
+    if (item->type == TreeItemType::IngestJob || item->type == TreeItemType::IngestResultItem) 
+    { 
+        fetchIngestResultItems(item); 
+        return; 
+    }
 
-    populateDSTreeItemChildren(item);
+    // DataSources
+    if (item->type == TreeItemType::DataSource || item->type == TreeItemType::FS_Structure)
+    {
+        populateDSTreeItemChildren(item);
+    }
 }
 
 //FIXME: Handle Special Nodes
@@ -271,14 +302,15 @@ void CaseTreeModel::populateDSTreeItemChildren(TreeItem *item)
         return;
     }
 
-    int parentRow = item->parent->children.indexOf(item);
-    if (parentRow < 0)
+    int parentRow = item->parent ? item->parent->children.indexOf(item) : -1;
+    if (item->parent && parentRow < 0)
     {
         qWarning() << "[CaseTreeModel] Cannot Populate Children: Item not Found in Parent's Children List" << item->name << "(ID:" << item->id << ")";
+        item->isLazyLoaded = false;
         return;
     }
 
-    auto parentIdx = createIndex(parentRow, 0, item);
+    QModelIndex parentIdx = indexForItem(item);
 
     auto ItemChildDirs = dsIndexDB->getChildDirectories(item->id);
     if (!ItemChildDirs.first)
@@ -373,6 +405,159 @@ void CaseTreeModel::populateDSTreeItemChildren(TreeItem *item)
     }
 
     endInsertRows();
+    return;
+}
+
+//############################################################################################
+// Ingest Results 
+
+//TODO: Move all these calls to a Thread
+//TODO: Add a Small Loader Item/Icon while we fetch data
+
+void CaseTreeModel::fetchIngestJobs(TreeItem *item)
+{
+    PerformanceTimer timer("CaseTreeModel: fetchIngestJobs");
+
+    if (!item) 
+    { 
+        qWarning() << "[CaseTreeModel] fetchIngestJobs Called with NULL Item"; 
+        return;
+    }
+    if (!caseManagerPtr) 
+    { 
+        qWarning() << "[CaseTreeModel] No CaseManager Available;"; 
+        item->isLazyLoaded = false; 
+        return; 
+    }
+
+    item->isLazyLoaded = false;
+
+    QList<IngestJobHistoryData> jobs = caseManagerPtr->getIngestJobs();
+    if (jobs.isEmpty()) 
+    { 
+        qWarning() << "[CaseTreeModel] No Ingest Jobs Found for Case";
+        return;
+    }
+
+    QModelIndex parentIdx = indexForItem(item);
+    int firstRow = item->children.size();
+    int lastRow = firstRow + jobs.size() - 1;
+    beginInsertRows(parentIdx, firstRow, lastRow);
+    for (const IngestJobHistoryData &j : jobs)
+    {
+        QString label = QStringLiteral("[%1] %2 v%3 - %4").arg(j.id).arg(j.moduleName).arg(j.moduleVersion).arg(j.startTime.toString(Qt::ISODate));
+        auto *jobItem = new TreeItem{ TreeItemType::IngestJob, label, static_cast<quint64>(j.id), -1, true };
+        jobItem->parent = item;
+        jobItem->isLazyLoaded = true;
+        item->children.append(jobItem);
+    }
+    endInsertRows();
+    item->isLazyLoaded = false;
+}
+
+void CaseTreeModel::fetchIngestResultItems(TreeItem *item)
+{
+    PerformanceTimer timer("CaseTreeModel: fetchIngestResultItems");
+    if (!item) 
+    { 
+        qWarning() << "[CaseTreeModel] fetchIngestResultItems Called with NULL Item"; 
+        return; 
+    }
+    if (!caseManagerPtr) 
+    { 
+        qWarning() << "[CaseTreeModel] No CaseManager Available"; 
+        item->isLazyLoaded = false; 
+        return; 
+    }
+
+    item->isLazyLoaded = false;
+
+    QList<IngestResultItemData> children;
+    if (item->type == TreeItemType::IngestJob)
+        children = caseManagerPtr->getIngestResultItemsForJob(static_cast<qint64>(item->id));
+    else
+        children = caseManagerPtr->getIngestResultChildren(static_cast<qint64>(item->id));
+
+    if (children.isEmpty()) 
+    { 
+        qWarning() << "[CaseTreeModel] No Ingest Result Items Found for Item" << item->name << "(ID:" << item->id << ")";
+        return; 
+    }
+
+    item->children.reserve(item->children.size() + children.size());
+
+    QModelIndex parentIdx = indexForItem(item);
+    int firstRow = item->children.size();
+    int lastRow = firstRow + children.size() - 1;
+    beginInsertRows(parentIdx, firstRow, lastRow);
+
+    for (const IngestResultItemData &it : children)
+    {
+        auto *child = new TreeItem{ TreeItemType::IngestResultItem, it.itemName, static_cast<quint64>(it.id), static_cast<int>(it.datasourceId), true };
+        child->isFolder = (it.itemType == IngestResultItemData::ItemType::Folder);
+        child->parent = item;
+        item->children.append(child);
+    }
+
+    endInsertRows();
+    item->isLazyLoaded = false;
+}
+
+void CaseTreeModel::refreshIngestResults()
+{
+    if (!root) 
+    {
+        qWarning() << "[CaseTreeModel] refreshIngestResults: Root Item is NULL";
+        return;
+    }
+    TreeItem *ingestRoot = nullptr;
+    for (TreeItem *c : root->children) 
+    {
+        if (c && c->type == TreeItemType::IngestResults)
+        { 
+            ingestRoot = c;
+            break;
+        }
+    }
+    if (!ingestRoot)
+    {
+        qWarning() << "[CaseTreeModel] refreshIngestResults: Ingest Results Root Item is NULL";
+        return;
+    }
+
+    if (!ingestRoot->children.isEmpty()) 
+    {
+        QModelIndex parentIdx = indexForItem(ingestRoot);
+        int count = ingestRoot->children.size();
+        beginRemoveRows(parentIdx, 0, count - 1);
+        qDeleteAll(ingestRoot->children);
+        ingestRoot->children.clear();
+        endRemoveRows();
+    }
+
+    ingestRoot->isLazyLoaded = true;
+    fetchIngestJobs(ingestRoot);
+}
+
+QModelIndex CaseTreeModel::ingestResultsIndex() const
+{
+    if (!root)
+    {
+        qWarning() << "[CaseTreeModel] ingestResultsIndex: Root Item is NULL";
+        return QModelIndex();
+    }
+    int row = 0;
+
+    for (TreeItem *c : root->children) 
+    {
+        if (c && c->type == TreeItemType::IngestResults) 
+        {
+            return createIndex(row, 0, c);
+        }
+        ++row;
+    }
+    
+    return QModelIndex();
 }
 
 //############################################################################################
@@ -384,6 +569,29 @@ TreeItem* CaseTreeModel::itemFromIndex(const QModelIndex &idx) const
         return root;
 
     return static_cast<TreeItem*>(idx.internalPointer());
+}
+
+QModelIndex CaseTreeModel::indexForItem(TreeItem *item) const
+{
+    if (!item) 
+    {
+        qWarning() << "[CaseTreeModel] indexForItem: Item is null";
+        return QModelIndex();
+    }
+    if (!item->parent) 
+    {
+        qWarning() << "[CaseTreeModel] indexForItem: Item has no parent";
+        return QModelIndex();
+    }
+
+    int row = item->parent->children.indexOf(item);
+    if (row < 0)
+    {
+        qWarning() << "[CaseTreeModel] indexForItem: Item not found in parent's children:" << item->name << "(ID:" << item->id << ")";
+        return QModelIndex();
+    }
+
+    return createIndex(row, 0, item);
 }
 
 QString CaseTreeModel::pathForItem(TreeItem *item) const

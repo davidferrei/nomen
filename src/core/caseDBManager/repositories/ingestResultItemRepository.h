@@ -12,6 +12,7 @@ public:
 
     bool insert(IngestResultItemData &item);
     QList<IngestResultItemData> getChildrenItems(qint64 parentItemId);
+    QList<IngestResultItemData> getTopLevelItemsForJob(qint64 jobId);
 
 private:
     IBPP::Database fb_db;

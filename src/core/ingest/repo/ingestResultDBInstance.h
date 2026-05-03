@@ -15,7 +15,10 @@ class IngestResultDBInstance : public QObject
 public:
     explicit IngestResultDBInstance(IBPP::Database db, qint64 jobId, QObject *parent = nullptr);
 
+
+    //TODO: Create Batch Insert Func
     qint64 createFolderItem(const QString &name);
+    qint64 createFolderItem(qint64 parentId, const QString &name);
     qint64 createTextItem(qint64 parentId, const QString &label, const QString &value);
 
 private:

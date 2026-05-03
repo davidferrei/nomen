@@ -270,7 +270,8 @@ void MainWindow::loadDataSources()
 
     qDebug() << "Total Disks Found:" << dataSources.size();
 
-    caseTreeModel = new CaseTreeModel(this);
+    caseTreeModel = new CaseTreeModel(this, &caseManager);
+    caseTreeModel->setCasePath(caseManager.getCurrentCase().casePath);
     itemTableModel = new ItemTableModel(caseTreeModel, this);
     itemTableProxy = new QSortFilterProxyModel(this);
     itemTableProxy->setSourceModel(itemTableModel);
@@ -367,25 +368,43 @@ void MainWindow::setupJobSignalConnections()
                                  8000,
                                  NotificationWidget::NotificationType::Success);
 
-        if (!isIngest)
+        switch (type)
         {
-            const QList<DataSourceData> allDataSources = caseManager.getDataSources();
-            const DataSourceData* ds = nullptr;
-            for (const DataSourceData& d : allDataSources)
-                if (d.filePath == filePath) { ds = &d; break; }
-
-            if (!ds)
+            case Job::JobType::Index:
             {
-                qWarning() << "[MainWindow]: Index Job Finished but no Matching Data Source Found for File Path:" << filePath;
-                return;
+                const QList<DataSourceData> allDataSources = caseManager.getDataSources();
+                const DataSourceData* ds = nullptr;
+                for (const DataSourceData& d : allDataSources)
+                    if (d.filePath == filePath) { ds = &d; break; }
+
+                if (!ds)
+                {
+                    qWarning() << "[MainWindow]: Index Job Finished but no Matching Data Source Found for File Path:" << filePath;
+                    return;
+                }
+
+                QString label = ds->name.isEmpty() ? QStringLiteral("Disk %1").arg(ds->id) : ds->name;
+                dataSourceNames.insert(static_cast<int>(ds->id), label);
+
+                QString lmdbPath = caseManager.getCurrentCase().casePath + "/indexes/disk-" + QString::number(ds->id);
+                qDebug() << "[MainWindow] Indexing Finished, Adding DS to Tree:" << label;
+                caseTreeModel->addDataSource(static_cast<int>(ds->id), label, lmdbPath);
+                break;
             }
 
-            QString label = ds->name.isEmpty() ? QStringLiteral("Disk %1").arg(ds->id) : ds->name;
-            dataSourceNames.insert(static_cast<int>(ds->id), label);
+            case Job::JobType::Ingest:
+            {
+                if (caseTreeModel)
+                {
+                    caseTreeModel->refreshIngestResults();
+                    QModelIndex idx = caseTreeModel->ingestResultsIndex();
+                    if (idx.isValid()) ui->treeViewFilesystem->expand(idx);
+                }
+                break;
+            }
 
-            QString lmdbPath = caseManager.getCurrentCase().casePath + "/indexes/disk-" + QString::number(ds->id);
-            qDebug() << "[MainWindow] Indexing Finished, Adding DS to Tree:" << label;
-            caseTreeModel->addDataSource(static_cast<int>(ds->id), label, lmdbPath);
+            default:
+                break;
         }
     });
 

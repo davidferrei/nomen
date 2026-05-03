@@ -50,6 +50,10 @@ public:
 
     QList<DataSourceData> getDataSources() const;
 
+    QList<IngestJobHistoryData> getIngestJobs() const;
+    QList<IngestResultItemData> getIngestResultItemsForJob(qint64 jobId) const;
+    QList<IngestResultItemData> getIngestResultChildren(qint64 parentId) const;
+
 
 private:
     bool initEnvironment();
