@@ -10,40 +10,24 @@ bool IngestResultItemRepository::insert(IngestResultItemData &item)
     IBPP::Statement st = IBPP::StatementFactory(fb_db, tr);
     st->Prepare(
         "INSERT INTO IngestResultItems"
-        " (JOB_ID, PARENT_ITEM_ID, ITEM_TYPE, ITEM_NAME,"
-        "  DATASOURCE_ID, PARTITION_ID, FILESYSTEM_ID, LMDB_PATH)"
-        " VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+        " (JOB_ID, FILE_ID, PARENT_ITEM_ID, ITEM_TYPE, ITEM_NAME)"
+        " VALUES (?, ?, ?, ?, ?)"
     );
 
     st->Set(1, static_cast<int64_t>(item.jobId));
 
-    if (item.parentItemId < 0)
+    if (item.fileId < 0)
         st->SetNull(2);
     else
-        st->Set(2, static_cast<int64_t>(item.parentItemId));
+        st->Set(2, static_cast<int64_t>(item.fileId));
 
-    st->Set(3, static_cast<int16_t>(static_cast<int>(item.itemType)));
-    st->Set(4, item.itemName.isEmpty() ? "" : item.itemName.toStdString());
-
-    if (item.datasourceId < 0)
-        st->SetNull(5);
+    if (item.parentItemId < 0)
+        st->SetNull(3);
     else
-        st->Set(5, static_cast<int64_t>(item.datasourceId));
+        st->Set(3, static_cast<int64_t>(item.parentItemId));
 
-    if (item.partitionId < 0)
-        st->SetNull(6);
-    else
-        st->Set(6, static_cast<int16_t>(item.partitionId));
-
-    if (item.filesystemId < 0)
-        st->SetNull(7);
-    else
-        st->Set(7, static_cast<int16_t>(item.filesystemId));
-
-    if (item.lmdbPath.isEmpty())
-        st->SetNull(8);
-    else
-        st->Set(8, item.lmdbPath.toStdString());
+    st->Set(4, static_cast<int16_t>(static_cast<int>(item.itemType)));
+    st->Set(5, item.itemName.isEmpty() ? "" : item.itemName.toStdString());
 
     st->Execute();
 
@@ -69,8 +53,7 @@ QList<IngestResultItemData> IngestResultItemRepository::getChildrenItems(qint64 
 
     IBPP::Statement st = IBPP::StatementFactory(fb_db, tr);
     st->Prepare(
-        "SELECT ID, JOB_ID, PARENT_ITEM_ID, ITEM_TYPE, ITEM_NAME,"
-        " DATASOURCE_ID, PARTITION_ID, FILESYSTEM_ID, LMDB_PATH"
+        "SELECT ID, JOB_ID, PARENT_ITEM_ID, ITEM_TYPE, ITEM_NAME, FILE_ID"
         " FROM IngestResultItems"
         " WHERE PARENT_ITEM_ID = ?"
     );
@@ -93,8 +76,7 @@ QList<IngestResultItemData> IngestResultItemRepository::getTopLevelItemsForJob(q
 
     IBPP::Statement st = IBPP::StatementFactory(fb_db, tr);
     st->Prepare(
-        "SELECT ID, JOB_ID, PARENT_ITEM_ID, ITEM_TYPE, ITEM_NAME,"
-        " DATASOURCE_ID, PARTITION_ID, FILESYSTEM_ID, LMDB_PATH"
+        "SELECT ID, JOB_ID, PARENT_ITEM_ID, ITEM_TYPE, ITEM_NAME, FILE_ID"
         " FROM IngestResultItems"
         " WHERE JOB_ID = ? AND PARENT_ITEM_ID IS NULL"
     );
@@ -138,28 +120,7 @@ IngestResultItemData IngestResultItemRepository::rowToData(IBPP::Statement &st)
     if (!st->IsNull(6))
     {
         st->Get(6, tmp64);
-        item.datasourceId = static_cast<qint64>(tmp64);
-    }
-
-    if (!st->IsNull(7))
-    {
-        int16_t p = 0;
-        st->Get(7, p);
-        item.partitionId = p;
-    }
-
-    if (!st->IsNull(8))
-    {
-        int16_t f = 0;
-        st->Get(8, f);
-        item.filesystemId = f;
-    }
-
-    if (!st->IsNull(9))
-    {
-        std::string s;
-        st->Get(9, s);
-        item.lmdbPath = QString::fromStdString(s);
+        item.fileId = static_cast<qint64>(tmp64);
     }
 
     return item;

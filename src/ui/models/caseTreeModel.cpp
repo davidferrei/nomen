@@ -493,7 +493,7 @@ void CaseTreeModel::fetchIngestResultItems(TreeItem *item)
 
     for (const IngestResultItemData &it : children)
     {
-        auto *child = new TreeItem{ TreeItemType::IngestResultItem, it.itemName, static_cast<quint64>(it.id), static_cast<int>(it.datasourceId), true };
+        auto *child = new TreeItem{ TreeItemType::IngestResultItem, it.itemName, static_cast<quint64>(it.id), -1, true };
         child->isFolder = (it.itemType == IngestResultItemData::ItemType::Folder);
         child->parent = item;
         item->children.append(child);

@@ -13,7 +13,7 @@ static void debugPrintJob(const IngestJobHistoryData &job)
              << "Log length:" << job.log.size();
 }
 
-static void debugPrintAllJobs(IngestJobHistoryRepository &repo)
+static void debugPrintAllJobs(IngestJobHistoryRepository repo)
 {
     QList<IngestJobHistoryData> list = repo.getAll();
     qDebug() << "[DEBUG] IngestJobs count:" << list.size();
@@ -57,10 +57,9 @@ void IngestWorker::run()
         return;
     }
     
-    IngestJobHistoryRepository ingestJobHistoryRepo = dbThread.ingestJobsRepo();
     IngestResultDBInstance *ingestResultDB = nullptr;
 
-    debugPrintAllJobs(ingestJobHistoryRepo);
+    debugPrintAllJobs(dbThread.ingestJobsRepo());
 
     try 
     {
@@ -83,7 +82,7 @@ void IngestWorker::run()
         ingestJobData.settingsJson = QString("{}");
 
         // qDebug() << "[IngestWorker] Ingest Job Prepared (module, status):" << ingestJobData.moduleName << ingestJobData.status;
-        if (!ingestJobHistoryRepo.insert(ingestJobData)) 
+        if (!dbThread.ingestJobsRepo().insert(ingestJobData)) 
         {
             qWarning() << "[IngestWorker]: Failed to Save Job";
             emit failed("Failed to Insert Job into the DB");
@@ -120,7 +119,7 @@ void IngestWorker::run()
         ingestJobData.status = 2;
         ingestJobData.log.clear();
 
-        if (!ingestJobHistoryRepo.setStatus(ingestJobData.id, ingestJobData.status)) 
+        if (!dbThread.ingestJobsRepo().setStatus(ingestJobData.id, ingestJobData.status)) 
         {
             qWarning() << "[IngestWorker]: Failed to Set Job Status";
             emit failed("Failed to Update Job History in DB");
@@ -128,7 +127,7 @@ void IngestWorker::run()
         }
 
         debugPrintJob(ingestJobData);
-        debugPrintAllJobs(ingestJobHistoryRepo);
+        debugPrintAllJobs(dbThread.ingestJobsRepo());
 
 
         emit finished();
@@ -140,7 +139,7 @@ void IngestWorker::run()
         ingestJobData.log = QString::fromUtf8(e.what());
 
         qWarning() << "[IngestWorker] Calling setStatus for Failed Job ID:" << ingestJobData.id;
-        if (!ingestJobHistoryRepo.setStatus(ingestJobData.id, ingestJobData.status)) 
+        if (!dbThread.ingestJobsRepo().setStatus(ingestJobData.id, ingestJobData.status)) 
         {
             qWarning() << "[IngestWorker]: Failed to Set Job Status";
             emit failed("Failed to Update Job History in DB");
@@ -148,7 +147,7 @@ void IngestWorker::run()
         }
 
         qWarning() << "[IngestWorker] Appending error log for Failed Job ID:" << ingestJobData.id << "log:" << ingestJobData.log;
-        if (!ingestJobHistoryRepo.appendLog(ingestJobData.id, ingestJobData.log)) 
+        if (!dbThread.ingestJobsRepo().appendLog(ingestJobData.id, ingestJobData.log)) 
         {
             qWarning() << "[IngestWorker]: Failed to Append Job Log";
             emit failed("Failed to Update Job History in DB");
@@ -163,7 +162,7 @@ void IngestWorker::run()
         ingestJobData.log = QString("Unknown Error");
 
         qWarning() << "[IngestWorker] Calling setStatus for Unknown Error Job ID:" << ingestJobData.id;
-        if (!ingestJobHistoryRepo.setStatus(ingestJobData.id, ingestJobData.status)) 
+        if (!dbThread.ingestJobsRepo().setStatus(ingestJobData.id, ingestJobData.status)) 
         {
             qWarning() << "[IngestWorker]: Failed to Set Job Status";
             emit failed("Failed to Update Job History in DB");
@@ -171,7 +170,7 @@ void IngestWorker::run()
         }
 
         qWarning() << "[IngestWorker] Appending unknown error log for Unknown Error Job ID:" << ingestJobData.id << "log:" << ingestJobData.log;
-        if (!ingestJobHistoryRepo.appendLog(ingestJobData.id, ingestJobData.log)) 
+        if (!dbThread.ingestJobsRepo().appendLog(ingestJobData.id, ingestJobData.log)) 
         {
             qWarning() << "[IngestWorker]: Failed to Append Job Log";
             emit failed("Failed to Update Job History in DB");

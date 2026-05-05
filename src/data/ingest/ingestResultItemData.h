@@ -19,10 +19,7 @@ struct IngestResultItemData {
     ItemType itemType = ItemType::Folder;
     QString itemName;
 
-    qint64 datasourceId = -1;
-    int partitionId = -1;
-    int filesystemId = -1;
-    QString lmdbPath;
+    qint64 fileId = -1;
 };
 
 #endif // INGESTRESULTITEMDATA_H

@@ -13,6 +13,7 @@
 #include "core/caseDBManager/repositories/caseinformationRepository.h"
 #include "core/caseDBManager/repositories/ingestJobHistoryRepository.h"
 #include "core/caseDBManager/repositories/ingestResultItemRepository.h"
+#include "core/caseDBManager/repositories/ingestFileRepository.h"
 
 class CaseDBManager
 {
@@ -35,6 +36,7 @@ public:
     CaseInformationRepository caseInfoRepo() { return CaseInformationRepository(fb_db); };
     IngestJobHistoryRepository ingestJobsRepo() { return IngestJobHistoryRepository(fb_db); };
     IngestResultItemRepository ingestResultItemsRepo() { return IngestResultItemRepository(fb_db); };
+    IngestFileRepository ingestFileRepo() { return IngestFileRepository(fb_db); };
 
 private:
     IBPP::Database fb_db;
