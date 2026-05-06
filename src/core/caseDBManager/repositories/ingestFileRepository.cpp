@@ -41,6 +41,13 @@ bool IngestFileRepository::insert(IngestFileData &data)
 
     st->Execute();
 
+    if (st->Fetch()) 
+    {
+        int64_t newId = 0;
+        st->Get(1, newId);
+        data.id = static_cast<qint64>(newId);
+    }
+
     tr->Commit();
     return true;
 }

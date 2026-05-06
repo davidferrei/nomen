@@ -27,7 +27,7 @@ public:
     qint64 createTextItem(qint64 parentId, const QString &label, const QString &value);
 
     // Ingest File Repo
-    qint64 createFileItem(qint64 datasourceId, qint64 partitionId, qint64 filesystemId, const QString &lmdbPath, const QString &notes = QString());
+    qint64 createFileItem(qint64 datasourceId, qint64 partitionId, qint64 filesystemId, const QString &lmdbPath, const QString &notes = QString(), qint64 parentItemId = -1);
 
 
 private:

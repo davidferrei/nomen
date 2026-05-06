@@ -10,6 +10,8 @@ void TxtCounterModule::init()
 	if (ingestResultDB)
 	{
         resultFolderId = ingestResultDB->createFolderItem(getModuleName());
+		filesFolderId = ingestResultDB->createFolderItem(resultFolderId, QStringLiteral("Files"));
+		if (filesFolderId < 0) filesFolderId = resultFolderId;
 	}
 }
 
@@ -62,19 +64,19 @@ void TxtCounterModule::finishWalk()
 		ingestResultDB->createTextItem(resultFolderId, QStringLiteral("Directories"), QString::number(dirsCount));
 		ingestResultDB->createTextItem(resultFolderId, QStringLiteral("TXT Files"), QString::number(txtFilesCount));
 
-		qint64 idPasswd = ingestResultDB->createFileItem(1, 2, 0, QStringLiteral("2:0:etc/passwd"), QStringLiteral("This is a note for the passwd file record"));
+		qint64 idPasswd = ingestResultDB->createFileItem(1, 2, 0, QStringLiteral("2:0:etc/passwd"), QStringLiteral("This is a note for the passwd file record"), filesFolderId);
 		if (idPasswd < 0) qWarning() << "[TxtCounter] Failed to Create File Record for /etc/passwd";
-		qint64 idShadow = ingestResultDB->createFileItem(1, 2, 0, QStringLiteral("2:0:etc/shadow"));
+		qint64 idShadow = ingestResultDB->createFileItem(1, 2, 0, QStringLiteral("2:0:etc/shadow"), QString(), filesFolderId);
 		if (idShadow < 0) qWarning() << "[TxtCounter] Failed to Create File Record for /etc/shadow";
 
-		idPasswd = ingestResultDB->createFileItem(1, 2, 0, QStringLiteral("2:0:etc/passwd"));
+		idPasswd = ingestResultDB->createFileItem(1, 2, 0, QStringLiteral("2:0:etc/passwd"), QString(), filesFolderId);
 		if (idPasswd < 0) qWarning() << "[TxtCounter] Failed to Create File Record for /etc/passwd";
-		idShadow = ingestResultDB->createFileItem(1, 2, 0, QStringLiteral("2:0:etc/shadow"));
+		idShadow = ingestResultDB->createFileItem(1, 2, 0, QStringLiteral("2:0:etc/shadow"), QString(), filesFolderId);
 		if (idShadow < 0) qWarning() << "[TxtCounter] Failed to Create File Record for /etc/shadow";
 
-		idPasswd = ingestResultDB->createFileItem(1, 2, 0, QStringLiteral("2:0:etc/passwd"));
+		idPasswd = ingestResultDB->createFileItem(1, 2, 0, QStringLiteral("2:0:etc/passwd"), QString(), filesFolderId);
 		if (idPasswd < 0) qWarning() << "[TxtCounter] Failed to Create File Record for /etc/passwd";
-		idShadow = ingestResultDB->createFileItem(1, 2, 0, QStringLiteral("2:0:etc/shadow"), QStringLiteral("This is a note for the shadow file record"));
+		idShadow = ingestResultDB->createFileItem(1, 2, 0, QStringLiteral("2:0:etc/shadow"), QStringLiteral("This is a note for the shadow file record"), filesFolderId);
 		if (idShadow < 0) qWarning() << "[TxtCounter] Failed to Create File Record for /etc/shadow";
 
 		// Load Test

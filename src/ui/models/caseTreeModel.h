@@ -48,7 +48,7 @@ struct TreeItem
     quint64 id = 0;
     int dsId = -1;
     bool isLazyLoaded = false;
-    bool isFolder = false;
+    IngestResultItemData::ItemType ingestItemType;
 
     TreeItem* parent = nullptr;
     QList<TreeItem*> children;

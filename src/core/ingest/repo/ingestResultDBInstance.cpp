@@ -56,7 +56,8 @@ qint64 IngestResultDBInstance::createTextItem(qint64 parentId, const QString &la
     return ingestItem.id;
 }
 
-qint64 IngestResultDBInstance::createFileItem(qint64 datasourceId, qint64 partitionId, qint64 filesystemId, const QString &lmdbPath, const QString &notes)
+
+qint64 IngestResultDBInstance::createFileItem(qint64 datasourceId, qint64 partitionId, qint64 filesystemId, const QString &lmdbPath, const QString &notes, qint64 parentItemId)
 {
     IngestFileData ingestFile;
     ingestFile.datasourceId = datasourceId;
@@ -71,5 +72,24 @@ qint64 IngestResultDBInstance::createFileItem(qint64 datasourceId, qint64 partit
         qWarning() << "[IngestResultDBInstance] Failed to Create File Item: " << lmdbPath;
         return -1;
     }
+    if (ingestFile.id <= 0) 
+    {
+        qWarning() << "[IngestResultDBInstance] File Repository did not Return an ID for:" << lmdbPath;
+        return -1;
+    }
+
+    IngestResultItemData resultItem;
+    resultItem.jobId = jobId;
+    resultItem.parentItemId = parentItemId < 0 ? -1 : parentItemId;
+    resultItem.itemType = IngestResultItemData::ItemType::File;
+    resultItem.itemName = lmdbPath;
+    resultItem.fileId = ingestFile.id;
+
+    if (!itemRepo.insert(resultItem)) 
+    {
+        qWarning() << "[IngestResultDBInstance] Failed to Create Result Item for File:" << lmdbPath << "(File ID:" << ingestFile.id << ")";
+        return -1;
+    }
+
     return ingestFile.id;
 }

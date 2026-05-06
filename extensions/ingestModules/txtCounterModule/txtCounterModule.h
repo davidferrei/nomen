@@ -32,6 +32,7 @@ private:
     uint64_t dirsCount = 0;
     uint64_t txtFilesCount = 0;
     qint64 resultFolderId = -1;
+    qint64 filesFolderId = -1;
 
 };
 

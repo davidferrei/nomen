@@ -190,17 +190,29 @@ QVariant CaseTreeModel::data(const QModelIndex &index, int role) const
                 break;
 
             case TreeItemType::IngestResultItem:
+            {
+                switch (item->ingestItemType)
+                {
+                    case IngestResultItemData::ItemType::Folder:
+                        ic = QIcon::fromTheme(QStringLiteral("folder"));
+                        break;
 
-                if (item->isFolder || !item->children.isEmpty())
-                {
-                    ic = QIcon::fromTheme(QStringLiteral("folder"));
+                    case IngestResultItemData::ItemType::File:
+                        ic = QIcon::fromTheme(QStringLiteral("document-export"));
+                        break;
+
+                    case IngestResultItemData::ItemType::Text:
+                        ic = QIcon::fromTheme(QStringLiteral("folder-notes"));
+                        break;
+                    
+                    case IngestResultItemData::ItemType::Artifact:
+                    case IngestResultItemData::ItemType::Report:
+                    default:
+                        ic = QIcon::fromTheme(QStringLiteral("text-x-generic"));
+                        break;
                 }
-                else
-                {
-                    // ic = QIcon::fromTheme(QStringLiteral("text-x-generic"));
-                    ic = QIcon::fromTheme(QStringLiteral("folder-notes"));
-                }
-                break;
+            }
+            break;
         }
 
         if (!ic.isNull())
@@ -493,8 +505,9 @@ void CaseTreeModel::fetchIngestResultItems(TreeItem *item)
 
     for (const IngestResultItemData &it : children)
     {
-        auto *child = new TreeItem{ TreeItemType::IngestResultItem, it.itemName, static_cast<quint64>(it.id), -1, true };
-        child->isFolder = (it.itemType == IngestResultItemData::ItemType::Folder);
+        const bool isExpandable = (it.itemType == IngestResultItemData::ItemType::Folder);
+        auto *child = new TreeItem{ TreeItemType::IngestResultItem, it.itemName, static_cast<quint64>(it.id), -1, isExpandable };
+        child->ingestItemType = it.itemType;
         child->parent = item;
         item->children.append(child);
     }
