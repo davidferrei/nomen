@@ -345,7 +345,7 @@ void MainWindow::loadDataSources()
 
 void MainWindow::setupJobSignalConnections()
 {
-    connect(jobManager, &JobManager::jobStarted, this, [this](const QString& filePath, Job::JobType type, const QString& moduleName, const QString& dsName)
+    connect(jobManager, &JobManager::jobStarted, this, [this](const QString& filePath, Job::JobType type, const QString& moduleName, const QString& dsName, qint64 dsId)
     {
         // qDebug() << "[MainWindow] jobStarted signal received for" << filePath << "type:" << static_cast<int>(type) << "module:" << moduleName << "ds:" << dsName;
         bool isIngest = (type == Job::JobType::Ingest);
@@ -357,7 +357,7 @@ void MainWindow::setupJobSignalConnections()
                                  NotificationWidget::NotificationType::Info);
     });
 
-    connect(jobManager, &JobManager::jobFinished, this, [this](const QString& filePath, Job::JobType type, const QString& moduleName, const QString& dsName)
+    connect(jobManager, &JobManager::jobFinished, this, [this](const QString& filePath, Job::JobType type, const QString& moduleName, const QString& dsName, qint64 dsId)
     {
         // qDebug() << "[MainWindow] jobFinished signal received for" << filePath << "type:" << static_cast<int>(type) << "module:" << moduleName << "ds:" << dsName;
         bool isIngest = (type == Job::JobType::Ingest);
@@ -368,14 +368,26 @@ void MainWindow::setupJobSignalConnections()
                                  8000,
                                  NotificationWidget::NotificationType::Success);
 
+        qDebug() << "[MainWindow] jobFinished called for filePath:" << filePath << "dsId:" << dsId << "type:" << static_cast<int>(type);
+
         switch (type)
         {
             case Job::JobType::Index:
             {
+                if (!caseTreeModel)
+                {
+                    qWarning() << "[MainWindow] jobFinished (Index): caseTreeModel is Null";
+                    return;
+                }
+
                 const QList<DataSourceData> allDataSources = caseManager.getDataSources();
                 const DataSourceData* ds = nullptr;
                 for (const DataSourceData& d : allDataSources)
-                    if (d.filePath == filePath) { ds = &d; break; }
+                    if (d.id == dsId) 
+                    { 
+                        ds = &d; 
+                        break; 
+                    }
 
                 if (!ds)
                 {
@@ -387,7 +399,7 @@ void MainWindow::setupJobSignalConnections()
                 dataSourceNames.insert(static_cast<int>(ds->id), label);
 
                 QString lmdbPath = caseManager.getCurrentCase().casePath + "/indexes/disk-" + QString::number(ds->id);
-                qDebug() << "[MainWindow] Indexing Finished, Adding DS to Tree:" << label;
+                qDebug() << "[MainWindow] Indexing Finished, Adding DS to Tree:" << label << "(dsId:" << ds->id << ") lmdbPath:" << lmdbPath;
                 caseTreeModel->addDataSource(static_cast<int>(ds->id), label, lmdbPath);
                 break;
             }
@@ -406,9 +418,9 @@ void MainWindow::setupJobSignalConnections()
             default:
                 break;
         }
-    });
+    }, Qt::QueuedConnection);
 
-    connect(jobManager, &JobManager::jobFailed, this, [this](const QString& filePath, const QString& error, Job::JobType type, const QString& moduleName, const QString& dsName)
+    connect(jobManager, &JobManager::jobFailed, this, [this](const QString& filePath, const QString& error, Job::JobType type, const QString& moduleName, const QString& dsName, qint64 dsId)
     {
         // qDebug() << "[MainWindow] jobFailed signal received for" << filePath << ":" << error << "type:" << static_cast<int>(type) << "module:" << moduleName << "ds:" << dsName;
         bool isIngest = (type == Job::JobType::Ingest);
@@ -418,7 +430,7 @@ void MainWindow::setupJobSignalConnections()
                  descBase + QStringLiteral(":\n") + error,
                  10000,
                  NotificationWidget::NotificationType::Failure);
-    });
+    }, Qt::QueuedConnection);
 }
 
 void MainWindow::setupUiSignalConnections()

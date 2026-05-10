@@ -198,8 +198,23 @@ QPair<bool, QVector<quint64>> IndexDBManager::getChildDirectories(quint64 parent
     if (!env) return QPair<bool, QVector<quint64>>(false, out);
 
     auto childrenResult = getChildren(parentId);
-    if (!childrenResult.first)
+    if (!childrenResult.first) 
+    {
+        qWarning() << "[IndexDBManager] getChildDirectories: getChildren Failed for ParentId:" << parentId;
         return QPair<bool, QVector<quint64>>(false, out);
+    }
+
+    if (childrenResult.second.isEmpty()) 
+    {
+        qWarning() << "[IndexDBManager] getChildDirectories: no Children for ParentId:" << parentId;
+    } 
+    else 
+    {
+        QStringList ids;
+        ids.reserve(childrenResult.second.size());
+        for (quint64 cid : childrenResult.second) ids << QString::number(cid);
+        qDebug() << "[IndexDBManager] getChildDirectories: parentId:" << parentId << "children:" << ids.join(",");
+    }
 
     for (quint64 cid : childrenResult.second)
     {

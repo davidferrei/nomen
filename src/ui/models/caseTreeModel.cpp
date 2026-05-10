@@ -53,6 +53,12 @@ void CaseTreeModel::buildStaticRootTreeItems()
 
 void CaseTreeModel::addDataSource(int dsId, const QString &label, const QString &lmdbPath)
 {
+    if (indexDBInstancesMap.contains(dsId))
+    {
+        qWarning() << "[CaseTreeModel] addDataSource: DS" << dsId << "Already in Tree";
+        return;
+    }
+
     auto dsIndexDB = std::make_shared<IndexDBManager>(lmdbPath);
     if (!dsIndexDB->open())
     {
@@ -329,6 +335,18 @@ void CaseTreeModel::populateDSTreeItemChildren(TreeItem *item)
     {
         qWarning() << "[CaseTreeModel] Failed to Get Child Directories for Item" << item->name << "(ID:" << item->id << ") in DS ID" << item->dsId;
         return;
+    }
+
+    if (ItemChildDirs.second.isEmpty()) 
+    {
+        qWarning() << "[CaseTreeModel] populateDSTreeItemChildren: getChildDirectories Returned Empty List for Item:" << item->name << "(ID:" << item->id << ") dsId:" << item->dsId;
+    } 
+    else 
+    {
+        QStringList childIds;
+        childIds.reserve(ItemChildDirs.second.size());
+        for (quint64 cid : ItemChildDirs.second) childIds << QString::number(cid);
+        qDebug() << "[CaseTreeModel] populateDSTreeItemChildren: getChildDirectories Returned" << ItemChildDirs.second.size() << "Children for Item:" << item->name << "IDs:" << childIds.join(",");
     }
 
 
@@ -626,6 +644,8 @@ QString CaseTreeModel::pathForItem(TreeItem *item) const
                 auto pathResult = indexInstance->getPathForNode(item->id);
                 if (pathResult.first)
                     return pathResult.second;
+                else
+                    qWarning() << "[CaseTreeModel] pathForItem: getPathForNode Returned False for dsId:" << item->dsId << "itemId:" << item->id;
             }
         }
     }

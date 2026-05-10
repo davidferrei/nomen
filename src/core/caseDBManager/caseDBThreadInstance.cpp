@@ -1,5 +1,10 @@
 #include "caseDBThreadInstance.h"
 
+#include <QMutex>
+#include <QMutexLocker>
+#include <QThread>
+#include <cstdlib>
+
 CaseDBThreadInstance::CaseDBThreadInstance(const QString& dbFilePath) : dbPath(dbFilePath) {}
 
 CaseDBThreadInstance::~CaseDBThreadInstance()
@@ -20,6 +25,15 @@ bool CaseDBThreadInstance::openDatabase()
     }
 
     try {
+        static QMutex fbConnectMutex;
+        QMutexLocker locker(&fbConnectMutex);
+
+        const QString lockPath = QString::fromLatin1("/tmp/firebird_lock_%1").arg(reinterpret_cast<quintptr>(QThread::currentThreadId()));
+        const char* prevLock = std::getenv("FIREBIRD_LOCK");
+        std::string prevLockStr;
+        if (prevLock) prevLockStr = prevLock;
+        
+        setenv("FIREBIRD_LOCK", lockPath.toStdString().c_str(), 1);
         // std::string lockStd = QString("/tmp/firebird_lock_%1").arg(reinterpret_cast<quintptr>(QThread::currentThreadId())).toStdString();
 
 
@@ -37,6 +51,15 @@ bool CaseDBThreadInstance::openDatabase()
             );
 
         fb_db->Connect();
+
+        if (prevLock) 
+        {
+            setenv("FIREBIRD_LOCK", prevLockStr.c_str(), 1);
+        } 
+        else 
+        {
+            unsetenv("FIREBIRD_LOCK");
+        }
         qInfo() << "[FIREBIRD]: Database Connection Successful";
 
         IBPP::Transaction tr = IBPP::TransactionFactory(fb_db);

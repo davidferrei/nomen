@@ -24,6 +24,7 @@ public:
     JobState getState() const { return state; }
     QString getDSFilePath() const { return dataSource.filePath; }
     QString getDSName() const { return dataSource.name; }
+    qint64 getDSId() const { return dataSource.id; }
     virtual QString getModuleName() const { return QString(); }
 
 signals:
