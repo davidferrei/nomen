@@ -90,6 +90,32 @@ QList<IngestResultItemData> IngestResultItemRepository::getTopLevelItemsForJob(q
     return result;
 }
 
+QPair<bool, IngestResultItemData> IngestResultItemRepository::getById(qint64 id)
+{
+    IBPP::Transaction tr = IBPP::TransactionFactory(fb_db);
+    tr->Start();
+
+    IBPP::Statement st = IBPP::StatementFactory(fb_db, tr);
+    st->Prepare(
+        "SELECT ID, JOB_ID, PARENT_ITEM_ID, ITEM_TYPE, ITEM_NAME, FILE_ID"
+        " FROM IngestResultItems"
+        " WHERE ID = ?"
+    );
+    st->Set(1, static_cast<int64_t>(id));
+    st->Execute();
+
+    if (st->Fetch()) 
+    {
+        IngestResultItemData item = rowToData(st);
+        tr->Commit();
+        return qMakePair(true, item);
+    }
+
+    tr->Commit();
+    qWarning() << "[IngestResultItemRepository] getById: No IngestResultItem Found with ID" << id;
+    return qMakePair(false, IngestResultItemData());
+}
+
 IngestResultItemData IngestResultItemRepository::rowToData(IBPP::Statement &st)
 {
     IngestResultItemData item;

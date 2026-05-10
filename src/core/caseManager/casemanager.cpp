@@ -383,6 +383,28 @@ QList<IngestResultItemData> CaseManager::getIngestResultChildren(qint64 parentId
     return currentCaseDB->ingestResultItemsRepo().getChildrenItems(parentId);
 }
 
+QPair<bool, IngestResultItemData> CaseManager::getIngestResultItem(qint64 id) const
+{
+    if (!currentCaseDB)
+    {
+        qCritical() << "No Case Database Open!";
+        return qMakePair(false, IngestResultItemData());
+    }
+    
+    return currentCaseDB->ingestResultItemsRepo().getById(id);
+}
+
+QPair<bool, IngestFileData> CaseManager::getIngestFile(qint64 id) const
+{
+    if (!currentCaseDB)
+    {
+        qCritical() << "No Case Database Open!";
+        return qMakePair(false, IngestFileData());
+    }
+
+    return currentCaseDB->ingestFileRepo().getById(id);
+}
+
 
 //###########################################################################################
 // Case Setter/Getter

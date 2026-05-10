@@ -53,6 +53,9 @@ public:
     QList<IngestJobHistoryData> getIngestJobs() const;
     QList<IngestResultItemData> getIngestResultItemsForJob(qint64 jobId) const;
     QList<IngestResultItemData> getIngestResultChildren(qint64 parentId) const;
+    
+    QPair<bool, IngestResultItemData> getIngestResultItem(qint64 id) const;
+    QPair<bool, IngestFileData> getIngestFile(qint64 id) const;
 
 
 private:

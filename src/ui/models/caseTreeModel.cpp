@@ -644,10 +644,16 @@ void CaseTreeModel::onItemActivated(const QModelIndex &index)
         return;
     }
 
+    if (activatedItem->type == TreeItemType::IngestResultItem)
+    {
+        emit ingestItemActivated(static_cast<qint64>(activatedItem->id));
+        return;
+    }
+
     QString resolvedPath = pathForItem(activatedItem);
 
     // qDebug() << "[CaseTreeModel] Signal - nodeActivated: DS:" << activatedItem->dsId << "Path:" << resolvedPath;
-    
+
     emit nodeActivated(activatedItem->dsId, resolvedPath);
 }
 

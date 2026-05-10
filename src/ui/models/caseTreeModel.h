@@ -94,6 +94,7 @@ public slots:
 
 signals:
     void nodeActivated(int dsId, const QString &path);
+    void ingestItemActivated(qint64 ingestItemId);
 
 private:
     void buildStaticRootTreeItems();

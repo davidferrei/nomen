@@ -430,6 +430,68 @@ void MainWindow::setupUiSignalConnections()
 
     connect(ui->treeViewFilesystem, &QTreeView::clicked, caseTreeModel, &CaseTreeModel::onItemActivated);
     connect(caseTreeModel, &CaseTreeModel::nodeActivated, this, &MainWindow::onCaseTreeNodeActivated);
+    connect(caseTreeModel, &CaseTreeModel::ingestItemActivated, this, [this](qint64 ingestItemId)
+    {
+        auto ingestItemRes = caseManager.getIngestResultItem(ingestItemId);
+        if (!ingestItemRes.first)
+        {
+            qWarning() << "[MainWindow] Ingest Item Activated but Could not Load Item ID:" << ingestItemId;
+            return;
+        }
+
+        IngestResultItemData ingestResultItem = ingestItemRes.second;
+        if (ingestResultItem.itemType == IngestResultItemData::ItemType::Folder)
+            return;
+
+        if (ingestResultItem.fileId < 0)
+        {
+            qWarning() << "[MainWindow] Ingest Item has no File ID:" << ingestItemId;
+            return;
+        }
+
+        auto fileItem = caseManager.getIngestFile(ingestResultItem.fileId);
+        if (!fileItem.first)
+        {
+            qWarning() << "[MainWindow] Ingest File not Found for File ID:" << ingestResultItem.fileId;
+            return;
+        }
+
+        IngestFileData fileItemData = fileItem.second;
+
+        QString diskImagePath;
+        const QList<DataSourceData> dataSourcesList = caseManager.getDataSources();
+        for (const DataSourceData& ds : dataSourcesList)
+        {
+            if (static_cast<qint64>(ds.id) == fileItemData.datasourceId)
+            {
+                diskImagePath = ds.filePath;
+                break;
+            }
+        }
+
+        QString fsPath = ingestResultItem.itemName;
+
+        plainTextViewer->fileSelected(diskImagePath, fsPath);
+        metadataViewer->fileSelected(diskImagePath, fsPath);
+
+        int dsId = static_cast<int>(fileItemData.datasourceId);
+        QString dsName = dataSourceNames.value(dsId, QStringLiteral("Disk %1").arg(fileItemData.datasourceId));
+        ui->filePath->setText(QStringLiteral("%1 | %2").arg(dsName, fsPath));
+
+        int lastSlash = fsPath.lastIndexOf('/');
+
+        if (lastSlash > 0)
+        {
+            const QString parentPath = fsPath.left(lastSlash);
+
+            navigationSelectedDSId = dsId;
+            navigationCurrentPath = parentPath;
+
+            ui->currentNodeLabel->setText(QStringLiteral("%1 | %2").arg(dsName, parentPath));
+
+            itemTableModel->setRoot(dsId, parentPath);
+        }
+    });
 
     // FS Explorer Table
     connect(ui->tableView, &QTableView::clicked, this, &MainWindow::onFSTableRowClicked);
