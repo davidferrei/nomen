@@ -67,7 +67,8 @@ bool CaseManager::createCaseInfo(const CaseInfo& info)
 bool CaseManager::loadCaseInfo(const QString& casePath)
 {
     QFile file(casePath + "/case_info.json");
-    if (!file.open(QIODevice::ReadOnly)) {
+    if (!file.open(QIODevice::ReadOnly)) 
+    {
         qWarning() << "Cannot Open Case File At:" << casePath << "/case_info.json";
         return false;
     }
@@ -194,7 +195,8 @@ bool CaseManager::initEnvironment()
 bool CaseManager::openCase(const QString& casePath)
 {
 
-    if (!loadCaseInfo(casePath)) {
+    if (!loadCaseInfo(casePath))    
+    {
         qCritical() << "Failed to Load Case Info";
         return false;
     }
@@ -202,7 +204,8 @@ bool CaseManager::openCase(const QString& casePath)
     delete currentCaseDB;
     currentCaseDB = new CaseDBManager(casePath);
 
-    if (!loadCaseInfo(casePath)) {
+    if (!loadCaseInfo(casePath)) 
+    {
         qCritical() << "Failed to Load Case Info";
         return false;
     }
@@ -231,7 +234,8 @@ bool CaseManager::openCase(const QString& casePath)
         }
     }
 
-    if (!currentCaseDB->openDatabase()) {
+    if (!currentCaseDB->openDatabase()) 
+    {
         qCritical() << "Database Open Test Failed";
         return false;
     }
@@ -260,10 +264,12 @@ QList<CaseInfo> CaseManager::loadPreviousCases() const
 {
     QList<CaseInfo> cases;
 
-    for (const QString& path : previousCasesPathsList) {
+    for (const QString& path : previousCasesPathsList) 
+    {
 
         QFile file(path + "/case_info.json");
-        if (!file.open(QIODevice::ReadOnly)) {
+        if (!file.open(QIODevice::ReadOnly)) 
+        {
             qWarning() << "Missing case_info.json in " << path;
             continue;
         }
@@ -324,7 +330,8 @@ bool CaseManager::saveOrganization(const OrganizationData& org)
 bool CaseManager::saveDataSource(const DataSourceData& ds)
 {
 
-    if (!currentCaseDB) {
+    if (!currentCaseDB) 
+    {
         qCritical() << "No Case Database Open!";
         return false;
     }
@@ -334,7 +341,8 @@ bool CaseManager::saveDataSource(const DataSourceData& ds)
 
 QList<DataSourceData> CaseManager::getDataSources() const
 {
-    if (!currentCaseDB) {
+    if (!currentCaseDB) 
+    {
         qCritical() << "No Case Database Open!";
         return {};
     }
@@ -346,7 +354,8 @@ QList<DataSourceData> CaseManager::getDataSources() const
 bool CaseManager::saveCaseInfo(const CaseInfo& c)
 {
 
-    if (!currentCaseDB) {
+    if (!currentCaseDB) 
+    {
         qCritical() << "No Case Database Open!";
         return false;
     }
@@ -358,7 +367,8 @@ bool CaseManager::saveCaseInfo(const CaseInfo& c)
 
 QList<IngestJobHistoryData> CaseManager::getIngestJobs() const
 {
-    if (!currentCaseDB) {
+    if (!currentCaseDB) 
+    {
         qCritical() << "No Case Database Open!";
         return {};
     }
@@ -367,7 +377,8 @@ QList<IngestJobHistoryData> CaseManager::getIngestJobs() const
 
 QList<IngestResultItemData> CaseManager::getIngestResultItemsForJob(qint64 jobId) const
 {
-    if (!currentCaseDB) {
+    if (!currentCaseDB) 
+    {
         qCritical() << "No Case Database Open!";
         return {};
     }
@@ -376,7 +387,8 @@ QList<IngestResultItemData> CaseManager::getIngestResultItemsForJob(qint64 jobId
 
 QList<IngestResultItemData> CaseManager::getIngestResultChildren(qint64 parentId) const
 {
-    if (!currentCaseDB) {
+    if (!currentCaseDB) 
+    {
         qCritical() << "No Case Database Open!";
         return {};
     }

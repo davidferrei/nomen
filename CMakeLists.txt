@@ -118,3 +118,6 @@ endif()
 
 ##Extensions
 add_subdirectory(extensions/ingestModules)
+
+## Tests
+add_subdirectory(tests)
