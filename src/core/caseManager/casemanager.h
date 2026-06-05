@@ -41,6 +41,7 @@ public:
     //Getter/Setters
     CaseInfo& getCurrentCase();
     bool markCurrentCaseEnvironmentInitialized();
+    IBPP::Database getCaseDatabaseHandle() const;
     
     //Access DB
     bool saveInvestigator(const InvestigatorData& inv);

@@ -427,3 +427,15 @@ CaseInfo& CaseManager::getCurrentCase()
     return currentCase;
 }
 
+IBPP::Database CaseManager::getCaseDatabaseHandle() const
+{
+    if (!currentCaseDB) 
+    {
+        qCritical() << "No Case Database Open!";
+        return nullptr;
+    }
+
+    return currentCaseDB->database();
+}
+
+

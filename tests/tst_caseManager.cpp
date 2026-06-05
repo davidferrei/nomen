@@ -22,6 +22,10 @@ private slots:
     void TEST_CreateCaseInfo();
     void TEST_LoadCaseInfo();
     void TEST_OpenCase();
+    void TEST_ValidateCaseSchema();
+    void TEST_InsertAndValidateInvestigator();
+    void TEST_InsertAndValidateOrganization();
+    void TEST_InsertAndValidateDataSource();
 
 private:
     QTemporaryDir tst_CaseDir;
@@ -134,6 +138,212 @@ void TEST_CaseManager::TEST_OpenCase()
        
     validateCaseInfoJson(tst_CaseInfo.casePath, tst_CaseInfo);
 }
+
+void TEST_CaseManager::TEST_ValidateCaseSchema()
+{
+    QVERIFY(!tst_CaseInfo.casePath.isEmpty());
+
+    IBPP::Database tst_db = tst_CaseManagerInstance->getCaseDatabaseHandle();
+    QVERIFY2(tst_db != nullptr, "Database Handle Not Available from CaseManager");
+
+    try 
+    {
+        IBPP::Transaction tr = IBPP::TransactionFactory(tst_db);
+        tr->Start();
+
+        IBPP::Statement st = IBPP::StatementFactory(tst_db, tr);
+
+        st->Prepare(
+            "SELECT RDB$RELATION_NAME FROM RDB$RELATIONS "
+            "WHERE RDB$RELATION_NAME IN ('CASETABLE', 'ORGANIZATION', 'INVESTIGATOR', 'DATASOURCE', 'INGESTJOBSHISTORY', 'INGESTFILETABLE', 'INGESTRESULTITEMS')"
+        );
+        st->Execute();
+
+        int tableCount = 0;
+        while (st->Fetch()) 
+        {
+            std::string tableName;
+            st->Get(1, tableName);
+            QString trimmedName = QString::fromStdString(tableName).trimmed();
+            qDebug() << "Found Table:" << trimmedName;
+            tableCount++;
+        }
+
+        tr->Commit();
+
+        QVERIFY2(tableCount == 7, QString("Expected 7 Tables, found %1").arg(tableCount).toStdString().c_str());
+        qDebug() << "Case Database Schema Validated Successfully: All 7 Tables Exist";
+    }
+    catch (const IBPP::Exception &e) 
+    {
+        QFAIL(QString("Failed to Validate Case Database Schema: %1").arg(e.ErrorMessage()).toStdString().c_str());
+    }
+}
+
+void TEST_CaseManager::TEST_InsertAndValidateInvestigator()
+{
+    InvestigatorData tst_InvestigadorData;
+    tst_InvestigadorData.name = "John Forensics";
+    tst_InvestigadorData.phoneNumber = "911111111";
+    tst_InvestigadorData.email = "john.forensics@email.com";
+    tst_InvestigadorData.notes = "Lead Investigator - Case";
+
+    QVERIFY2(tst_CaseManagerInstance->saveInvestigator(tst_InvestigadorData), "Failed to Save Investigator");
+
+    IBPP::Database tst_db = tst_CaseManagerInstance->getCaseDatabaseHandle();
+    QVERIFY2(tst_db != nullptr, "Database Handle Not Available from CaseManager");
+
+    try 
+    {
+        IBPP::Transaction tr = IBPP::TransactionFactory(tst_db);
+        tr->Start();
+
+        IBPP::Statement st = IBPP::StatementFactory(tst_db, tr);
+        st->Prepare(
+            "SELECT NAME, PHONENUMBER, EMAIL, NOTES FROM INVESTIGATOR "
+            "WHERE NAME = ?"
+        );
+        st->Set(1, tst_InvestigadorData.name.toStdString());
+        st->Execute();
+
+        QVERIFY2(st->Fetch(), "Investigator Not Found in Case Database");
+
+        std::string name, phone, email, notes;
+        st->Get(1, name);
+        st->Get(2, phone);
+        st->Get(3, email);
+        st->Get(4, notes);
+
+        tr->Commit();
+
+        QCOMPARE(QString::fromStdString(name).trimmed(), tst_InvestigadorData.name);
+        QCOMPARE(QString::fromStdString(phone).trimmed(), tst_InvestigadorData.phoneNumber);
+        QCOMPARE(QString::fromStdString(email).trimmed(), tst_InvestigadorData.email);
+        QCOMPARE(QString::fromStdString(notes).trimmed(), tst_InvestigadorData.notes);
+
+        qDebug() << "Investigator Successfully Saved and Validated in Case Database";
+    }
+    catch (const IBPP::Exception &e) 
+    {
+        QFAIL(QString("Failed to Validate Investigator: %1").arg(e.ErrorMessage()).toStdString().c_str());
+    }
+}
+
+void TEST_CaseManager::TEST_InsertAndValidateOrganization()
+{
+
+    OrganizationData tst_OrganizationData;
+    tst_OrganizationData.name = "The Organization";
+    tst_OrganizationData.phoneNumber = "912121212";
+    tst_OrganizationData.email = "the_org@orgs.com";
+    tst_OrganizationData.notes = "Organization Notes";
+
+    QVERIFY2(tst_CaseManagerInstance->saveOrganization(tst_OrganizationData), "Failed to Save Organization");
+
+    IBPP::Database tst_db = tst_CaseManagerInstance->getCaseDatabaseHandle();
+    QVERIFY2(tst_db != nullptr, "Database Handle Not Available from CaseManager");
+
+    try 
+    {
+        IBPP::Transaction tr = IBPP::TransactionFactory(tst_db);
+        tr->Start();
+
+        IBPP::Statement st = IBPP::StatementFactory(tst_db, tr);
+        st->Prepare(
+            "SELECT NAME, PHONENUMBER, EMAIL, NOTES FROM ORGANIZATION "
+            "WHERE NAME = ?"
+        );
+        st->Set(1, tst_OrganizationData.name.toStdString());
+        st->Execute();
+
+        QVERIFY2(st->Fetch(), "Organization Not Found in Case Database");
+
+        std::string name, phone, email, notes;
+        st->Get(1, name);
+        st->Get(2, phone);
+        st->Get(3, email);
+        st->Get(4, notes);
+
+        tr->Commit();
+
+        QCOMPARE(QString::fromStdString(name).trimmed(), tst_OrganizationData.name);
+        QCOMPARE(QString::fromStdString(phone).trimmed(), tst_OrganizationData.phoneNumber);
+        QCOMPARE(QString::fromStdString(email).trimmed(), tst_OrganizationData.email);
+        QCOMPARE(QString::fromStdString(notes).trimmed(), tst_OrganizationData.notes);
+
+        qDebug() << "Organization Successfully Saved and Validated in Case Database";
+    }
+    catch (const IBPP::Exception &e) 
+    {
+        QFAIL(QString("Failed to Validate Organization: %1").arg(e.ErrorMessage()).toStdString().c_str());
+    }
+}
+
+void TEST_CaseManager::TEST_InsertAndValidateDataSource()
+{
+
+    DataSourceData tst_DataSourceData;
+    tst_DataSourceData.name = "Evidence Disk - 1";
+    tst_DataSourceData.diskSize = 2199023255552LL; 
+    tst_DataSourceData.sectorSize = 4096;
+    tst_DataSourceData.hash = "11111111111111111111111111111111";
+    tst_DataSourceData.hashType = "SHA256";
+    tst_DataSourceData.format = "RAW";
+    tst_DataSourceData.filePath = tst_CaseInfo.casePath + "/evidence/disk.dd";
+    tst_DataSourceData.timeZone = "WEST";
+    tst_DataSourceData.notes = "Primary Evidence Disk for the Case";
+    tst_DataSourceData.indexed = 0;
+
+    QVERIFY2(tst_CaseManagerInstance->saveDataSource(tst_DataSourceData), "Failed to Save DataSource");
+
+    IBPP::Database tst_db = tst_CaseManagerInstance->getCaseDatabaseHandle();
+    QVERIFY2(tst_db != nullptr, "Database Handle Not Available from CaseManager");
+
+    try 
+    {
+        IBPP::Transaction tr = IBPP::TransactionFactory(tst_db);
+        tr->Start();
+
+        IBPP::Statement st = IBPP::StatementFactory(tst_db, tr);
+        st->Prepare(
+            "SELECT NAME, DISKSIZE, SECTORSIZE, HASH_TYPE, FORMAT, FILEPATH, TIMEZONE FROM DATASOURCE "
+            "WHERE NAME = ?"
+        );
+        st->Set(1, tst_DataSourceData.name.toStdString());
+        st->Execute();
+
+        QVERIFY2(st->Fetch(), "DataSource Not Found in Case Database");
+
+        std::string name, hashType, format, filePath, timeZone;
+        long diskSize;
+        int sectorSize;
+
+        st->Get(1, name);
+        st->Get(2, diskSize);
+        st->Get(3, sectorSize);
+        st->Get(4, hashType);
+        st->Get(5, format);
+        st->Get(6, filePath);
+        st->Get(7, timeZone);
+
+        tr->Commit();
+
+        QCOMPARE(QString::fromStdString(name).trimmed(), tst_DataSourceData.name);
+        // QCOMPARE(diskSize, tst_DataSourceData.diskSize); //Not Implemented
+        // QCOMPARE(sectorSize, tst_DataSourceData.sectorSize); //Not Implemented
+        QCOMPARE(QString::fromStdString(hashType).trimmed(), tst_DataSourceData.hashType);
+        QCOMPARE(QString::fromStdString(format).trimmed(), tst_DataSourceData.format);
+        QCOMPARE(QString::fromStdString(timeZone).trimmed(), tst_DataSourceData.timeZone);
+
+        qDebug() << "DataSource Successfully Saved and Validated in Case Database";
+    }
+    catch (const IBPP::Exception &e) 
+    {
+        QFAIL(QString("Failed to Validate DataSource: %1").arg(e.ErrorMessage()).toStdString().c_str());
+    }
+}
+
+
 
 QTEST_MAIN(TEST_CaseManager)
 #include "tst_caseManager.moc"
