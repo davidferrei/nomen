@@ -40,3 +40,4 @@ endfunction()
 
 # Test List
 add_test_executable(tst_caseManager)
+add_test_executable(tst_indexDisk)

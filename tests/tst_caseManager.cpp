@@ -88,7 +88,7 @@ void TEST_CaseManager::TEST_CreateCaseInfo()
     tst_CaseInfo.caseName = "Test Case";
     tst_CaseInfo.createdDate = QDateTime::currentDateTime().toString("yyyy-MM-dd");
     tst_CaseInfo.updatedDate = QDateTime::currentDateTime().toString("yyyy-MM-dd");
-    tst_CaseInfo.notes = "This is a test case";
+    tst_CaseInfo.notes = "This is a Test Case";
     tst_CaseInfo.caseState = 0;
     tst_CaseInfo.casePath = tst_CaseDir.path() + "/test_case";
     

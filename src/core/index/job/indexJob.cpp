@@ -59,9 +59,12 @@ void IndexJob::start()
             worker = nullptr;
             thread = nullptr;
 
-            if (workerSucceeded) {
+            if (workerSucceeded) 
+            {
                 emit finished();
-            } else {
+            } 
+            else 
+            {
                 emit failed(workerError);
             }
         });
