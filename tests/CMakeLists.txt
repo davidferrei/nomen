@@ -23,6 +23,8 @@ function(add_test_executable TEST_NAME)
         ${CMAKE_SOURCE_DIR}/lib/ibpp/libfbclient.so
     )
 
+    target_link_options(${TEST_NAME} PRIVATE -rdynamic)
+
     target_include_directories(${TEST_NAME} PRIVATE
         ${CMAKE_SOURCE_DIR}/src
         ${CMAKE_SOURCE_DIR}/lib
@@ -41,3 +43,4 @@ endfunction()
 # Test List
 add_test_executable(tst_caseManager)
 add_test_executable(tst_indexDisk)
+add_test_executable(tst_ingestDisk)
