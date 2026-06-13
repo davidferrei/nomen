@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Package>
+    <!-- Component Display Info -->
+    <DisplayName>Nomen</DisplayName>
+    <Description>Nomen Forensic Analysis Tool - Linux Distribution</Description>
+    <Version>1.0.0</Version>
+    <ReleaseDate>2026-06-09</ReleaseDate>
+    <Name>com.nomen.app</Name>
+    
+    <!-- License -->
+    <Licenses>
+        <License name="License Agreement" file="License.txt" />
+    </Licenses>
+    
+    <!-- Installation Script -->
+    <Script>installscript.qs</Script>
+    
+    <!-- Installation Settings -->
+    <Default>true</Default>
+    <ForcedInstallation>true</ForcedInstallation>
+</Package>

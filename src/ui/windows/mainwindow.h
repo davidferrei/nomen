@@ -2,15 +2,19 @@
 #define MAINWINDOW_H
 
 #include "core/caseManager/casemanager.h"
-#include "core/index/job/indexManager.h"
+#include "core/jobManager/jobManager.h"
 #include "core/caseDBManager/repositories/datasourceRepository.h"
 #include "../../core/index/repo/IndexDBManager.h"
+#include "core/extensions/ingestModuleFactory.h"
+
 
 #include "../widgets/DraggableTabBar.h"
 #include "../widgets/NotificationWidget.h"
 #include "../widgets/DraggableTabWidget.h"
 #include "../widgets/fileViewers/PlainTextViewer.h"
 #include "../widgets/metadataViewer/MetadataViewer.h"
+#include "ingestPicker/ingestPicker.h"
+
 
 #include "ui/models/caseTreeModel.h"
 #include "ui/models/itemTableModel.h"
@@ -53,7 +57,7 @@ private:
 
     // DATA
     CaseManager& caseManager;
-    IndexManager* indexManager;
+    JobManager* jobManager;
     QMap<int, QString> dataSourceNames;
 
     int navigationSelectedDSId = -1;
@@ -76,7 +80,7 @@ private:
     void setUIWidgetsSizes();
     void setupUiElements();
     void setupSignalConnections();
-    void setupIndexingSignalConnections();
+    void setupJobSignalConnections();
     void setupUiSignalConnections();
 
 

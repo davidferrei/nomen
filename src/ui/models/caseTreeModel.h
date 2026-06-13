@@ -11,8 +11,17 @@
 #include <memory>
 
 #include "core/index/repo/IndexDBManager.h"
+#include "core/caseDBManager/caseDBThreadInstance.h"
+#include "core/caseDBManager/repositories/ingestJobHistoryRepository.h"
+#include "core/caseDBManager/repositories/ingestResultItemRepository.h"
+#include "core/caseManager/casemanager.h"
 
 #include "data/case/dsFSNodeItem.h"
+
+#include "core/logging/performancemeasure.h"
+
+
+class CaseManager;
 
 //TODO: Display Child Counter
 
@@ -26,7 +35,9 @@ enum class TreeItemType
     Evidence_Tags,
     Evidence_Groups,
     Views_Root,
-    IngestResults
+    IngestResults,
+    IngestJob,
+    IngestResultItem
 };
 
 struct TreeItem
@@ -37,6 +48,7 @@ struct TreeItem
     quint64 id = 0;
     int dsId = -1;
     bool isLazyLoaded = false;
+    IngestResultItemData::ItemType ingestItemType;
 
     TreeItem* parent = nullptr;
     QList<TreeItem*> children;
@@ -50,8 +62,10 @@ class CaseTreeModel : public QAbstractItemModel
     Q_OBJECT
 
 public:
-    explicit CaseTreeModel(QObject *parent = nullptr);
+    explicit CaseTreeModel(QObject *parent = nullptr, CaseManager *caseManager = nullptr);
     ~CaseTreeModel() override;
+
+    void setCasePath(const QString &path) { casePath = path; }
 
     //Note: Must be Called Before the Model is Used
     void addDataSource(int dsId, const QString &label, const QString &lmdbPath);
@@ -70,6 +84,9 @@ public:
     QPair<bool, QVector<DSFSNodeItem>> getChildrenItemsForDSPath(int dsId, const QString &path) const;
     QPair<bool, quint64> getNodeIdForPath(int dsId, const QString &path) const;
     QModelIndex findIndex(int dsId, quint64 nodeId, const QModelIndex &parent = {}) const;
+    
+    void refreshIngestResults();
+    QModelIndex ingestResultsIndex() const;
 
 
 public slots:
@@ -77,15 +94,21 @@ public slots:
 
 signals:
     void nodeActivated(int dsId, const QString &path);
+    void ingestItemActivated(qint64 ingestItemId);
 
 private:
     void buildStaticRootTreeItems();
     void populateDSTreeItemChildren(TreeItem *item);
+    void fetchIngestJobs(TreeItem *item);
+    void fetchIngestResultItems(TreeItem *item);
     TreeItem* itemFromIndex(const QModelIndex &idx) const;
     QString pathForItem(TreeItem *item) const;
+    QModelIndex indexForItem(TreeItem *item) const;
 
     TreeItem* root;
     TreeItem* dataSources;
+    QString casePath;
+    CaseManager *caseManagerPtr = nullptr;
     QMap<int, std::shared_ptr<IndexDBManager>> indexDBInstancesMap;
 };
 

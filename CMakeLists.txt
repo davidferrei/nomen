@@ -13,8 +13,14 @@ find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Threads)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets)
 
 # SleuthKit
-set(SLEUTHKIT_INCLUDE_DIR /usr/include/tsk)
-set(SLEUTHKIT_LIB /usr/lib/libtsk.so)
+find_library(SLEUTHKIT_LIB NAMES tsk tsk3 PATHS /usr/lib /usr/local/lib /usr/lib/x86_64-linux-gnu)
+find_path(SLEUTHKIT_INCLUDE_DIR NAMES libtsk.h PATHS /usr/include/tsk /usr/local/include/tsk /usr/include /usr/local/include)
+
+if(NOT SLEUTHKIT_LIB OR NOT SLEUTHKIT_INCLUDE_DIR)
+    message(WARNING "SleuthKit not Found. Attempting fallback to System Paths")
+    set(SLEUTHKIT_INCLUDE_DIR /usr/include/tsk)
+    set(SLEUTHKIT_LIB /usr/lib/libtsk.so)
+endif()
 
 include_directories(${SLEUTHKIT_INCLUDE_DIR})
 
@@ -80,14 +86,18 @@ target_link_libraries(Nomen
         ibpp
         lmdb
         ${CMAKE_SOURCE_DIR}/lib/ibpp/libfbclient.so
+
 )
+
+target_link_options(Nomen PRIVATE -rdynamic)
 
 target_compile_definitions(Nomen PRIVATE IBPP_LINUX)
 target_compile_features(ibpp PRIVATE cxx_std_17)
 
 set_target_properties(Nomen PROPERTIES
-    BUILD_RPATH "$ORIGIN/../lib/ibpp"
-    INSTALL_RPATH "$ORIGIN/../lib/ibpp"
+    BUILD_RPATH "$ORIGIN/../lib"
+    INSTALL_RPATH "$ORIGIN/../lib"
+    INSTALL_RPATH_USE_LINK_PATH TRUE
 )
 
 # macOS / Windows Properties
@@ -113,3 +123,9 @@ install(TARGETS Nomen
 if(QT_VERSION_MAJOR EQUAL 6)
     qt_finalize_executable(Nomen)
 endif()
+
+##Extensions
+add_subdirectory(extensions/ingestModules)
+
+## Tests
+add_subdirectory(tests)

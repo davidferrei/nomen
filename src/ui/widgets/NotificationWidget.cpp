@@ -115,8 +115,8 @@ NotificationWidget::NotificationWidget(QWidget *host, const QString &title, cons
         "  border-bottom-left-radius: 0px;"
         "  border-bottom-right-radius: 0px;"
         "}"
-        "QLabel#NomenToastIcon  { color: %6; background: transparent; font-size: 15px; }"
-        "QLabel#NomenToastTitle { color: %3; background: transparent; font-size: 14px; font-weight: bold; }"
+        "QLabel#NomenToastIcon  { color: %6; background: transparent; font-size: 15px; font-weight: bold;}"
+        "QLabel#NomenToastTitle { color: %3; background: transparent; font-size: 14px; }"
         "QLabel#NomenToastDesc  { color: %3; background: transparent; font-size: 12px; }"
         "QPushButton#NomenToastClose {"
         "  color: %3; background: transparent; border: none;"
@@ -208,7 +208,8 @@ void NotificationWidget::show(QWidget *parent, const QString &title, const QStri
         if (QWidget *centralWidget = mainWindow->centralWidget())
             host = centralWidget;
 
-    new NotificationWidget(host, title, description, durationMs, type);
+    NotificationWidget *w = new NotificationWidget(host, title, description, durationMs, type);
+    // qDebug() << "[NotificationWidget] instance created:" << w << "parentWidget:" << w->parentWidget() << "activeToasts:" << activeToastsList.size();
 }
 
 void NotificationWidget::repositionStack(QWidget *host)

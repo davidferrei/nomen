@@ -1,10 +1,11 @@
 #include "indexJob.h"
 
-IndexJob::IndexJob(const DataSourceData& ds, const QString& casePath, QObject* parent) : QObject(parent), dataSource(ds), caseFolderPath(casePath) {}
+IndexJob::IndexJob(const DataSourceData& ds, const QString& casePath, QObject* parent) : Job(Job::JobType::Index, ds, parent), caseFolderPath(casePath) {}
 
 IndexJob::~IndexJob()
 {
-    if (thread && thread->isRunning()) {
+    if (thread && thread->isRunning()) 
+    {
         disconnect(thread, nullptr, this, nullptr);
         disconnect(worker, nullptr, this, nullptr);
         thread->quit();
@@ -58,25 +59,21 @@ void IndexJob::start()
             worker = nullptr;
             thread = nullptr;
 
-            if (workerSucceeded) {
+            if (workerSucceeded) 
+            {
                 emit finished();
-            } else {
+            } 
+            else 
+            {
                 emit failed(workerError);
             }
         });
 
     qDebug() << "[IndexJob] Starting Job for" << dataSource.filePath << "in Thread" << thread->objectName();
+    qDebug() << "[IndexJob] start() called on" << this << "for" << dataSource.filePath;
 
     emit started();
 
     thread->start();
 }
 
-//############################################################################################
-// Setters/Getters
-
-
-QString IndexJob::getDSFilePath() const
-{
-    return dataSource.filePath;
-}

@@ -15,6 +15,8 @@
 #include <QDir>
 
 #include <cstdlib>
+#include <QThread>
+#include <QObject>
 
 
 int main(int argc, char *argv[])
@@ -31,10 +33,30 @@ int main(int argc, char *argv[])
     //Logger Setup
     initLogger();
 
-    // Firebird Environment 
-    //TODO: Windows Fix
-    setenv("FIREBIRD", "/home/admin1/dev/qt6/Nomen/fb_embedded", 1);
-    setenv("LD_LIBRARY_PATH", "/home/admin1/dev/qt6/Nomen/fb_embedded/lib", 1);
+    // Firebird Environment //TODO: CLean this
+    QString firebirdPath;
+    QString firebirdLibPath; 
+    
+    QString installedLibPath = QApplication::applicationDirPath() + "/../lib";
+    if (QFile::exists(installedLibPath + "/libfbclient.so") || 
+        QFile::exists(installedLibPath + "/libfbclient.so.2") ||
+        QFile::exists(installedLibPath + "/libfbclient.so.5.0.3")) 
+    {
+        firebirdPath = installedLibPath;
+        firebirdLibPath = installedLibPath;
+        qInfo() << "FIREBIRD: Using installed structure at:" << installedLibPath;
+    }
+    else 
+    {
+        firebirdPath = "/home/admin1/dev/qt6/Nomen/fb_embedded";
+        firebirdLibPath = "/home/admin1/dev/qt6/Nomen/fb_embedded/lib";
+        qInfo() << "FIREBIRD: Using development structure at:" << firebirdPath;
+    }
+    
+    qInfo() << "FIREBIRD: Setting LD_LIBRARY_PATH to:" << firebirdLibPath;
+    
+    setenv("FIREBIRD", firebirdPath.toStdString().c_str(), 1);
+    setenv("LD_LIBRARY_PATH", firebirdLibPath.toStdString().c_str(), 1);
     setenv("FIREBIRD_LOCK", "/tmp/firebird_lock", 1);
 
     QDir lockDir("/tmp/firebird_lock");
@@ -43,6 +65,10 @@ int main(int argc, char *argv[])
     //TSK Version
     const char* tskVersion = tsk_version_get_str();
     qInfo() << "The Sleuth Kit version:" << tskVersion;
+
+
+    //################################################################
+
 
     //Case Manager Start
     CaseManager caseManager;

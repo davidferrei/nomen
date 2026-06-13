@@ -25,7 +25,6 @@ tags
 *.debug
 Makefile*
 *.prl
-*.app
 moc_*.cpp
 ui_*.h
 qrc_*.cpp
@@ -100,4 +99,11 @@ fb_embedded/plugins/udr/
 fb_embedded/security*.fdb
 fb_embedded/databases.conf
 fb_embedded/firebird.log
+
+
+# Installer Libraries and Binaries
+Nomen-*.run
+installer/packages/*/data/bin/*
+installer/packages/*/data/extensions/*
+installer/packages/*/data/lib/*
 

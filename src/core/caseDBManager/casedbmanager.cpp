@@ -76,6 +76,46 @@ bool CaseDBManager::createSchema()
             )
         )");
 
+        // IngestFileTable
+        st->Execute(R"(
+            CREATE TABLE IngestFileTable (
+                ID BIGINT PRIMARY KEY,
+                DATASOURCE_ID BIGINT NOT NULL,
+                PARTITION_ID SMALLINT,
+                FILESYSTEM_ID SMALLINT,
+                LMDB_PATH VARCHAR(4096) NOT NULL,
+                LMDB_PATH_HASH VARCHAR(64) NOT NULL,
+                NOTES BLOB SUB_TYPE TEXT,
+                CONSTRAINT UQ_FILE_DATASOURCE_PATHHASH UNIQUE (DATASOURCE_ID, LMDB_PATH_HASH)
+            )
+        )");
+
+        // IngestJobsHistory Table
+        st->Execute(R"(
+            CREATE TABLE IngestJobsHistory (
+                ID BIGINT PRIMARY KEY,
+                MODULE_NAME VARCHAR(255),
+                MODULE_VERSION VARCHAR(64),
+                START_TIME TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                END_TIME TIMESTAMP,
+                STATUS SMALLINT DEFAULT 0,
+                LOG BLOB SUB_TYPE TEXT,
+                SETTINGS_JSON BLOB SUB_TYPE TEXT
+            )
+        )");
+
+        // IngestResultItems Table
+        st->Execute(R"(
+            CREATE TABLE IngestResultItems (
+                ID BIGINT PRIMARY KEY,
+                JOB_ID BIGINT NOT NULL REFERENCES IngestJobsHistory(ID),
+                FILE_ID BIGINT REFERENCES IngestFileTable(ID),
+                PARENT_ITEM_ID BIGINT,
+                ITEM_TYPE SMALLINT DEFAULT 0 NOT NULL,
+                ITEM_NAME VARCHAR(1024) NOT NULL
+            )
+        )");
+
         // Increment IDs
         // st->Execute("CREATE GENERATOR GEN_CASE_ID;");
         // st->Execute("SET GENERATOR GEN_CASE_ID TO 0;");
@@ -88,6 +128,15 @@ bool CaseDBManager::createSchema()
 
         st->Execute("CREATE GENERATOR GEN_DATASOURCE_ID");
         st->Execute("SET GENERATOR GEN_DATASOURCE_ID TO 0");
+
+        st->Execute("CREATE GENERATOR GEN_INGESTJOB_ID");
+        st->Execute("SET GENERATOR GEN_INGESTJOB_ID TO 0");
+
+        st->Execute("CREATE GENERATOR GEN_INGESTRESULT_ID");
+        st->Execute("SET GENERATOR GEN_INGESTRESULT_ID TO 0");
+
+        st->Execute("CREATE GENERATOR GEN_FILE_ID");
+        st->Execute("SET GENERATOR GEN_FILE_ID TO 0");
 
         // Triggers
         // st->Execute(R"(
@@ -127,6 +176,36 @@ bool CaseDBManager::createSchema()
             BEGIN
                 IF (NEW.DATASOURCEID IS NULL) THEN
                     NEW.DATASOURCEID = GEN_ID(GEN_DATASOURCE_ID, 1);
+            END
+        )");
+
+        st->Execute(R"(
+            CREATE TRIGGER BI_INGESTJOBS FOR INGESTJOBSHISTORY
+            BEFORE INSERT
+            AS
+            BEGIN
+                IF (NEW.ID IS NULL) THEN
+                    NEW.ID = GEN_ID(GEN_INGESTJOB_ID, 1);
+            END
+        )");
+
+        st->Execute(R"(
+            CREATE TRIGGER BI_INGESTRESULTITEMS FOR INGESTRESULTITEMS
+            BEFORE INSERT
+            AS
+            BEGIN
+                IF (NEW.ID IS NULL) THEN
+                    NEW.ID = GEN_ID(GEN_INGESTRESULT_ID, 1);
+            END
+        )");
+
+        st->Execute(R"(
+            CREATE TRIGGER BI_INGESTFILETABLE FOR INGESTFILETABLE
+            BEFORE INSERT
+            AS
+            BEGIN
+                IF (NEW.ID IS NULL) THEN
+                    NEW.ID = GEN_ID(GEN_FILE_ID, 1);
             END
         )");
 
@@ -295,4 +374,9 @@ void CaseDBManager::closeDatabase()
 bool CaseDBManager::databaseExists() const
 {
     return QFile::exists(dbPath + "/case_db/case.fdb");
+}
+
+IBPP::Database CaseDBManager::database() const
+{
+    return fb_db;
 }

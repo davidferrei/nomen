@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Installer>
+    <!-- Application Info -->
+    <Name>Nomen</Name>
+    <Version>1.0.0</Version>
+    <Title>Nomen - Forensic Post-Mortem Analysis Tool</Title>
+    <Publisher>Nomen</Publisher>
+    
+    <!-- Installation Paths -->
+    <!-- Linux Home: ~/Nomen -->
+    <TargetDir>@HomeDir@/Nomen</TargetDir>
+    
+    <!-- Windows -->
+    <StartMenuDir>Nomen</StartMenuDir>
+    
+    <!-- UI Customization -->
+    <!-- <AllowNonAsciiCharacters>false</AllowNonAsciiCharacters> -->
+    
+    <!-- Post-Install Action -->
+    <!-- <RunProgramDescription>Launch Nomen</RunProgramDescription>
+    <RunProgram>@TargetDir@/bin/Nomen</RunProgram> -->
+</Installer>
