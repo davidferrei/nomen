@@ -86,7 +86,6 @@ target_link_libraries(Nomen
         ibpp
         lmdb
         ${CMAKE_SOURCE_DIR}/lib/ibpp/libfbclient.so
-
 )
 
 target_link_options(Nomen PRIVATE -rdynamic)

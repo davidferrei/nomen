@@ -8,9 +8,9 @@
     <Name>com.nomen.app</Name>
     
     <!-- License -->
-    <Licenses>
+    <!-- <Licenses>
         <License name="License Agreement" file="License.txt" />
-    </Licenses>
+    </Licenses> -->
     
     <!-- Installation Script -->
     <Script>installscript.qs</Script>

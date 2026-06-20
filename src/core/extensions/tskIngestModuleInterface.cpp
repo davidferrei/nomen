@@ -59,7 +59,8 @@ TSK_WALK_RET_ENUM tskIngestModuleInterface::file_callback(TSK_FS_FILE* fs_file, 
     } 
     catch (...) 
     {
-        qWarning() << "[tskIngestModuleInterface] processFile Function Threw an Exception for" << fileContext.filePath;
+        qWarning() << "[tskIngestModuleInterface] processFile Threw an Exception for" << fileContext.filePath;
+        return TSK_WALK_STOP;
     }
 
     return TSK_WALK_CONT;
@@ -114,7 +115,7 @@ bool tskIngestModuleInterface::runWalk(const QString &imagePath)
 
     if (fsVector.empty()) 
     {
-        qWarning() << "[tskIngestModuleInterface] Failed to find any filesystems in:" << imagePath;
+        qWarning() << "[tskIngestModuleInterface] Failed to Find any Filesystems in:" << imagePath;
         tsk_img_close(img);
         return false;
     }

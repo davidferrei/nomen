@@ -1,6 +1,7 @@
 
 add_subdirectory(txtCounterModule)
 add_subdirectory(detectMIMEType)
+add_subdirectory(yaraXModule)
 
 find_package(Qt6 REQUIRED COMPONENTS Core)
 

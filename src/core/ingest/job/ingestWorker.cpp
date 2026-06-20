@@ -146,7 +146,6 @@ void IngestWorker::run()
             return;
         }
 
-        qWarning() << "[IngestWorker] Appending error log for Failed Job ID:" << ingestJobData.id << "log:" << ingestJobData.log;
         if (!dbThread.ingestJobsRepo().appendLog(ingestJobData.id, ingestJobData.log)) 
         {
             qWarning() << "[IngestWorker]: Failed to Append Job Log";

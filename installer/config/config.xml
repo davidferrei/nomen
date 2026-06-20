@@ -3,7 +3,7 @@
     <!-- Application Info -->
     <Name>Nomen</Name>
     <Version>1.0.0</Version>
-    <Title>Nomen - Forensic Post-Mortem Analysis Tool</Title>
+    <Title>Nomen - Installer</Title>
     <Publisher>Nomen</Publisher>
     
     <!-- Installation Paths -->
@@ -15,6 +15,16 @@
     
     <!-- UI Customization -->
     <!-- <AllowNonAsciiCharacters>false</AllowNonAsciiCharacters> -->
+    <Logo>app_icon_logo.png</Logo>
+    <InstallerWindowIcon>app_icon_window.png</InstallerWindowIcon>
+    <TitleColor>#25DDB2</TitleColor>
+
+    <ProductImages>
+        <ProductImage>
+            <Image>app_icon_product.png</Image>
+            <Url>https://github.com/davidferrei/nomen</Url>
+        </ProductImage>
+    </ProductImages>
     
     <!-- Post-Install Action -->
     <!-- <RunProgramDescription>Launch Nomen</RunProgramDescription>

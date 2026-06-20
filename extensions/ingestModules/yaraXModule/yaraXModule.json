@@ -1,0 +1,7 @@
+{
+  "name": "Yara-X",
+  "id": "org.nomen.yaraXModule",
+  "description": "Ingest Module for YARA-X",
+  "version": "1.0.0",
+  "author": "Nomen"
+}
