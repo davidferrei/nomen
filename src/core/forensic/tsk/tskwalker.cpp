@@ -71,7 +71,7 @@ static TSK_WALK_RET_ENUM file_callback(TSK_FS_FILE* fs_file, const char* path, v
     uint64_t parent_id = 0;
     uint64_t par_addr = 0;
 
-    // 0=allocated, 1=unallocated (meta present), 2=deleted (meta lost), 3=orphan (set below)
+    // 0=allocated, 1=unallocated (meta present), 2=deleted (meta lost), 3=orphan
     int status = 0;
     if (fs_file->name->flags & TSK_FS_NAME_FLAG_UNALLOC)
         status = (fs_meta != nullptr) ? 1 : 2;

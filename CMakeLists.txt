@@ -6,7 +6,7 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Threads)
@@ -17,9 +17,15 @@ find_library(SLEUTHKIT_LIB NAMES tsk tsk3 PATHS /usr/lib /usr/local/lib /usr/lib
 find_path(SLEUTHKIT_INCLUDE_DIR NAMES libtsk.h PATHS /usr/include/tsk /usr/local/include/tsk /usr/include /usr/local/include)
 
 if(NOT SLEUTHKIT_LIB OR NOT SLEUTHKIT_INCLUDE_DIR)
-    message(WARNING "SleuthKit not Found. Attempting fallback to System Paths")
+    message(WARNING "SleuthKit not Found. Attempting Fallback to System Paths")
     set(SLEUTHKIT_INCLUDE_DIR /usr/include/tsk)
     set(SLEUTHKIT_LIB /usr/lib/libtsk.so)
+endif()
+
+# libewf
+find_library(LIBEWF_LIB NAMES ewf PATHS /usr/lib /usr/local/lib /usr/lib/x86_64-linux-gnu)
+if(NOT LIBEWF_LIB)
+    set(LIBEWF_LIB /usr/lib/libewf.so)
 endif()
 
 include_directories(${SLEUTHKIT_INCLUDE_DIR})
@@ -83,6 +89,7 @@ target_link_libraries(Nomen
         Qt${QT_VERSION_MAJOR}::Widgets
         Threads::Threads
         ${SLEUTHKIT_LIB}
+        ${LIBEWF_LIB}
         ibpp
         lmdb
         ${CMAKE_SOURCE_DIR}/lib/ibpp/libfbclient.so

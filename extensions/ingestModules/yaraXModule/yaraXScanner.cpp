@@ -67,8 +67,8 @@ static void matching_rule_callback(const YRX_RULE *yrxRule, void *user_data)
     YaraXScanner *yrxScannerData = static_cast<YaraXScanner*>(user_data);
     yrxScannerData->incrementMatchesFoundCount();
 
-    if (static_cast<int>(yrxScannerData->getStoredMatches().size()) >= 20) //Debug
-        return;
+    // if (static_cast<int>(yrxScannerData->getStoredMatches().size()) >= 20) //Debug
+    //     return;
 
     const uint8_t *ruleIDBytes;
     size_t ruleIDLength;
@@ -100,10 +100,10 @@ static void matching_rule_callback(const YRX_RULE *yrxRule, void *user_data)
     };
     const_cast<std::vector<YaraXMatchResultData>&>(yrxScannerData->getStoredMatches()).push_back(yrxMatchResultdata);
 
-    qInfo() << "[YaraX] Match #" << yrxScannerData->getMatchesFoundCount()
-            << "| File:" << yrxMatchResultdata.filePath
-            << "| Rule:" << yrxMatchResultdata.ruleName
-            << "| NS:" << yrxMatchResultdata.ruleNamespace;
+    // qInfo() << "[YaraX] Match #" << yrxScannerData->getMatchesFoundCount()
+    //         << "| File:" << yrxMatchResultdata.filePath
+    //         << "| Rule:" << yrxMatchResultdata.ruleName
+    //         << "| NS:" << yrxMatchResultdata.ruleNamespace;
 
 }
 
@@ -114,6 +114,7 @@ bool YaraXScanner::initialize()
 {
     qInfo() << "[YaraX] Initializing Scanner...";
     resetCounters();
+    storedMatches.clear();
 
     QString rulesDir;
     if (!findYaraRulesDirectory(rulesDir)) 
@@ -253,4 +254,7 @@ void YaraXScanner::cleanup()
         yrx_rules_destroy(yrxRules);
         yrxRules = nullptr;
     }
+
+    storedMatches.clear();
+    storedMatches.shrink_to_fit();
 }

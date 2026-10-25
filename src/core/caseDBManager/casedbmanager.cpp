@@ -80,7 +80,7 @@ bool CaseDBManager::createSchema()
         st->Execute(R"(
             CREATE TABLE IngestFileTable (
                 ID BIGINT PRIMARY KEY,
-                DATASOURCE_ID BIGINT NOT NULL,
+                DATASOURCE_ID BIGINT NOT NULL REFERENCES DataSource(DATASOURCEID),
                 PARTITION_ID SMALLINT,
                 FILESYSTEM_ID SMALLINT,
                 LMDB_PATH VARCHAR(4096) NOT NULL,
